@@ -32,6 +32,7 @@
               xorg.libXcursor
               xorg.libXrandr
 
+              libxkbcommon
               dbus
             ];
 
