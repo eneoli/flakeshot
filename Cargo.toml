@@ -2,6 +2,9 @@
 name = "flakeshot"
 version = "0.1.0"
 edition = "2021"
+description = "A screenshot tool for wayland and xorg written in rust."
+repository = "https://github.com/eneoli/flakeshot"
+authors = ["eneoli", "TornaxO7"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
