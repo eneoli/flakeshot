@@ -8,29 +8,15 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-
-  checkout:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-  checkfmt:
-    runs-on: ubuntu-latest
-    steps:
       - name: Check formatting
         run: cargo fmt --check --verbose
-
-  clippy:
-    runs-on: ubuntu-latest
-    steps:
       - name: Check best practices (Clippy)
         run: cargo clippy --verbose
-  build:
-    runs-on: ubuntu-latest
-    steps:
       - name: Check for build errors
         run: cargo check --verbose
-  tests:
-    runs-on: ubuntu-latest
-    steps:
       - name: Running tests
         run: cargo test --verbose
