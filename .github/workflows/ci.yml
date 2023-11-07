@@ -1,0 +1,23 @@
+name: Rust
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check formatting
+        run: cargo fmt --check --verbose
+      - uses: actions/checkout@v3
+      - name: Check best practices (Clippy)
+        run: cargo clippy --verbose
+      - name: Check for build errors
+        run: cargo check --verbose
+      - name: Run tests
+        run: cargo test --verbose
