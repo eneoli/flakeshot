@@ -9,3 +9,4 @@ authors = ["eneoli", "TornaxO7"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+tokio = { version = "1.33.0", features = ["full"] }
