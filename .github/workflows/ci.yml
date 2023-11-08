@@ -1,5 +1,8 @@
 name: CI
 
+permissions:
+  contents: write
+
 # Use our Nix Flake Environment for steps
 defaults:
   run:
