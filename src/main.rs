@@ -1,7 +1,8 @@
-fn run() -> Result<(), ()> {
+async fn run() -> Result<(), ()> {
     Ok(())
 }
 
-fn main() {
-    let _result = run();
+#[tokio::main]
+async fn main() {
+    let _result = run().await;
 }
