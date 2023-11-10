@@ -64,7 +64,7 @@ pub fn get_images() -> Result<Vec<image::RgbImage>, Error> {
             ),
         };
 
-        let mut image: Vec<u8> = Vec::with_capacity((width * height) as usize);
+        let mut image: Vec<u8> = Vec::with_capacity((width * height) as usize * bytes_per_pixel);
 
         for chunk in image_bytes.chunks_exact(bytes_per_pixel) {
             let mut rgb = get_rgb(chunk, setup.bitmap_format_bit_order);
@@ -79,13 +79,13 @@ pub fn get_images() -> Result<Vec<image::RgbImage>, Error> {
 }
 
 fn get_8bit_rgb(chunk: &[u8], bit_order: ImageOrder) -> Rgb<u8> {
-    let lsb_pixel = get_8bit_pixel(chunk, bit_order);
-
     const MAX_R_AND_B_VALUE: u8 = 0b11u8;
     const MAX_R_AND_B_VALUE_F32: f32 = MAX_R_AND_B_VALUE as f32;
 
     const MAX_G_VALUE: u8 = 0b111u8;
     const MAX_G_VALUE_F32: f32 = MAX_G_VALUE as f32;
+
+    let lsb_pixel = get_8bit_pixel(chunk, bit_order);
 
     let r = {
         let red_bits = lsb_pixel >> 6;
@@ -123,13 +123,13 @@ fn get_8bit_pixel(chunk: &[u8], bit_order: ImageOrder) -> u8 {
 }
 
 fn get_16bit_rgb(chunk: &[u8], bit_order: ImageOrder) -> Rgb<u8> {
-    let pixel = get_16bit_pixel(chunk, bit_order);
-
     const MAX_R_AND_B_VALUE: u16 = 0b1_1111;
     const MAX_R_AND_B_VALUE_F32: f32 = MAX_R_AND_B_VALUE as f32;
 
     const MAX_G_VALUE: u16 = 0b11_1111;
     const MAX_G_VALUE_F32: f32 = MAX_G_VALUE as f32;
+
+    let pixel = get_16bit_pixel(chunk, bit_order);
 
     let r = {
         let red_bits = pixel >> 11;
