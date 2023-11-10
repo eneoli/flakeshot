@@ -90,8 +90,8 @@ pub fn get_images() -> Result<Vec<image::RgbImage>, Error> {
 
         let mut image: Vec<u8> = Vec::with_capacity((width * height) as usize * bytes_per_pixel);
 
-        for chunk in image_bytes.chunks_exact(bytes_per_pixel) {
-            let mut rgb = get_rgb(chunk, setup.bitmap_format_bit_order);
+        for rgb_data_chunk in image_bytes.chunks_exact(bytes_per_pixel) {
+            let mut rgb = get_rgb(rgb_data_chunk, setup.bitmap_format_bit_order);
             image.extend_from_slice(&mut rgb.0);
         }
 
