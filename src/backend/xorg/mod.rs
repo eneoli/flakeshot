@@ -27,7 +27,7 @@ pub fn get_images() -> Result<Vec<image::RgbImage>, Error> {
 
     for screen in &setup.roots {
         let width = screen.width_in_pixels as u32;
-        let height = screen.width_in_pixels as u32;
+        let height = screen.height_in_pixels as u32;
 
         let (image_bytes, pixmap_format) = {
             let cookie = conn
@@ -57,7 +57,7 @@ pub fn get_images() -> Result<Vec<image::RgbImage>, Error> {
         let get_rgb = match bytes_per_pixel {
             1 => get_8bit_rgb,
             2 => get_16bit_rgb,
-            3 => get_32bit_rgb,
+            4 => get_32bit_rgb,
             _ => unimplemented!(
                 "We didn't implement the rgb-extraction of a pixel consisting of {} bytes.",
                 bytes_per_pixel
