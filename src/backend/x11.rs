@@ -26,6 +26,23 @@ pub enum Error {
 ///
 /// This function collects, from each screen (a.k.a your monitors) a screenshot
 /// and returns it.
+///
+/// # Example
+/// ```no_run
+/// use flakeshot::backend::x11::get_images;
+/// use std::fs::File;
+/// use image::ImageOutputFormat;
+///
+/// fn main() {
+///     let mut file = File::create("./targets/example_screenshot.png").unwrap();
+///     let images = get_images().unwrap();
+///
+///     // we will only use the first screenshot for this example
+///     let first_image = images.first().unwrap();
+///
+///     first_image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
+/// }
+/// ```
 pub fn get_images() -> Result<Vec<image::RgbImage>, Error> {
     let (conn, _) = x11rb::connect(None)?;
     let setup = conn.setup();
