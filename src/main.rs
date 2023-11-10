@@ -1,7 +1,8 @@
-fn run() -> Result<(), flakeshot::Error> {
+async fn run() -> Result<(), ()> {
     Ok(())
 }
 
-fn main() {
-    run().unwrap();
+#[tokio::main]
+async fn main() {
+    run().await.unwrap();
 }
