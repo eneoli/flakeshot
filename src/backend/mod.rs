@@ -1,4 +1,4 @@
-//! This module contains the backends to get the screenshot from.
+//! Contains the different backends to get the screenshot from.
 
 pub mod wayland;
 pub mod x11;

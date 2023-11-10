@@ -1,4 +1,4 @@
-//! Implementation for getting a screenshot on X11.
+//! Backend implementation for X11.
 use image::{Rgb, RgbImage};
 use x11rb::{
     connection::Connection,
