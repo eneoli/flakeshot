@@ -1,3 +1,4 @@
+//! Implementation for getting a screenshot on X11.
 use image::{Rgb, RgbImage};
 use x11rb::{
     connection::Connection,
@@ -7,6 +8,8 @@ use x11rb::{
 const ALL_BITS_FROM_PLANE: u32 = u32::MAX;
 const U8_MAX: f32 = u8::MAX as f32;
 
+/// A general enum with possible errors as values which can occur while
+/// operating with the xorg-server.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Couldn't connect to the xorg server: {0}")]
@@ -19,6 +22,10 @@ pub enum Error {
     ReplyError(#[from] x11rb::errors::ReplyError),
 }
 
+/// The main function of this module.
+///
+/// This function collects, from each screen (a.k.a your monitors) a screenshot
+/// and returns it.
 pub fn get_images() -> Result<Vec<image::RgbImage>, Error> {
     let (conn, _) = x11rb::connect(None)?;
     let setup = conn.setup();
