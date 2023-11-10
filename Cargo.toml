@@ -9,3 +9,5 @@ authors = ["eneoli", "TornaxO7"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+image = "0.24.7"
+x11rb = "0.12.0"
