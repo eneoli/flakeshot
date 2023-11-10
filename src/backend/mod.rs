@@ -16,11 +16,11 @@ pub enum Error {
 /// This function returns an rgb-image for each screen (or "monitor" in other
 /// words).
 pub fn get_images() -> Result<Vec<image::RgbImage>, Error> {
-    let is_running_wayland = std::env::var("WAYLAND_DISPLAY").is_ok();
+    let xorg_server_is_running = std::env::var("DISPLAY").is_ok();
 
-    if is_running_wayland {
-        todo!()
-    } else {
+    if xorg_server_is_running {
         x11::get_images().map_err(Error::from)
+    } else {
+        todo!()
     }
 }
