@@ -10,5 +10,9 @@ tool which should run on X11 as good as on wayland.
 # Status
 `flakeshot` is still under heavy development and not considered useable.
 
+# License
+See [LICENSE.md].
+
 [flameshot]: https://github.com/flameshot-org/flameshot
 [grim]: https://sr.ht/~emersion/grim/
+[LICENSE.md]: ./LICENSE.md
