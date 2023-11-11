@@ -48,7 +48,7 @@
           });
 
       overlays.default = final: prev: {
-        flameshot = prev.callPackage mkFlakeshot { };
+        flakeshot = prev.callPackage mkFlakeshot { };
       };
 
       devShells = forAllSystems (pkgs: {
