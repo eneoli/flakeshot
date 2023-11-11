@@ -56,3 +56,6 @@ jobs:
 
       - name: Running tests
         run: cargo test --verbose
+
+      - name: Check `flake.nix`
+        run: nix flake check
