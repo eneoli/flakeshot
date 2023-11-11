@@ -11,7 +11,7 @@ tool which should run on X11 as good as on wayland.
 `flakeshot` is still under heavy development and not considered useable.
 
 # License
-`flakeshot` uses the MIT-License. See [LICENSE.txt].
+See [LICENSE.txt].
 
 [flameshot]: https://github.com/flameshot-org/flameshot
 [grim]: https://sr.ht/~emersion/grim/
