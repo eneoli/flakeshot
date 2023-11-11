@@ -13,6 +13,11 @@ tool which should run on X11 as good as on wayland.
 # License
 See [LICENSE.txt].
 
+# Credits
+- [`screenshots-rs`] for x11-backend-screenshot-code because otherwise it would have been
+  a pain to find out how to get a screenshot with x11.
+
 [flameshot]: https://github.com/flameshot-org/flameshot
 [grim]: https://sr.ht/~emersion/grim/
 [LICENSE.txt]: ./LICENSE.txt
+[`screenshots-rs`]: https://github.com/nashaofu/screenshots-rs
