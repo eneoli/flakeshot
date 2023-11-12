@@ -10,4 +10,3 @@ tool which should run on X11 as good as on Wayland.
 
 [flameshot]: https://github.com/flameshot-org/flameshot
 [grim]: https://sr.ht/~emersion/grim/
-[`screenshots-rs`]: https://github.com/nashaofu/screenshots-rs
