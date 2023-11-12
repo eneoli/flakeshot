@@ -1,6 +1,4 @@
-# What is `flakeshot`?
-
-`flakeshot` is a screenshot-tool for unix-systems which runs natively on `Wayland` *and* `X11`.
+A screenshot tool for unix-systems which runs natively on `Wayland` *and* `X11`.
 
 # Motivation
 We all know some screenshot tools like [flameshot] (for X11) or [grim] (for Wayland) but they
