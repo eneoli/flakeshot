@@ -26,7 +26,7 @@
         cargoSha256 = "";
 
         meta = {
-          description = "A screenshot tool for wayland and xorg!";
+          description = "A screenshot tool for wayland and x11!";
           homepage = "https://github.com/eneoli/flakeshot/";
           license = lib.licenses.gpl2;
         };
