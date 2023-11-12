@@ -28,7 +28,7 @@
         meta = {
           description = "A screenshot tool for wayland and xorg!";
           homepage = "https://github.com/eneoli/flakeshot/";
-          license = lib.licenses.mit;
+          license = lib.licenses.gpl2;
         };
       };
     in
