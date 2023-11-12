@@ -13,31 +13,57 @@
           (system: function (import nixpkgs {
             inherit system;
 
-            overlays = [ (import rust-overlay) ];
+            overlays = [ rust-overlay.overlays.default ];
           }));
+
+      mkFlakeshot = { rustPlatform, lib, ... }: rustPlatform.buildRustPackage {
+        pname = "flakeshot";
+        version = "0.0.1";
+
+        src = ./.;
+        cargoLock.lockFile = ./Cargo.lock;
+
+        meta = {
+          description = "A screenshot tool for wayland and x11!";
+          homepage = "https://github.com/eneoli/flakeshot/";
+          license = lib.licenses.gpl2;
+        };
+      };
     in
     {
+      apps = forAllSystems
+        (pkgs:
+          let
+            flakeshotPkg = pkgs.callPackage mkFlakeshot { };
+          in
+          {
+            default = {
+              type = "app";
+              program = "${flakeshotPkg}/bin/flakeshot";
+            };
+          });
+
+      overlays.default = final: prev: {
+        flakeshot = prev.callPackage mkFlakeshot { };
+      };
+
       devShells = forAllSystems (pkgs: {
         default =
           let
             toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
           in
           pkgs.mkShell rec {
-            packages = with pkgs; [
+            packages = [
               toolchain
             ];
 
             buildInputs = with pkgs; [
-              xorg.libX11
-              xorg.libXcursor
-              xorg.libXrandr
-
-              libxkbcommon
               dbus
             ];
 
-            LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${builtins.toString (pkgs.lib.makeLibraryPath buildInputs)}";
+            LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${builtins.toString (pkgs.lib.makeLibraryPath buildInputs)} ";
           };
       });
     };
 }
+
