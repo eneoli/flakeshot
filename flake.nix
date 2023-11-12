@@ -60,11 +60,6 @@
             ];
 
             buildInputs = with pkgs; [
-              xorg.libX11
-              xorg.libXcursor
-              xorg.libXrandr
-
-              libxkbcommon
               dbus
             ];
 
