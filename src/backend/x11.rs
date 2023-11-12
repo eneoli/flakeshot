@@ -10,8 +10,6 @@ use x11rb::{
     protocol::xproto::{ConnectionExt, ImageFormat, ImageOrder},
 };
 
-const ALL_BITS_FROM_PLANE: u32 = u32::MAX;
-
 /// A general enum with possible errors as values which can occur while
 /// operating with the xorg-server.
 #[derive(thiserror::Error, Debug)]
@@ -48,6 +46,8 @@ pub enum Error {
 /// }
 /// ```
 pub fn get_images() -> Result<Vec<image::DynamicImage>, Error> {
+    const ALL_BITS: u32 = u32::MAX;
+
     let (conn, _) = x11rb::connect(None)?;
     let setup = conn.setup();
 
@@ -61,7 +61,7 @@ pub fn get_images() -> Result<Vec<image::DynamicImage>, Error> {
         let height_u32 = u32::from(height_u16);
 
         let (image_bytes, pixmap_format) = {
-            let cookie = conn
+            let image_reply = conn
                 .get_image(
                     ImageFormat::Z_PIXMAP,
                     screen.root,
@@ -69,11 +69,12 @@ pub fn get_images() -> Result<Vec<image::DynamicImage>, Error> {
                     0,
                     width_u16,
                     height_u16,
-                    ALL_BITS_FROM_PLANE,
+                    ALL_BITS,
                 )
+                .map_err(Error::from)?
+                .reply()
                 .map_err(Error::from)?;
 
-            let image_reply = cookie.reply().map_err(Error::from)?;
             let pixmap_format = setup
                 .pixmap_formats
                 .iter()
@@ -83,27 +84,10 @@ pub fn get_images() -> Result<Vec<image::DynamicImage>, Error> {
             (image_reply.data, pixmap_format)
         };
 
+        let bit_order = setup.bitmap_format_bit_order;
         let image = match pixmap_format.bits_per_pixel {
-            24 => {
-                let mut rgb_image = RgbImage::from_vec(width_u32, height_u32, image_bytes).unwrap();
-                if setup.bitmap_format_bit_order == ImageOrder::LSB_FIRST {
-                    for rgb in rgb_image.pixels_mut() {
-                        rgb.0.reverse();
-                    }
-                }
-                DynamicImage::ImageRgb8(rgb_image)
-            }
-            32 => {
-                let mut rgba_image =
-                    RgbaImage::from_vec(width_u32, height_u32, image_bytes).unwrap();
-
-                if setup.bitmap_format_bit_order == ImageOrder::LSB_FIRST {
-                    for rgba in rgba_image.pixels_mut() {
-                        rgba.0[0..3].reverse();
-                    }
-                }
-                DynamicImage::ImageRgba8(rgba_image)
-            }
+            24 => get_rgb_image(width_u32, height_u32, image_bytes, bit_order),
+            32 => get_rgba_image(width_u32, height_u32, image_bytes, bit_order),
             _ => unimplemented!(
                 "We don't support {}-bit RGB values",
                 pixmap_format.bits_per_pixel
@@ -114,4 +98,35 @@ pub fn get_images() -> Result<Vec<image::DynamicImage>, Error> {
     }
 
     Ok(images)
+}
+
+fn get_rgb_image(
+    width: u32,
+    height: u32,
+    image_bytes: Vec<u8>,
+    bit_order: ImageOrder,
+) -> DynamicImage {
+    let mut rgb_image = RgbImage::from_vec(width, height, image_bytes).unwrap();
+    if bit_order == ImageOrder::LSB_FIRST {
+        for rgb in rgb_image.pixels_mut() {
+            rgb.0.reverse();
+        }
+    }
+    DynamicImage::ImageRgb8(rgb_image)
+}
+
+fn get_rgba_image(
+    width: u32,
+    height: u32,
+    image_bytes: Vec<u8>,
+    bit_order: ImageOrder,
+) -> DynamicImage {
+    let mut rgba_image = RgbaImage::from_vec(width, height, image_bytes).unwrap();
+
+    if bit_order == ImageOrder::LSB_FIRST {
+        for rgba in rgba_image.pixels_mut() {
+            rgba.0[0..3].reverse();
+        }
+    }
+    DynamicImage::ImageRgba8(rgba_image)
 }
