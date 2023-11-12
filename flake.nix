@@ -36,10 +36,8 @@
           let
             flakeshotPkg = pkgs.callPackage mkFlakeshot { };
           in
-          rec {
-            default = flakeshot;
-
-            flakeshot = {
+          {
+            default = {
               type = "app";
               program = "${flakeshotPkg}/bin/flakeshot";
             };
