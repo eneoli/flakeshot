@@ -10,10 +10,9 @@ authors = ["eneoli", "TornaxO7"]
 
 [dependencies]
 anyhow = { version = "1.0.75", features = [] }
+thiserror = "1.0.50"
 image = { version = "0.24.7", features = [] }
-libc = "0.2.150"
 memfd = "0.6.4"
-memmap2 = "0.9.0"
 wayland-client = "0.31.1"
 wayland-protocols = { version = "0.31.0", features = ["client", "unstable"] }
 wayland-protocols-wlr = { version = "0.2.0", features = ["client"] }
