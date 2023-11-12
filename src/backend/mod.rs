@@ -15,7 +15,7 @@ pub enum Error {
 ///
 /// This function returns an rgb-image for each screen (or "monitor" in other
 /// words).
-pub fn get_images() -> Result<Vec<image::RgbImage>, Error> {
+pub fn get_images() -> Result<Vec<image::DynamicImage>, Error> {
     let xorg_server_is_running = std::env::var("DISPLAY").is_ok();
 
     if xorg_server_is_running {
