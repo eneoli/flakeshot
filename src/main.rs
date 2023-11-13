@@ -1,15 +1,13 @@
-use flakeshot::Error;
+use clap::Parser;
+use flakeshot::cli::Cli;
 
-fn run() ->Result<(), Error> {
-    Err(Error::NotImplemented)
+async fn run() -> Result<(), ()> {
+    let _cli = Cli::parse();
+
+    Ok(())
 }
 
-fn main() {
-
-    let result = run();
-
-    if let Err(err) = result {
-        match err {
-        }
-    }
+#[tokio::main]
+async fn main() {
+    run().await.unwrap();
 }
