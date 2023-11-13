@@ -11,16 +11,29 @@ pub enum Error {
     X11(#[from] x11::Error),
 }
 
+pub type Pixel = u16;
+
+pub enum OutputIdentifier {
+    X11(u32),
+    Wayland {
+        id: u32,
+        name: String,
+        description: String,
+    },
+}
+
+pub struct OutputInfo {
+    pub identifier: OutputIdentifier,
+    pub width: Pixel,
+    pub height: Pixel,
+    pub x: i16,
+    pub y: i16,
+}
+
 /// The main function of this module.
 ///
 /// This function returns an rgb-image for each screen (or "monitor" in other
 /// words).
-pub fn get_images() -> Result<Vec<image::DynamicImage>, Error> {
-    let xorg_server_is_running = std::env::var("DISPLAY").is_ok();
-
-    if xorg_server_is_running {
-        x11::get_images().map_err(Error::from)
-    } else {
-        todo!()
-    }
+pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, image::DynamicImage)>> {
+    todo!()
 }
