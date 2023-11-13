@@ -1,4 +1,5 @@
 pub mod backend;
+pub mod cli;
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 #[derive(thiserror::Error, Debug)]
