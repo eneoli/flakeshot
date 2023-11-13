@@ -21,5 +21,5 @@ pub struct OutputInfo {
 }
 
 pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, image::DynamicImage)>> {
-    Ok(vec![])
+    todo!()
 }
