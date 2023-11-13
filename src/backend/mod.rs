@@ -6,3 +6,4 @@ pub mod output_info;
 pub mod geometry;
 
 pub mod output_mode;
+pub mod frame_meta;

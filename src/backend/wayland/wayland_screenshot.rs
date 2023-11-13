@@ -1,12 +1,8 @@
 use std::io::Read;
-use std::os::fd::AsFd;
 use std::path::Path;
-use std::thread::sleep;
-use std::time::Duration;
 use wayland_client::Connection;
-use wayland_client::protocol::wl_buffer::WlBuffer;
-use wayland_client::protocol::wl_shm;
-use crate::backend::wayland::shared_memory::create_shm_file;
+use wayland_client::protocol::wl_shm::Format::{Abgr8888, Argb8888, Xbgr8888};
+use crate::backend::wayland::wayland_shared_memory::{WaylandSharedMemory};
 use crate::backend::wayland::wayland_error::WaylandError;
 use crate::backend::wayland::wayland_screenshot_state::WaylandScreenshotState;
 
@@ -27,32 +23,6 @@ impl WaylandScreenshot {
 
         queue.roundtrip(&mut state)?;
 
-        let mut memfile = create_shm_file("/tmp/flakeshot", 2160 * 3840 * 4)?; // TODO stride and resolution
-
-        let buffer: WlBuffer = {
-            // setup shm
-            let wl_shm = state.wl_shm
-                .as_ref()
-                .ok_or(WaylandError::NoShmBind)?;
-
-            let shm_pool = wl_shm.create_pool(
-                memfile.as_fd(),
-                3840 * 2160 * 4,
-                &queue_handle,
-                (),
-            );
-
-            shm_pool.create_buffer(
-                0,
-                3840,
-                2160,
-                3840 * 4,
-                wl_shm::Format::Xbgr8888, // TODO check for right format
-                &queue_handle,
-                (),
-            )
-        };
-
         loop {
             queue.blocking_dispatch(&mut state)?;
 
@@ -61,40 +31,61 @@ impl WaylandScreenshot {
                 continue;
             }
 
-            // TODO can we do it better?
-            {
-                let screenshot_manager = state.zwlr_screencopy_manager_v1
-                    .as_ref()
-                    .ok_or(WaylandError::NoScreenshotManager)?;
+            let screenshot_manager = state.zwlr_screencopy_manager_v1
+                .as_ref()
+                .ok_or(WaylandError::NoScreenshotManager)?;
 
 
-                let frame = screenshot_manager.capture_output(
-                    0,
-                    &state.outputs.last_mut().unwrap().output,
-                    &queue_handle,
-                    (),
-                );
+            let frame = screenshot_manager.capture_output(
+                0,
+                &state.outputs.last_mut().unwrap().output,
+                &queue_handle,
+                (),
+            );
 
-                frame.copy(&buffer);
+            while state.current_frame.is_none() {
+                queue.blocking_dispatch(&mut state).unwrap();
             }
+
+            let (width, height, stride) = {
+                let current_frame = state.current_frame.as_ref().unwrap();
+                let width = current_frame.width.clone();
+                let height = current_frame.height.clone();
+                let stride = current_frame.stride.clone();
+
+                (width, height, stride)
+            };
+
+            let shared_memory = WaylandSharedMemory::new(
+                state.wl_shm
+                    .as_ref()
+                    .ok_or(WaylandError::NoShmBind)?,
+                &queue_handle,
+                width,
+                height,
+                stride,
+                Xbgr8888,
+            )?;
+
+            frame.copy(shared_memory.get_buffer());
 
             while !state.screenshot_ready {
                 queue.blocking_dispatch(&mut state).unwrap();
             }
 
-            sleep(Duration::from_secs(5)); // TODO use events instead of sleep
-
             let mut data = vec![];
 
-            memfile.read_to_end(&mut data)?;
+            shared_memory.get_memfile().read_to_end(&mut data)?;
 
             image::save_buffer(
                 &Path::new("/home/oliver/screen.png"),
                 data.as_slice(),
-                3840,
-                2160,
+                width,
+                height,
                 image::ColorType::Rgba8,
             )?;
+
+            //shared_memory.destroy();
 
             break; // done
         }

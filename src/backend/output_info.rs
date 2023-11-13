@@ -10,7 +10,17 @@ pub struct OutputInfo {
     pub scale: i32,
     pub geometry: Geometry,
     pub mode: OutputMode,
+
+    // width
+    // height
+    // name
+    // desc
+    // x
+    // y
+    // scale
 }
+
+(OutputInfo, DynamicImage)
 
 impl OutputInfo {
     pub fn from_wl_output(wl_ouput: WlOutput) -> OutputInfo {

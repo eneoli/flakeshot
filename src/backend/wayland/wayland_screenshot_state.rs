@@ -2,11 +2,13 @@ use wayland_client::{Connection, Dispatch, Proxy, QueueHandle};
 use wayland_client::protocol::{wl_buffer, wl_output, wl_registry, wl_shm, wl_shm_pool};
 use wayland_client::protocol::wl_buffer::WlBuffer;
 use wayland_client::protocol::wl_output::WlOutput;
-use wayland_client::protocol::wl_shm::WlShm;
+use wayland_client::protocol::wl_shm::{Format, WlShm};
 use wayland_client::protocol::wl_shm_pool::WlShmPool;
+use wayland_client::WEnum;
 use wayland_protocols_wlr::screencopy::v1::client::zwlr_screencopy_frame_v1::ZwlrScreencopyFrameV1;
 use wayland_protocols_wlr::screencopy::v1::client::{zwlr_screencopy_frame_v1, zwlr_screencopy_manager_v1};
 use wayland_protocols_wlr::screencopy::v1::client::zwlr_screencopy_manager_v1::ZwlrScreencopyManagerV1;
+use crate::backend::frame_meta::FrameMeta;
 use crate::backend::geometry::Geometry;
 use crate::backend::output_info::OutputInfo;
 use crate::backend::output_mode::OutputMode;
@@ -25,8 +27,10 @@ pub struct WaylandScreenshotState {
 
     pub outputs: Vec<OutputInfo>,
 
+    pub current_frame: Option<FrameMeta>,
+
     pub wl_shm: Option<WlShm>,
-    // pub shn_formats: Vec<>, // TODO check how format looks like
+    pub shm_formats: Vec<Format>,
 
     pub zwlr_screencopy_manager_v1: Option<ZwlrScreencopyManagerV1>,
 }
@@ -85,7 +89,7 @@ impl Dispatch<wl_registry::WlRegistry, ()> for WaylandScreenshotState {
             match interface.as_str() {
                 WL_OUTPUT => {
                     registry.bind::<WlOutput, _, _>(name, version, qhandle, ());
-                },
+                }
                 WL_SHM => state.wl_shm = Some(
                     registry.bind::<WlShm, _, _>(name, version, qhandle, ())
                 ),
@@ -100,16 +104,18 @@ impl Dispatch<wl_registry::WlRegistry, ()> for WaylandScreenshotState {
 
 impl Dispatch<WlShm, ()> for WaylandScreenshotState {
     fn event(
-        _state: &mut Self,
+        state: &mut Self,
         _proxy: &WlShm,
-        _event: wl_shm::Event,
+        event: wl_shm::Event,
         _data: &(),
         _conn: &Connection,
         _qhandle: &QueueHandle<Self>,
     ) {
-
-        //println!("Advertised Format for SHM");
-        //println!("{:#?}", event);
+        if let wl_shm::Event::Format { format } = event {
+            if let WEnum::Value(format) = format {
+                state.shm_formats.push(format.clone());
+            }
+        }
     }
 }
 
@@ -123,15 +129,15 @@ impl Dispatch<ZwlrScreencopyFrameV1, ()> for WaylandScreenshotState {
         _qhandle: &QueueHandle<Self>,
     ) {
         if let zwlr_screencopy_frame_v1::Event::BufferDone = event {
-            state.screenshot_ready = true;
+            // Not interested
         }
 
         if let zwlr_screencopy_frame_v1::Event::Buffer { .. } = event {
-           // println!("{}", width); // TODO save infos
+            state.current_frame = FrameMeta::from_wayland_event(&event);
         }
 
         if let zwlr_screencopy_frame_v1::Event::Ready { .. } = event {
-            println!("Buffer ready"); // TODO do we need this?
+            state.screenshot_ready = true;
         }
 
         if let zwlr_screencopy_frame_v1::Event::Failed = event {
@@ -221,6 +227,31 @@ impl OutputMode {
                     height,
                     width,
                     refresh,
+                }
+            )
+        } else {
+            None
+        }
+    }
+}
+
+impl FrameMeta {
+    pub fn from_wayland_event(event: &zwlr_screencopy_frame_v1::Event) -> Option<Self> {
+        if let &zwlr_screencopy_frame_v1::Event::Buffer {
+            format,
+            width,
+            height,
+            stride,
+        } = event {
+            Some(
+                Self {
+                    width,
+                    height,
+                    stride,
+                    format: match format {
+                        WEnum::Value(format) => Some(format),
+                        WEnum::Unknown(_) => None,
+                    },
                 }
             )
         } else {
