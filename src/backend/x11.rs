@@ -7,9 +7,8 @@
 use image::{DynamicImage, RgbImage, RgbaImage};
 use x11rb::{
     connection::Connection,
-    protocol::{xproto::{ImageFormat, ImageOrder, Screen, Setup}, randr::ConnectionExt},
+    protocol::xproto::{ImageFormat, ImageOrder, Screen},
     rust_connection::RustConnection,
-    protocol::randr,
 };
 
 use super::{OutputIdentifier, OutputInfo};
@@ -50,29 +49,43 @@ pub enum Error {
 /// }
 /// ```
 pub fn get_images() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
+    use x11rb::protocol::randr::ConnectionExt;
+
     let (conn, _) = x11rb::connect(None)?;
     let setup = conn.setup();
 
     let mut images = Vec::with_capacity(setup.roots.len());
 
     for screen in &setup.roots {
-        let image = get_image(&conn, &screen);
+        let image = get_image(&conn, &screen)?;
+        let monitors = conn.randr_get_monitors(screen.root, true)?.reply()?;
 
-        let ouput_info = OutputInfo {
+        if monitors.monitors.len() > 1 {
+            unimplemented!(concat![
+                "We implemented flakeshot only for screens which are mapped to a single monitor.\n",
+                "Please create an issue with the title 'MUTIPLE-MONITORS' or look\n",
+                "if someone has already created this issue and give it a thumbs up."
+            ]);
+        }
+
+        let monitor = &monitors.monitors[0];
+
+        let output_info = OutputInfo {
             identifier: OutputIdentifier::X11(screen.root),
             width: screen.width_in_pixels,
             height: screen.height_in_pixels,
-            x:,
-            y: todo!(),
+            x: monitor.x,
+            y: monitor.y,
         };
 
-        images.push(image);
+        images.push((output_info, image));
     }
 
     Ok(images)
 }
 
 fn get_image(conn: &RustConnection, screen: &Screen) -> Result<DynamicImage, Error> {
+    use x11rb::protocol::xproto::ConnectionExt;
     const ALL_BITS: u32 = u32::MAX;
 
     let setup = &conn.setup();
