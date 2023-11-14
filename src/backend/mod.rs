@@ -34,6 +34,12 @@ pub struct OutputInfo {
 ///
 /// This function returns an rgb-image for each screen (or "monitor" in other
 /// words).
-pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, image::DynamicImage)>> {
-    todo!()
+pub async fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
+    let xorg_is_running = std::env::var("DISPLAY").is_ok();
+
+    if xorg_is_running {
+        x11::get_images().map_err(Error::from)
+    } else {
+        todo!()
+    }
 }

@@ -7,8 +7,12 @@
 use image::{DynamicImage, RgbImage, RgbaImage};
 use x11rb::{
     connection::Connection,
-    protocol::xproto::{ConnectionExt, ImageFormat, ImageOrder},
+    protocol::{xproto::{ImageFormat, ImageOrder, Screen, Setup}, randr::ConnectionExt},
+    rust_connection::RustConnection,
+    protocol::randr,
 };
+
+use super::{OutputIdentifier, OutputInfo};
 
 /// A general enum with possible errors as values which can occur while
 /// operating with the xorg-server.
@@ -45,59 +49,74 @@ pub enum Error {
 ///     first_image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
 /// }
 /// ```
-pub fn get_images() -> Result<Vec<image::DynamicImage>, Error> {
-    const ALL_BITS: u32 = u32::MAX;
-
+pub fn get_images() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
     let (conn, _) = x11rb::connect(None)?;
     let setup = conn.setup();
 
     let mut images = Vec::with_capacity(setup.roots.len());
 
     for screen in &setup.roots {
-        let width_u16 = screen.width_in_pixels;
-        let height_u16 = screen.height_in_pixels;
+        let image = get_image(&conn, &screen);
 
-        let width_u32 = u32::from(width_u16);
-        let height_u32 = u32::from(height_u16);
-
-        let (image_bytes, pixmap_format) = {
-            let image_reply = conn
-                .get_image(
-                    ImageFormat::Z_PIXMAP,
-                    screen.root,
-                    0,
-                    0,
-                    width_u16,
-                    height_u16,
-                    ALL_BITS,
-                )
-                .map_err(Error::from)?
-                .reply()
-                .map_err(Error::from)?;
-
-            let pixmap_format = setup
-                .pixmap_formats
-                .iter()
-                .find(|format| format.depth == image_reply.depth)
-                .unwrap();
-
-            (image_reply.data, pixmap_format)
-        };
-
-        let bit_order = setup.bitmap_format_bit_order;
-        let image = match pixmap_format.bits_per_pixel {
-            24 => get_rgb_image(width_u32, height_u32, image_bytes, bit_order),
-            32 => get_rgba_image(width_u32, height_u32, image_bytes, bit_order),
-            _ => unimplemented!(
-                "We don't support {}-bit RGB values",
-                pixmap_format.bits_per_pixel
-            ),
+        let ouput_info = OutputInfo {
+            identifier: OutputIdentifier::X11(screen.root),
+            width: screen.width_in_pixels,
+            height: screen.height_in_pixels,
+            x:,
+            y: todo!(),
         };
 
         images.push(image);
     }
 
     Ok(images)
+}
+
+fn get_image(conn: &RustConnection, screen: &Screen) -> Result<DynamicImage, Error> {
+    const ALL_BITS: u32 = u32::MAX;
+
+    let setup = &conn.setup();
+    let width_u16 = screen.width_in_pixels;
+    let height_u16 = screen.height_in_pixels;
+
+    let width_u32 = u32::from(width_u16);
+    let height_u32 = u32::from(height_u16);
+
+    let (image_bytes, pixmap_format) = {
+        let image_reply = conn
+            .get_image(
+                ImageFormat::Z_PIXMAP,
+                screen.root,
+                0,
+                0,
+                width_u16,
+                height_u16,
+                ALL_BITS,
+            )
+            .map_err(Error::from)?
+            .reply()
+            .map_err(Error::from)?;
+
+        let pixmap_format = setup
+            .pixmap_formats
+            .iter()
+            .find(|format| format.depth == image_reply.depth)
+            .unwrap();
+
+        (image_reply.data, pixmap_format)
+    };
+
+    let bit_order = setup.bitmap_format_bit_order;
+    let image = match pixmap_format.bits_per_pixel {
+        24 => get_rgb_image(width_u32, height_u32, image_bytes, bit_order),
+        32 => get_rgba_image(width_u32, height_u32, image_bytes, bit_order),
+        _ => unimplemented!(
+            "We don't support {}-bit RGB values",
+            pixmap_format.bits_per_pixel
+        ),
+    };
+
+    Ok(image)
 }
 
 fn get_rgb_image(
