@@ -43,9 +43,10 @@ pub enum Error {
 ///     let images = get_images().unwrap();
 ///
 ///     // we will only use the first screenshot for this example
-///     let first_image = images.first().unwrap();
+///     let first_screen = images.first().unwrap();
+///     let image = &first_screen.1;
 ///
-///     first_image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
+///     image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
 /// }
 /// ```
 pub fn get_images() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
