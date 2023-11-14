@@ -13,6 +13,7 @@ pub enum Error {
 
 pub type Pixel = u16;
 
+#[derive(Debug)]
 pub enum OutputIdentifier {
     X11(u32),
     Wayland {
@@ -22,6 +23,7 @@ pub enum OutputIdentifier {
     },
 }
 
+#[derive(Debug)]
 pub struct OutputInfo {
     pub identifier: OutputIdentifier,
     pub width: Pixel,

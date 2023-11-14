@@ -72,8 +72,8 @@ pub fn get_images() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
 
         let output_info = OutputInfo {
             identifier: OutputIdentifier::X11(screen.root),
-            width: screen.width_in_pixels,
-            height: screen.height_in_pixels,
+            width: monitor.width,
+            height: monitor.height,
             x: monitor.x,
             y: monitor.y,
         };
