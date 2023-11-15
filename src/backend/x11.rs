@@ -11,7 +11,7 @@ use x11rb::{
     rust_connection::RustConnection,
 };
 
-use super::{AdditionalInformation, OutputInfo};
+use super::{MonitorInfo, OutputInfo};
 
 /// A general enum with possible errors as values which can occur while
 /// operating with the xorg-server.
@@ -62,7 +62,7 @@ pub fn get_images() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
 
         let monitors = conn.randr_get_monitors(screen.root, true)?.reply()?;
         for monitor in &monitors.monitors {
-            let info = AdditionalInformation::X11 { name: monitor.name };
+            let monitor_info = MonitorInfo::X11 { name: monitor.name };
 
             let output_info = OutputInfo {
                 id: screen.root,
@@ -72,7 +72,7 @@ pub fn get_images() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
                 x: monitor.x,
                 y: monitor.y,
 
-                info,
+                monitor_info,
             };
 
             images.push((output_info, image.clone()));

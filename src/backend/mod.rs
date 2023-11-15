@@ -14,7 +14,7 @@ pub enum Error {
 pub type Pixel = u16;
 
 #[derive(Debug)]
-pub enum AdditionalInformation {
+pub enum MonitorInfo {
     X11 { name: u32 },
     Wayland { name: String, description: String },
 }
@@ -27,7 +27,7 @@ pub struct OutputInfo {
     pub y: i16,
 
     pub id: u32,
-    pub info: AdditionalInformation,
+    pub monitor_info: MonitorInfo,
 }
 
 /// The main function of this module.
