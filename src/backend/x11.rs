@@ -59,31 +59,24 @@ pub fn get_images() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
 
     for screen in &setup.roots {
         let image = get_image(&conn, &screen)?;
+
         let monitors = conn.randr_get_monitors(screen.root, true)?.reply()?;
+        for monitor in &monitors.monitors {
+            let info = AdditionalInformation::X11 { name: monitor.name };
 
-        if monitors.monitors.len() > 1 {
-            unimplemented!(concat![
-                "We implemented flakeshot only for screens which are mapped to a single monitor.\n",
-                "Please create an issue with the title 'MUTIPLE-MONITORS' or look\n",
-                "if someone has already created this issue and give it a thumbs up."
-            ]);
+            let output_info = OutputInfo {
+                id: screen.root,
+
+                width: monitor.width,
+                height: monitor.height,
+                x: monitor.x,
+                y: monitor.y,
+
+                info,
+            };
+
+            images.push((output_info, image.clone()));
         }
-
-        let monitor = &monitors.monitors[0];
-        let info = AdditionalInformation::X11 { name: monitor.name };
-
-        let output_info = OutputInfo {
-            id: screen.root,
-
-            width: monitor.width,
-            height: monitor.height,
-            x: monitor.x,
-            y: monitor.y,
-
-            info,
-        };
-
-        images.push((output_info, image));
     }
 
     Ok(images)
