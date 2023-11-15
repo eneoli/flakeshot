@@ -11,7 +11,7 @@ use x11rb::{
     rust_connection::RustConnection,
 };
 
-use super::{OutputIdentifier, OutputInfo};
+use super::{AdditionalInformation, OutputInfo};
 
 /// A general enum with possible errors as values which can occur while
 /// operating with the xorg-server.
@@ -70,13 +70,17 @@ pub fn get_images() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
         }
 
         let monitor = &monitors.monitors[0];
+        let info = AdditionalInformation::X11 { name: monitor.name };
 
         let output_info = OutputInfo {
-            identifier: OutputIdentifier::X11(screen.root),
+            id: screen.root,
+
             width: monitor.width,
             height: monitor.height,
             x: monitor.x,
             y: monitor.y,
+
+            info,
         };
 
         images.push((output_info, image));

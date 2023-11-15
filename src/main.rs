@@ -1,8 +1,5 @@
-use std::fs::File;
-
 use clap::Parser;
-use flakeshot::{backend, cli::Cli};
-use image::ImageFormat;
+use flakeshot::cli::Cli;
 
 async fn run() -> Result<(), ()> {
     let _cli = Cli::parse();
