@@ -1,9 +1,4 @@
 //! Backend implementation for X11.
-//!
-//! # Credits
-//! This module is inspired by the [`screenshots`] crate.
-//!
-//! [`screenshots`]: https://crates.io/crates/screenshots
 use image::{DynamicImage, RgbImage, RgbaImage};
 use x11rb::{
     connection::Connection,
