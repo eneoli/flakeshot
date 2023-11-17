@@ -3,7 +3,8 @@
 pub mod wayland;
 pub mod x11;
 
-/// A general backend error enum.
+/// Represents an error which occured in one of the backends
+/// while trying to get the screenshot(s) of each output.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     /// Represents that an error occured while trying to get a screenshot on X11.
@@ -18,23 +19,31 @@ pub type Pixel = u16;
 #[derive(Debug)]
 pub enum MonitorInfo {
     /// Some additional values in the X11 context.
-    X11 {
-        ///
-        name: u32,
-    },
+    X11 { name: u32 },
 
     /// Some additional values in the wayland context.
     Wayland { name: String, description: String },
 }
 
+/// Some general information about an output.
 #[derive(Debug)]
 pub struct OutputInfo {
+    /// The width of the output.
     pub width: Pixel,
+
+    /// The height of the output.
     pub height: Pixel,
+
+    /// The x-value of the top-left corner of the output.
     pub x: i16,
+
+    /// The y-value of the top-left corner of the output.
     pub y: i16,
 
+    /// A general id of the output.
     pub id: u32,
+
+    /// Some additional information about the monitor
     pub monitor_info: MonitorInfo,
 }
 
