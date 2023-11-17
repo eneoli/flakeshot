@@ -1,3 +1,4 @@
+//! Welcome to the code-documentation of flakeshot!
 pub mod backend;
 pub mod cli;
 
