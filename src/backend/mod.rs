@@ -15,7 +15,7 @@ pub enum Error {
 /// An alias type for better code readability.
 pub type Pixel = u16;
 
-/// This enum contains specifique values depending on which backend.
+/// Contains additional values depending on the backend.
 #[derive(Debug)]
 pub enum MonitorInfo {
     /// Some additional values in the X11 context.
@@ -40,7 +40,7 @@ pub struct OutputInfo {
     /// The y-value of the top-left corner of the output.
     pub y: i16,
 
-    /// A general id of the output.
+    /// The id of the output.
     pub id: u32,
 
     /// Some additional information about the monitor
@@ -54,8 +54,8 @@ pub struct OutputInfo {
 /// words).
 ///
 /// # Return value
-/// A tuple where the first value contains additional information about the image which is the second
-/// image.
+/// A tuple where the first value contains some general information about the output and is
+/// mapped to the given image in the second value of the tuple.
 pub async fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
     let xorg_is_running = { x11rb::connect(None).is_ok() };
 
