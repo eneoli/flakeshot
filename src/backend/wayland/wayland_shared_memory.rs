@@ -23,7 +23,7 @@ impl WaylandSharedMemory {
         stride: u32,
         format: Format,
     ) -> anyhow::Result<WaylandSharedMemory> {
-        let mut memfile = create_shm_file("/tmp/flakeshot", (height * stride) as u64)?;
+        let mut memfile = create_shm_file("flakeshot_pool", (height * stride) as u64)?;
 
         let shm_pool = wl_shm.create_pool(
             memfile.as_fd(),
