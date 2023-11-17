@@ -1,6 +1,6 @@
 use wayland_client::protocol::wl_output::{Subpixel, Transform};
 
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Debug)]
 pub struct WaylandGeometry {
     pub x: i32,
     pub y: i32,

@@ -124,7 +124,7 @@ impl Dispatch<WlShm, ()> for WaylandScreenshotState {
         // We got a supported format from the Wayland Compositor
         if let wl_shm::Event::Format { format } = event {
             if let WEnum::Value(format) = format {
-                state.shm_formats.push(format.clone());
+                state.shm_formats.push(format);
             }
         }
     }
