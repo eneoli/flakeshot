@@ -219,11 +219,11 @@ impl WaylandGeometry {
                     model,
                     make,
                     subpixel: match subpixel {
-                        WEnum::Value(subpixel) => subpixel,
+                        WEnum::Value(subpixel) => Some(subpixel),
                         WEnum::Unknown(_) => None,
                     },
                     transform: match transform {
-                        WEnum::Value(transform) => transform,
+                        WEnum::Value(transform) => Some(transform),
                         WEnum::Unknown(_) => None,
                     },
                 }
@@ -248,7 +248,7 @@ impl WaylandOutputMode {
                     width,
                     refresh,
                     flags: match flags {
-                        WEnum::Value(flags) => flags,
+                        WEnum::Value(flags) => Some(flags),
                         WEnum::Unknown(_) => None,
                     },
                 }
