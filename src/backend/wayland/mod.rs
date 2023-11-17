@@ -32,7 +32,6 @@ pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImag
     queue.roundtrip(&mut state)?;
 
     // spin util we got all outputs from wayland
-    //await_event_queue(|state| {false}, queue, state).await;
     while !state.outputs_fetched {
         queue.blocking_dispatch(&mut state)?;
     }
@@ -91,8 +90,6 @@ pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImag
         frame.copy(shared_memory.get_buffer());
 
         // spin until screenshot copied into shared buffer
-       // await_event_queue(|state| { false }, &mut queue, &mut state).await;
-
         while !state.screenshot_ready {
             queue.blocking_dispatch(&mut state)?;
         }
