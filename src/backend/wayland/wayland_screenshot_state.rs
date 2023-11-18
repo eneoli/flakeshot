@@ -149,7 +149,10 @@ impl Dispatch<WlShm, ()> for WaylandScreenshotState {
         _qhandle: &QueueHandle<Self>,
     ) {
         // We got a supported format from the Wayland Compositor
-        if let wl_shm::Event::Format {format: WEnum::Value(format)} = event {
+        if let wl_shm::Event::Format {
+            format: WEnum::Value(format),
+        } = event
+        {
             state.shm_formats.push(format);
         }
     }
