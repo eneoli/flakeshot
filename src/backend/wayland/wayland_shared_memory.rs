@@ -30,7 +30,7 @@ impl WaylandSharedMemory {
         let memfile = create_shm_file("flakeshot_pool", (height * stride) as u64)?;
 
         let shm_pool =
-            wl_shm.create_pool(memfile.as_fd(), (height * stride) as i32, &queue_handle, ());
+            wl_shm.create_pool(memfile.as_fd(), (height * stride) as i32, queue_handle, ());
 
         let buffer = shm_pool.create_buffer(
             0,
@@ -38,7 +38,7 @@ impl WaylandSharedMemory {
             height as i32,
             stride as i32,
             format,
-            &queue_handle,
+            queue_handle,
             (),
         );
 
@@ -49,16 +49,16 @@ impl WaylandSharedMemory {
         })
     }
 
-    pub fn destroy(self: &mut Self) {
+    pub fn destroy(&mut self) {
         self.shm_pool.destroy();
         self.buffer.destroy();
     }
 
-    pub fn get_buffer(self: &Self) -> &WlBuffer {
+    pub fn get_buffer(&self) -> &WlBuffer {
         &self.buffer
     }
 
-    pub fn get_memfile(self: &Self) -> &File {
+    pub fn get_memfile(&self) -> &File {
         &self.memfile
     }
 }
@@ -88,16 +88,13 @@ fn gen_random_file_name(prefix: &str) -> anyhow::Result<String> {
 
     let file_name = prefix.to_string() + duration.to_string().as_str();
 
-    while file_exists(&file_name.as_str()) {
-        duration = duration + 1;
+    while file_exists(file_name.as_str()) {
+        duration += 1;
     }
 
     Ok(file_name)
 }
 
 fn file_exists(path: &str) -> bool {
-    match fs::metadata(path) {
-        Ok(_) => true,
-        Err(_) => false,
-    }
+    fs::metadata(path).is_ok()
 }

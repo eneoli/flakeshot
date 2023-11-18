@@ -18,9 +18,9 @@ use wayland_protocols_wlr::screencopy::v1::client::{
 /**
  *   Globals as advertised by the Wayland compositor.
  */
-const WL_SHM: &'static str = "wl_shm";
-const WL_OUTPUT: &'static str = "wl_output";
-const ZWLR_SCREENCOPY_MANAGER_V1: &'static str = "zwlr_screencopy_manager_v1";
+const WL_SHM: &str = "wl_shm";
+const WL_OUTPUT: &str = "wl_output";
+const ZWLR_SCREENCOPY_MANAGER_V1: &str = "zwlr_screencopy_manager_v1";
 
 ///
 /// This Struct holds State while operating with the wayland compositor.
@@ -31,14 +31,17 @@ const ZWLR_SCREENCOPY_MANAGER_V1: &'static str = "zwlr_screencopy_manager_v1";
 ///
 #[derive(Default, Clone, Debug)]
 pub struct WaylandScreenshotState {
-    pub outputs_fetched: bool, // if the compositor did notify us about all available outputs
+    pub outputs_fetched: bool,
+    // if the compositor did notify us about all available outputs
     pub outputs: Vec<WaylandOutputInfo>,
 
     // per screenshot
-    pub screenshot_ready: bool, // true when `zwlr_screencopy_manager_v1` finished screenshotting.
+    pub screenshot_ready: bool,
+    // true when `zwlr_screencopy_manager_v1` finished screenshotting.
     pub current_frame: Option<WaylandFrameMeta>, // holds metadata of the current screenshot
 
-    pub wl_shm: Option<WlShm>,    // shared memory managemant
+    pub wl_shm: Option<WlShm>,
+    // shared memory managemant
     pub shm_formats: Vec<Format>, // supported shared memory formats by the compositor
 
     pub zwlr_screencopy_manager_v1: Option<ZwlrScreencopyManagerV1>,
@@ -48,7 +51,7 @@ impl WaylandScreenshotState {
     /**
      * Resets state to before a screenshot was made.
      */
-    pub fn next_screen(self: &mut Self) {
+    pub fn next_screen(&mut self) {
         self.screenshot_ready = false;
         self.current_frame = None;
     }
@@ -146,10 +149,8 @@ impl Dispatch<WlShm, ()> for WaylandScreenshotState {
         _qhandle: &QueueHandle<Self>,
     ) {
         // We got a supported format from the Wayland Compositor
-        if let wl_shm::Event::Format { format } = event {
-            if let WEnum::Value(format) = format {
-                state.shm_formats.push(format);
-            }
+        if let wl_shm::Event::Format {format: WEnum::Value(format)} = event {
+            state.shm_formats.push(format);
         }
     }
 }

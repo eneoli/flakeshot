@@ -60,10 +60,10 @@ pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImag
     let state_mutex = Arc::new(Mutex::new(WaylandScreenshotState::default()));
 
     {
-        let mut state = &mut *state_mutex.lock().unwrap();
+        let state = &mut *state_mutex.lock().unwrap();
         let queue = &mut *queue_mutex.lock().unwrap();
 
-        queue.roundtrip(&mut state)?;
+        queue.roundtrip(state)?;
     }
 
     // spin util we got all outputs from wayland
