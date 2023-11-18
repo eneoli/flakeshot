@@ -1,3 +1,4 @@
+//! Contains the Cli implementation of flakeshot.
 use clap::Parser;
 
 #[derive(Parser, Debug)]
