@@ -1,6 +1,6 @@
 use wayland_client::protocol::wl_shm::Format;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct WaylandFrameMeta {
     pub format: Option<Format>,
     pub width: u32,

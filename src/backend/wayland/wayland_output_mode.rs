@@ -1,6 +1,6 @@
 use wayland_client::protocol::wl_output::Mode;
 
-#[derive(Default, Debug)]
+#[derive(Default, Clone, Debug)]
 pub struct WaylandOutputMode {
     pub height: i32,
     pub width: i32,
