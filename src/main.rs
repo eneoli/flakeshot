@@ -1,6 +1,13 @@
-use flakeshot::backend::wayland::wayland_screenshot::WaylandScreenshot;
+use clap::Parser;
+use flakeshot::cli::Cli;
 
+async fn run() -> Result<(), ()> {
+    let _cli = Cli::parse();
 
-fn main() {
-    WaylandScreenshot::create_screenshots().unwrap();
+    Ok(())
+}
+
+#[tokio::main]
+async fn main() {
+    run().await.unwrap();
 }
