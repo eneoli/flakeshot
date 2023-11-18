@@ -8,10 +8,14 @@ use wayland_client::protocol::wl_shm_pool::WlShmPool;
 use wayland_client::{QueueHandle};
 use crate::backend::wayland::wayland_screenshot_state::WaylandScreenshotState;
 
+///
+/// Wrapper around wayland shared memory.
+/// Handles shared memory a bit more comfortable.
+///
 pub struct WaylandSharedMemory {
-    memfile: File,
-    shm_pool: WlShmPool,
-    buffer: WlBuffer,
+    memfile: File, // File handle for the shared memory
+    shm_pool: WlShmPool, // Wayland memory pool mapped to the shared memory
+    buffer: WlBuffer, // Buffer using the memory buffer
 }
 
 impl WaylandSharedMemory {

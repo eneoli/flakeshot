@@ -20,17 +20,25 @@ const WL_SHM: &'static str = "wl_shm";
 const WL_OUTPUT: &'static str = "wl_output";
 const ZWLR_SCREENCOPY_MANAGER_V1: &'static str = "zwlr_screencopy_manager_v1";
 
-#[derive(Default, Debug)]
+
+///
+/// This Struct holds State while operating with the wayland compositor.
+/// It is available on any event handling and used to store the information we got from the compositor.
+/// It also implements the event handlers for the event queue.
+///
+/// Note that many properties are options as they are first available when the corresponding event triggers.
+///
+#[derive(Default, Clone, Debug)]
 pub struct WaylandScreenshotState {
-    pub outputs_fetched: bool,
+    pub outputs_fetched: bool, // if the compositor did notify us about all available outputs
     pub outputs: Vec<WaylandOutputInfo>,
 
     // per screenshot
-    pub screenshot_ready: bool,
-    pub current_frame: Option<WaylandFrameMeta>,
+    pub screenshot_ready: bool, // true when `zwlr_screencopy_manager_v1` finished screenshotting.
+    pub current_frame: Option<WaylandFrameMeta>, // holds metadata of the current screenshot
 
-    pub wl_shm: Option<WlShm>,
-    pub shm_formats: Vec<Format>,
+    pub wl_shm: Option<WlShm>, // shared memory managemant
+    pub shm_formats: Vec<Format>, // supported shared memory formats by the compositor
 
     pub zwlr_screencopy_manager_v1: Option<ZwlrScreencopyManagerV1>,
 }
@@ -45,6 +53,11 @@ impl WaylandScreenshotState {
     }
 }
 
+// #########################
+// # Wayland Event Handler #
+// #########################
+
+/// Handles events regarding an output
 impl Dispatch<WlOutput, ()> for WaylandScreenshotState {
     fn event(
         state: &mut Self,
@@ -80,10 +93,8 @@ impl Dispatch<WlOutput, ()> for WaylandScreenshotState {
     }
 }
 
-// #########################
-// # Wayland Event Handler #
-// #########################
-
+/// Triggered when compositor notifies us about globals.
+/// We bind here to the globals we need.
 impl Dispatch<wl_registry::WlRegistry, ()> for WaylandScreenshotState {
     fn event(
         state: &mut Self,
@@ -112,6 +123,7 @@ impl Dispatch<wl_registry::WlRegistry, ()> for WaylandScreenshotState {
     }
 }
 
+/// Triggered when compositor notifies about a supported shared memory format.
 impl Dispatch<WlShm, ()> for WaylandScreenshotState {
     fn event(
         state: &mut Self,
@@ -130,6 +142,7 @@ impl Dispatch<WlShm, ()> for WaylandScreenshotState {
     }
 }
 
+/// Triggered when something with the screenshot we are taking happens.
 impl Dispatch<ZwlrScreencopyFrameV1, ()> for WaylandScreenshotState {
     fn event(
         state: &mut Self,
@@ -157,6 +170,21 @@ impl Dispatch<ZwlrScreencopyFrameV1, ()> for WaylandScreenshotState {
     }
 }
 
+/// Screencopy manager events
+impl Dispatch<ZwlrScreencopyManagerV1, ()> for WaylandScreenshotState {
+    fn event(
+        _state: &mut Self,
+        _proxy: &ZwlrScreencopyManagerV1,
+        _event: zwlr_screencopy_manager_v1::Event,
+        _data: &(),
+        _conn: &Connection,
+        _qhandle: &QueueHandle<Self>,
+    ) {
+        // Not interested
+    }
+}
+
+/// Shared Memory pool events
 impl Dispatch<WlShmPool, ()> for WaylandScreenshotState {
     fn event(
         _state: &mut Self,
@@ -170,24 +198,12 @@ impl Dispatch<WlShmPool, ()> for WaylandScreenshotState {
     }
 }
 
+/// Shared Memory Buffer events
 impl Dispatch<WlBuffer, ()> for WaylandScreenshotState {
     fn event(
         _state: &mut Self,
         _proxy: &WlBuffer,
         _event: wl_buffer::Event,
-        _data: &(),
-        _conn: &Connection,
-        _qhandle: &QueueHandle<Self>,
-    ) {
-        // Not interested
-    }
-}
-
-impl Dispatch<ZwlrScreencopyManagerV1, ()> for WaylandScreenshotState {
-    fn event(
-        _state: &mut Self,
-        _proxy: &ZwlrScreencopyManagerV1,
-        _event: zwlr_screencopy_manager_v1::Event,
         _data: &(),
         _conn: &Connection,
         _qhandle: &QueueHandle<Self>,

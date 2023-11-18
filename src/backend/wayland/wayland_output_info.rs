@@ -5,6 +5,7 @@ use crate::backend::wayland::wayland_output_mode::WaylandOutputMode;
 use crate::backend::{MonitorInfo, OutputInfo, Pixel};
 use crate::backend::wayland::wayland_error::WaylandError;
 
+/// This represents a wayland output (aka. a monitor).
 #[derive(Clone, Debug)]
 pub struct WaylandOutputInfo {
     pub output: WlOutput,

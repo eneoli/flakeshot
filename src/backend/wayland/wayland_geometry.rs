@@ -1,5 +1,6 @@
 use wayland_client::protocol::wl_output::{Subpixel, Transform};
 
+/// This represents physical metadata of a wayland output (aka a monitor).
 #[derive(Default, Clone, Debug)]
 pub struct WaylandGeometry {
     pub x: i32,
