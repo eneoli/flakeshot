@@ -29,9 +29,10 @@ pub(crate) mod wayland_output_mode;
 /// use std::fs::File;
 /// use image::ImageOutputFormat;
 ///
-/// fn main() {
+/// #[tokio::main]
+/// async fn main() {
 ///     let mut file = File::create("./targets/example_screenshot.png").unwrap();
-///     let images = create_screenshots().unwrap();
+///     let images = create_screenshots().await.unwrap();
 ///
 ///     // we will only use the first screenshot for this example
 ///     let first_screen = images.first().unwrap();
