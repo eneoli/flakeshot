@@ -1,9 +1,9 @@
-use wayland_client::protocol::wl_output::WlOutput;
-use wayland_client::Proxy;
+use crate::backend::wayland::wayland_error::WaylandError;
 use crate::backend::wayland::wayland_geometry::WaylandGeometry;
 use crate::backend::wayland::wayland_output_mode::WaylandOutputMode;
 use crate::backend::{MonitorInfo, OutputInfo, Pixel};
-use crate::backend::wayland::wayland_error::WaylandError;
+use wayland_client::protocol::wl_output::WlOutput;
+use wayland_client::Proxy;
 
 /// This represents a wayland output (aka. a monitor).
 #[derive(Clone, Debug)]
@@ -15,7 +15,6 @@ pub struct WaylandOutputInfo {
     pub geometry: WaylandGeometry,
     pub mode: WaylandOutputMode,
 }
-
 
 impl WaylandOutputInfo {
     pub fn from_wl_output(wl_ouput: WlOutput) -> WaylandOutputInfo {
@@ -34,18 +33,16 @@ impl TryFrom<&WaylandOutputInfo> for OutputInfo {
     type Error = WaylandError;
 
     fn try_from(value: &WaylandOutputInfo) -> Result<Self, Self::Error> {
-        Ok(
-            OutputInfo {
-                id: value.output.id().protocol_id(),
-                width: value.mode.width as Pixel,
-                height: value.mode.height as Pixel,
-                x: value.geometry.x as i16,
-                y: value.geometry.y as i16,
-                monitor_info: MonitorInfo::Wayland {
-                    name: value.name.clone(),
-                    description: value.description.clone(),
-                },
-            }
-        )
+        Ok(OutputInfo {
+            id: value.output.id().protocol_id(),
+            width: value.mode.width as Pixel,
+            height: value.mode.height as Pixel,
+            x: value.geometry.x as i16,
+            y: value.geometry.y as i16,
+            monitor_info: MonitorInfo::Wayland {
+                name: value.name.clone(),
+                description: value.description.clone(),
+            },
+        })
     }
 }

@@ -1,17 +1,19 @@
-use wayland_client::{Connection, Dispatch, Proxy, QueueHandle};
-use wayland_client::protocol::{wl_buffer, wl_output, wl_registry, wl_shm, wl_shm_pool};
-use wayland_client::protocol::wl_buffer::WlBuffer;
-use wayland_client::protocol::wl_output::{WlOutput};
-use wayland_client::protocol::wl_shm::{Format, WlShm};
-use wayland_client::protocol::wl_shm_pool::WlShmPool;
-use wayland_client::WEnum;
-use wayland_protocols_wlr::screencopy::v1::client::zwlr_screencopy_frame_v1::ZwlrScreencopyFrameV1;
-use wayland_protocols_wlr::screencopy::v1::client::{zwlr_screencopy_frame_v1, zwlr_screencopy_manager_v1};
-use wayland_protocols_wlr::screencopy::v1::client::zwlr_screencopy_manager_v1::ZwlrScreencopyManagerV1;
 use crate::backend::wayland::wayland_frame_meta::WaylandFrameMeta;
 use crate::backend::wayland::wayland_geometry::WaylandGeometry;
 use crate::backend::wayland::wayland_output_info::WaylandOutputInfo;
 use crate::backend::wayland::wayland_output_mode::WaylandOutputMode;
+use wayland_client::protocol::wl_buffer::WlBuffer;
+use wayland_client::protocol::wl_output::WlOutput;
+use wayland_client::protocol::wl_shm::{Format, WlShm};
+use wayland_client::protocol::wl_shm_pool::WlShmPool;
+use wayland_client::protocol::{wl_buffer, wl_output, wl_registry, wl_shm, wl_shm_pool};
+use wayland_client::WEnum;
+use wayland_client::{Connection, Dispatch, Proxy, QueueHandle};
+use wayland_protocols_wlr::screencopy::v1::client::zwlr_screencopy_frame_v1::ZwlrScreencopyFrameV1;
+use wayland_protocols_wlr::screencopy::v1::client::zwlr_screencopy_manager_v1::ZwlrScreencopyManagerV1;
+use wayland_protocols_wlr::screencopy::v1::client::{
+    zwlr_screencopy_frame_v1, zwlr_screencopy_manager_v1,
+};
 
 /**
  *   Globals as advertised by the Wayland compositor.
@@ -19,7 +21,6 @@ use crate::backend::wayland::wayland_output_mode::WaylandOutputMode;
 const WL_SHM: &'static str = "wl_shm";
 const WL_OUTPUT: &'static str = "wl_output";
 const ZWLR_SCREENCOPY_MANAGER_V1: &'static str = "zwlr_screencopy_manager_v1";
-
 
 ///
 /// This Struct holds State while operating with the wayland compositor.
@@ -37,7 +38,7 @@ pub struct WaylandScreenshotState {
     pub screenshot_ready: bool, // true when `zwlr_screencopy_manager_v1` finished screenshotting.
     pub current_frame: Option<WaylandFrameMeta>, // holds metadata of the current screenshot
 
-    pub wl_shm: Option<WlShm>, // shared memory managemant
+    pub wl_shm: Option<WlShm>,    // shared memory managemant
     pub shm_formats: Vec<Format>, // supported shared memory formats by the compositor
 
     pub zwlr_screencopy_manager_v1: Option<ZwlrScreencopyManagerV1>,
@@ -67,7 +68,8 @@ impl Dispatch<WlOutput, ()> for WaylandScreenshotState {
         _conn: &Connection,
         _qhandle: &QueueHandle<Self>,
     ) {
-        let output_query = state.outputs
+        let output_query = state
+            .outputs
             .iter_mut()
             .find(|output| output.output.id() == proxy.id());
 
@@ -85,8 +87,12 @@ impl Dispatch<WlOutput, ()> for WaylandScreenshotState {
             wl_output::Event::Name { name } => output.name = name,
             wl_output::Event::Description { description } => output.description = description,
             wl_output::Event::Scale { factor } => output.scale = factor,
-            wl_output::Event::Geometry { .. } => output.geometry = WaylandGeometry::from_wayland_geometry(event).unwrap(),
-            wl_output::Event::Mode { .. } => output.mode = WaylandOutputMode::from_wayland_event(event).unwrap(),
+            wl_output::Event::Geometry { .. } => {
+                output.geometry = WaylandGeometry::from_wayland_geometry(event).unwrap()
+            }
+            wl_output::Event::Mode { .. } => {
+                output.mode = WaylandOutputMode::from_wayland_event(event).unwrap()
+            }
             wl_output::Event::Done => state.outputs_fetched = true,
             _ => (),
         }
@@ -104,19 +110,25 @@ impl Dispatch<wl_registry::WlRegistry, ()> for WaylandScreenshotState {
         _conn: &Connection,
         qhandle: &QueueHandle<Self>,
     ) {
-
         // bind to global events
-        if let wl_registry::Event::Global { name, interface, version } = event {
+        if let wl_registry::Event::Global {
+            name,
+            interface,
+            version,
+        } = event
+        {
             match interface.as_str() {
                 WL_OUTPUT => {
                     registry.bind::<WlOutput, _, _>(name, version, qhandle, ());
                 }
-                WL_SHM => state.wl_shm = Some(
-                    registry.bind::<WlShm, _, _>(name, version, qhandle, ())
-                ),
-                ZWLR_SCREENCOPY_MANAGER_V1 => state.zwlr_screencopy_manager_v1 = Some(
-                    registry.bind::<ZwlrScreencopyManagerV1, _, _>(name, version, qhandle, ())
-                ),
+                WL_SHM => {
+                    state.wl_shm = Some(registry.bind::<WlShm, _, _>(name, version, qhandle, ()))
+                }
+                ZWLR_SCREENCOPY_MANAGER_V1 => {
+                    state.zwlr_screencopy_manager_v1 = Some(
+                        registry.bind::<ZwlrScreencopyManagerV1, _, _>(name, version, qhandle, ()),
+                    )
+                }
                 _ => (),
             }
         }
@@ -224,26 +236,25 @@ impl WaylandGeometry {
             model,
             make,
             subpixel,
-            transform
-        } = event {
-            Some(
-                WaylandGeometry {
-                    x,
-                    y,
-                    physical_width,
-                    physical_height,
-                    model,
-                    make,
-                    subpixel: match subpixel {
-                        WEnum::Value(subpixel) => Some(subpixel),
-                        WEnum::Unknown(_) => None,
-                    },
-                    transform: match transform {
-                        WEnum::Value(transform) => Some(transform),
-                        WEnum::Unknown(_) => None,
-                    },
-                }
-            )
+            transform,
+        } = event
+        {
+            Some(WaylandGeometry {
+                x,
+                y,
+                physical_width,
+                physical_height,
+                model,
+                make,
+                subpixel: match subpixel {
+                    WEnum::Value(subpixel) => Some(subpixel),
+                    WEnum::Unknown(_) => None,
+                },
+                transform: match transform {
+                    WEnum::Value(transform) => Some(transform),
+                    WEnum::Unknown(_) => None,
+                },
+            })
         } else {
             None
         }
@@ -257,18 +268,17 @@ impl WaylandOutputMode {
             width,
             refresh,
             flags,
-        } = event {
-            Some(
-                Self {
-                    height,
-                    width,
-                    refresh,
-                    flags: match flags {
-                        WEnum::Value(flags) => Some(flags),
-                        WEnum::Unknown(_) => None,
-                    },
-                }
-            )
+        } = event
+        {
+            Some(Self {
+                height,
+                width,
+                refresh,
+                flags: match flags {
+                    WEnum::Value(flags) => Some(flags),
+                    WEnum::Unknown(_) => None,
+                },
+            })
         } else {
             None
         }
@@ -282,18 +292,17 @@ impl WaylandFrameMeta {
             width,
             height,
             stride,
-        } = event {
-            Some(
-                Self {
-                    width,
-                    height,
-                    stride,
-                    format: match format {
-                        WEnum::Value(format) => Some(format),
-                        WEnum::Unknown(_) => None,
-                    },
-                }
-            )
+        } = event
+        {
+            Some(Self {
+                width,
+                height,
+                stride,
+                format: match format {
+                    WEnum::Value(format) => Some(format),
+                    WEnum::Unknown(_) => None,
+                },
+            })
         } else {
             None
         }

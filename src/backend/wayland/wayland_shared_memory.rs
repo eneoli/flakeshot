@@ -1,3 +1,4 @@
+use crate::backend::wayland::wayland_screenshot_state::WaylandScreenshotState;
 use std::fs;
 use std::fs::File;
 use std::os::fd::AsFd;
@@ -5,17 +6,16 @@ use std::time::SystemTime;
 use wayland_client::protocol::wl_buffer::WlBuffer;
 use wayland_client::protocol::wl_shm::{Format, WlShm};
 use wayland_client::protocol::wl_shm_pool::WlShmPool;
-use wayland_client::{QueueHandle};
-use crate::backend::wayland::wayland_screenshot_state::WaylandScreenshotState;
+use wayland_client::QueueHandle;
 
 ///
 /// Wrapper around wayland shared memory.
 /// Handles shared memory a bit more comfortable.
 ///
 pub struct WaylandSharedMemory {
-    memfile: File, // File handle for the shared memory
+    memfile: File,       // File handle for the shared memory
     shm_pool: WlShmPool, // Wayland memory pool mapped to the shared memory
-    buffer: WlBuffer, // Buffer using the memory buffer
+    buffer: WlBuffer,    // Buffer using the memory buffer
 }
 
 impl WaylandSharedMemory {
@@ -29,12 +29,8 @@ impl WaylandSharedMemory {
     ) -> anyhow::Result<WaylandSharedMemory> {
         let memfile = create_shm_file("flakeshot_pool", (height * stride) as u64)?;
 
-        let shm_pool = wl_shm.create_pool(
-            memfile.as_fd(),
-            (height * stride) as i32,
-            &queue_handle,
-            (),
-        );
+        let shm_pool =
+            wl_shm.create_pool(memfile.as_fd(), (height * stride) as i32, &queue_handle, ());
 
         let buffer = shm_pool.create_buffer(
             0,
@@ -46,13 +42,11 @@ impl WaylandSharedMemory {
             (),
         );
 
-        Ok(
-            Self {
-                memfile,
-                shm_pool,
-                buffer,
-            }
-        )
+        Ok(Self {
+            memfile,
+            shm_pool,
+            buffer,
+        })
     }
 
     pub fn destroy(self: &mut Self) {
@@ -72,8 +66,7 @@ impl WaylandSharedMemory {
 fn create_shm_file(prefix: &str, bytes: u64) -> anyhow::Result<File> {
     let name = gen_random_file_name(prefix)?;
 
-    let options = memfd::MemfdOptions::default()
-        .allow_sealing(true);
+    let options = memfd::MemfdOptions::default().allow_sealing(true);
 
     let memfile = options.create(name)?;
 
