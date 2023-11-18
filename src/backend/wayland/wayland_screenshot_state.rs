@@ -15,9 +15,7 @@ use wayland_protocols_wlr::screencopy::v1::client::{
     zwlr_screencopy_frame_v1, zwlr_screencopy_manager_v1,
 };
 
-/**
- *   Globals as advertised by the Wayland compositor.
- */
+/// Globals as advertised by the Wayland compositor.
 const WL_SHM: &str = "wl_shm";
 const WL_OUTPUT: &str = "wl_output";
 const ZWLR_SCREENCOPY_MANAGER_V1: &str = "zwlr_screencopy_manager_v1";
@@ -48,9 +46,7 @@ pub struct WaylandScreenshotState {
 }
 
 impl WaylandScreenshotState {
-    /**
-     * Resets state to before a screenshot was made.
-     */
+    /// Resets state to before a screenshot was made.
     pub fn next_screen(&mut self) {
         self.screenshot_ready = false;
         self.current_frame = None;

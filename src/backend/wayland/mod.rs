@@ -8,7 +8,7 @@ use std::io::Read;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use wayland_client::protocol::wl_shm::Format;
-use wayland_client::{Connection, DispatchError, EventQueue};
+use wayland_client::{Connection, DispatchError, EventQueue, QueueHandle};
 
 pub mod wayland_error;
 pub(crate) mod wayland_frame_meta;
@@ -42,22 +42,9 @@ pub(crate) mod wayland_shared_memory;
 /// }
 /// ```
 pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImage)>> {
-    let conn = Connection::connect_to_env()?;
-
-    let display = conn.display();
-
-    let queue_mutex: Arc<Mutex<EventQueue<WaylandScreenshotState>>> =
-        Arc::new(Mutex::new(conn.new_event_queue()));
-
-    let queue_handle = {
-        let queue = &mut *queue_mutex.lock().unwrap();
-        queue.handle()
-    };
-
-    // attach to globals
-    display.get_registry(&queue_handle, ());
-
     let state_mutex = Arc::new(Mutex::new(WaylandScreenshotState::default()));
+
+    let (queue_mutex, queue_handle) = init_queue()?;
 
     {
         let state = &mut *state_mutex.lock().unwrap();
@@ -72,7 +59,7 @@ pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImag
         queue_mutex.clone(),
         state_mutex.clone(),
     )
-    .await?;
+        .await?;
 
     let screenshot_manager = {
         let state = &mut *state_mutex.lock().unwrap();
@@ -104,7 +91,7 @@ pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImag
             queue_mutex.clone(),
             state_mutex.clone(),
         )
-        .await?;
+            .await?;
 
         let (width, height, stride, format) = {
             let state = &mut *state_mutex.lock().unwrap();
@@ -144,7 +131,7 @@ pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImag
             queue_mutex.clone(),
             state_mutex.clone(),
         )
-        .await?;
+            .await?;
 
         // read from shared memory
         // data holds our screenshot
@@ -166,6 +153,26 @@ pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImag
     }
 
     Ok(screenshots)
+}
+
+fn init_queue() -> anyhow::Result<(Arc<Mutex<EventQueue<WaylandScreenshotState>>>, QueueHandle<WaylandScreenshotState>)> {
+    let conn = Connection::connect_to_env()?;
+
+    let display = conn.display();
+
+    let queue_mutex: Arc<Mutex<EventQueue<WaylandScreenshotState>>> =
+        Arc::new(Mutex::new(conn.new_event_queue()));
+
+    let queue_handle = {
+        let queue = &mut *queue_mutex.lock().unwrap();
+
+        queue.handle()
+    };
+
+    // attach to globals
+    display.get_registry(&queue_handle, ());
+
+    Ok((queue_mutex, queue_handle))
 }
 
 // Transforms the buffer containing our image from the wayland compositor into a `image::DynamicImage`.
@@ -204,13 +211,13 @@ async fn await_queue_events<T: 'static + Send>(
         Duration::from_secs(120),
         tokio::spawn(async { poll_queue(until, queue_mutex, state_mutex) }),
     )
-    .await;
+        .await;
 
     match timeout_result {
         Ok(Ok(Ok(()))) => Ok(()),
-        Ok(Ok(Err(err))) => Err(WaylandError::EventQueuePollingError(err).into()), // error in poll_queue
-        Ok(Err(err)) => Err(WaylandError::ThreadSpawnFailed(err).into()), // error in tokio::spawn
-        Err(_) => Err(WaylandError::EventQueueTimeout.into()),            // Future Timeout
+        Ok(Ok(Err(err))) => Err(WaylandError::EventQueuePollingError(err).into()),
+        Ok(Err(err)) => Err(WaylandError::ThreadSpawnFailed(err).into()),
+        Err(_) => Err(WaylandError::EventQueueTimeout.into()),
     }
 }
 
