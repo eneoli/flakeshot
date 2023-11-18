@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 use image::{DynamicImage, RgbaImage, RgbImage};
 use image::DynamicImage::{ImageRgb8, ImageRgba8};
-use wayland_client::{Connection, EventQueue};
+use wayland_client::{Connection, DispatchError, EventQueue};
 use wayland_client::protocol::wl_shm::Format;
 use crate::backend::OutputInfo;
 use crate::backend::wayland::wayland_shared_memory::{WaylandSharedMemory};
@@ -107,28 +107,21 @@ pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImag
             state_mutex.clone(),
         ).await?;
 
-        let (width, height, stride) = {
+        let (width, height, stride, format) = {
             let state = &mut *state_mutex.lock().unwrap();
 
             let current_frame = state.current_frame
                 .as_ref()
-                .ok_or(WaylandError::BrokenState)?;
+                .ok_or(WaylandError::BrokenState("current_frame"))?;
+
+            let format = current_frame.format
+                .ok_or(WaylandError::MissingFormat)?;
 
             let width = current_frame.width;
             let height = current_frame.height;
             let stride = current_frame.stride;
 
-            (width, height, stride)
-        };
-
-        let format = {
-            let state = &mut *state_mutex.lock().unwrap();
-
-            state.current_frame
-                .as_ref()
-                .ok_or(WaylandError::BrokenState)?
-                .format
-                .ok_or(WaylandError::MissingFormat)?
+            (width, height, stride, format)
         };
 
         let mut shared_memory = {
@@ -220,8 +213,8 @@ async fn await_queue_events<T: 'static + Send>(
 
     match timeout_result {
         Ok(Ok(Ok(()))) => Ok(()),
-        Ok(Ok(Err(_))) => Err(WaylandError::EventQueuePollingError.into()), // error in poll_queue
-        Ok(Err(_)) => Err(WaylandError::ThreadSpawnFailed.into()), // error in tokio::spawn
+        Ok(Ok(Err(err))) => Err(WaylandError::EventQueuePollingError(err).into()), // error in poll_queue
+        Ok(Err(err)) => Err(WaylandError::ThreadSpawnFailed(err).into()), // error in tokio::spawn
         Err(_) => Err(WaylandError::EventQueueTimeout.into()), // Future Timeout
     }
 }
@@ -232,7 +225,7 @@ fn poll_queue<T>(
     until: impl Fn(&T) -> bool,
     queue_mutex: Arc<Mutex<EventQueue<T>>>,
     state_mutex: Arc<Mutex<T>>,
-) -> anyhow::Result<()> {
+) -> Result<(), DispatchError> {
     let queue = &mut *queue_mutex.lock().unwrap();
     let state = &mut *state_mutex.lock().unwrap();
 
