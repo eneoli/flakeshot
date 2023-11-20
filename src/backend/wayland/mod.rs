@@ -48,36 +48,41 @@ pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImag
 
     let mut screenshots: Vec<(OutputInfo, DynamicImage)> = vec![];
     for i in 0..num_outputs {
-        let frame = {
-            let output = &manager.get_outputs()?[i];
-
-            screenshot_manager.capture_output(0, &output.output, &queue_handle, ())
-        };
-
-        let mut shared_memory = manager.create_shared_memory()?;
-
-        frame.copy(shared_memory.get_buffer());
-
-        manager.await_screenshot()?;
-
-        // read from shared memory
-        // data holds our screenshot
-        let mut data = vec![];
-        shared_memory.get_memfile().read_to_end(&mut data)?;
-
-        let output_info = OutputInfo::try_from({ &manager.get_outputs()?[i] })?;
-
         let img = {
-            let width = shared_memory.width();
-            let height = shared_memory.height();
-            let format = shared_memory.format();
+            let frame = {
+                let output = &manager.get_outputs()?[i];
 
-            image_from_wayland(data, width, height, format)?
+                screenshot_manager.capture_output(0, &output.output, &queue_handle, ())
+            };
+
+            let mut shared_memory = manager.create_shared_memory()?;
+            frame.copy(shared_memory.get_buffer());
+
+            manager.await_screenshot()?;
+
+            // read from shared memory
+            // data holds our screenshot
+            let mut data = vec![];
+            shared_memory.get_memfile().read_to_end(&mut data)?;
+
+
+            let img = {
+                let width = shared_memory.width();
+                let height = shared_memory.height();
+                let format = shared_memory.format();
+
+                image_from_wayland(data, width, height, format)?
+            };
+
+            shared_memory.destroy();
+
+            img
         };
+
+        let output_info = OutputInfo::try_from(&manager.get_outputs()?[i])?;
 
         screenshots.push((output_info, img));
 
-        shared_memory.destroy();
         manager.next_screen(); // reset current screenshot metadata
     }
 
