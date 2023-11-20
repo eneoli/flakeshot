@@ -1,6 +1,4 @@
-///
 /// A general enum with possible errors as values which can occur in the wayland backend.
-///
 #[derive(thiserror::Error, Debug)]
 pub enum WaylandError {
     #[error("We tried to access an uninitialized property: {0}. This is likely a bug")]
