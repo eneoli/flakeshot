@@ -1,19 +1,19 @@
 use crate::backend::wayland::wayland_error::WaylandError;
+use crate::backend::wayland::wayland_screenshot_manager::WaylandScreenshotManager;
 use crate::backend::OutputInfo;
 use image::DynamicImage::{ImageRgb8, ImageRgba8};
 use image::{DynamicImage, RgbImage, RgbaImage};
 use std::io::Read;
 use wayland_client::protocol::wl_shm::Format;
-use crate::backend::wayland::wayland_screenshot_manager::WaylandScreenshotManager;
 
 pub mod wayland_error;
 pub(crate) mod wayland_frame_meta;
 pub(crate) mod wayland_geometry;
 pub(crate) mod wayland_output_info;
 pub(crate) mod wayland_output_mode;
+pub(crate) mod wayland_screenshot_manager;
 pub(crate) mod wayland_screenshot_state;
 pub(crate) mod wayland_shared_memory;
-pub(crate) mod wayland_screenshot_manager;
 
 /// The main function of this module.
 ///
@@ -44,17 +44,14 @@ pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImag
 
     let screenshot_manager = manager.get_zwlr_screencopy_manager_v1()?.clone();
 
-    let num_outputs = {
-        manager.get_outputs()?.len()
-    };
+    let num_outputs = { manager.get_outputs()?.len() };
 
     let mut screenshots: Vec<(OutputInfo, DynamicImage)> = vec![];
     for i in 0..num_outputs {
         let frame = {
             let output = &manager.get_outputs()?[i];
 
-            screenshot_manager
-                .capture_output(0, &output.output, &queue_handle, ())
+            screenshot_manager.capture_output(0, &output.output, &queue_handle, ())
         };
 
         let mut shared_memory = manager.create_shared_memory()?;
@@ -68,9 +65,7 @@ pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImag
         let mut data = vec![];
         shared_memory.get_memfile().read_to_end(&mut data)?;
 
-        let output_info = OutputInfo::try_from({
-            &manager.get_outputs()?[i]
-        })?;
+        let output_info = OutputInfo::try_from({ &manager.get_outputs()?[i] })?;
 
         let img = {
             let width = shared_memory.width();
