@@ -4,10 +4,10 @@ use crate::backend::wayland::wayland_output_info::WaylandOutputInfo;
 use crate::backend::wayland::wayland_output_mode::WaylandOutputMode;
 use wayland_client::protocol::wl_buffer::WlBuffer;
 use wayland_client::protocol::wl_output::WlOutput;
-use wayland_client::protocol::wl_shm::{Format, WlShm};
+use wayland_client::protocol::wl_shm::{WlShm};
 use wayland_client::protocol::wl_shm_pool::WlShmPool;
 use wayland_client::protocol::{wl_buffer, wl_output, wl_registry, wl_shm, wl_shm_pool};
-use wayland_client::WEnum;
+use wayland_client::{WEnum};
 use wayland_client::{Connection, Dispatch, Proxy, QueueHandle};
 use wayland_protocols_wlr::screencopy::v1::client::zwlr_screencopy_frame_v1::ZwlrScreencopyFrameV1;
 use wayland_protocols_wlr::screencopy::v1::client::zwlr_screencopy_manager_v1::ZwlrScreencopyManagerV1;
@@ -27,30 +27,16 @@ const ZWLR_SCREENCOPY_MANAGER_V1: &str = "zwlr_screencopy_manager_v1";
 ///
 /// Note that many properties are options as they are first available when the corresponding event triggers.
 ///
-#[derive(Default, Clone, Debug)]
+#[derive(Default, Debug)]
 pub struct WaylandScreenshotState {
     pub outputs_fetched: bool,
-    // if the compositor did notify us about all available outputs
     pub outputs: Vec<WaylandOutputInfo>,
 
-    // per screenshot
     pub screenshot_ready: bool,
-    // true when `zwlr_screencopy_manager_v1` finished screenshotting.
-    pub current_frame: Option<WaylandFrameMeta>, // holds metadata of the current screenshot
+    pub current_frame: Option<WaylandFrameMeta>,
 
     pub wl_shm: Option<WlShm>,
-    // shared memory managemant
-    pub shm_formats: Vec<Format>, // supported shared memory formats by the compositor
-
     pub zwlr_screencopy_manager_v1: Option<ZwlrScreencopyManagerV1>,
-}
-
-impl WaylandScreenshotState {
-    /// Resets state to before a screenshot was made.
-    pub fn next_screen(&mut self) {
-        self.screenshot_ready = false;
-        self.current_frame = None;
-    }
 }
 
 // #########################
@@ -134,26 +120,6 @@ impl Dispatch<wl_registry::WlRegistry, ()> for WaylandScreenshotState {
     }
 }
 
-/// Triggered when compositor notifies about a supported shared memory format.
-impl Dispatch<WlShm, ()> for WaylandScreenshotState {
-    fn event(
-        state: &mut Self,
-        _proxy: &WlShm,
-        event: wl_shm::Event,
-        _data: &(),
-        _conn: &Connection,
-        _qhandle: &QueueHandle<Self>,
-    ) {
-        // We got a supported format from the Wayland Compositor
-        if let wl_shm::Event::Format {
-            format: WEnum::Value(format),
-        } = event
-        {
-            state.shm_formats.push(format);
-        }
-    }
-}
-
 /// Triggered when something with the screenshot we are taking happens.
 impl Dispatch<ZwlrScreencopyFrameV1, ()> for WaylandScreenshotState {
     fn event(
@@ -188,6 +154,19 @@ impl Dispatch<ZwlrScreencopyManagerV1, ()> for WaylandScreenshotState {
         _state: &mut Self,
         _proxy: &ZwlrScreencopyManagerV1,
         _event: zwlr_screencopy_manager_v1::Event,
+        _data: &(),
+        _conn: &Connection,
+        _qhandle: &QueueHandle<Self>,
+    ) {
+        // Not interested
+    }
+}
+
+impl Dispatch<WlShm, ()> for WaylandScreenshotState {
+    fn event(
+        _state: &mut Self,
+        _proxy: &WlShm,
+        _event: wl_shm::Event,
         _data: &(),
         _conn: &Connection,
         _qhandle: &QueueHandle<Self>,
