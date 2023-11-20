@@ -65,7 +65,6 @@ pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImag
             let mut data = vec![];
             shared_memory.get_memfile().read_to_end(&mut data)?;
 
-
             let img = {
                 let width = shared_memory.width();
                 let height = shared_memory.height();
