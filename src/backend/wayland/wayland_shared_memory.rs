@@ -13,9 +13,13 @@ use wayland_client::QueueHandle;
 /// Handles shared memory a bit more comfortable.
 ///
 pub struct WaylandSharedMemory {
-    memfile: File,       // File handle for the shared memory
-    shm_pool: WlShmPool, // Wayland memory pool mapped to the shared memory
-    buffer: WlBuffer,    // Buffer using the memory buffer
+    width: u32,
+    height: u32,
+    stride: u32,
+    format: Format,
+    memfile: File,
+    shm_pool: WlShmPool,
+    buffer: WlBuffer,
 }
 
 impl WaylandSharedMemory {
@@ -43,6 +47,10 @@ impl WaylandSharedMemory {
         );
 
         Ok(Self {
+            width,
+            height,
+            stride,
+            format,
             memfile,
             shm_pool,
             buffer,
@@ -60,6 +68,19 @@ impl WaylandSharedMemory {
 
     pub fn get_memfile(&self) -> &File {
         &self.memfile
+    }
+
+    pub fn width(&self) -> u32 {
+        self.width
+    }
+    pub fn height(&self) -> u32 {
+        self.height
+    }
+    pub fn stride(&self) -> u32 {
+        self.stride
+    }
+    pub fn format(&self) -> Format {
+        self.format
     }
 }
 
