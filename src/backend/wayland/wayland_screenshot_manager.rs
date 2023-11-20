@@ -79,15 +79,13 @@ impl WaylandScreenshotManager {
             (width, height, stride, format)
         };
 
-        Ok(
-            WaylandSharedMemory::new(
-                self.state.wl_shm.as_ref().ok_or(WaylandError::NoShmBind)?,
-                &self.queue.handle(),
-                width,
-                height,
-                stride,
-                format,
-            )?
+        WaylandSharedMemory::new(
+            self.state.wl_shm.as_ref().ok_or(WaylandError::NoShmBind)?,
+            &self.queue.handle(),
+            width,
+            height,
+            stride,
+            format,
         )
     }
 

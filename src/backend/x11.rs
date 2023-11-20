@@ -53,7 +53,7 @@ pub fn get_images() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
     let mut images = Vec::with_capacity(setup.roots.len());
 
     for screen in &setup.roots {
-        let image = get_image(&conn, &screen)?;
+        let image = get_image(&conn, screen)?;
 
         let monitors = conn.randr_get_monitors(screen.root, true)?.reply()?;
         for monitor in &monitors.monitors {

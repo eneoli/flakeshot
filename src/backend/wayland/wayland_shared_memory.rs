@@ -15,7 +15,6 @@ use wayland_client::QueueHandle;
 pub struct WaylandSharedMemory {
     width: u32,
     height: u32,
-    stride: u32,
     format: Format,
     memfile: File,
     shm_pool: WlShmPool,
@@ -49,7 +48,6 @@ impl WaylandSharedMemory {
         Ok(Self {
             width,
             height,
-            stride,
             format,
             memfile,
             shm_pool,
@@ -75,9 +73,6 @@ impl WaylandSharedMemory {
     }
     pub fn height(&self) -> u32 {
         self.height
-    }
-    pub fn stride(&self) -> u32 {
-        self.stride
     }
     pub fn format(&self) -> Format {
         self.format
