@@ -130,10 +130,6 @@ impl Dispatch<ZwlrScreencopyFrameV1, ()> for WaylandScreenshotState {
         _conn: &Connection,
         _qhandle: &QueueHandle<Self>,
     ) {
-        if let zwlr_screencopy_frame_v1::Event::BufferDone = event {
-            // Not interested, screenshot is ready on ready event.
-        }
-
         if let zwlr_screencopy_frame_v1::Event::Ready { .. } = event {
             state.screenshot_ready = true;
         }
