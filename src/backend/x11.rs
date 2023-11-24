@@ -33,7 +33,7 @@ pub enum Error {
 /// use std::fs::File;
 /// use image::ImageOutputFormat;
 ///
-/// fn main() {
+/// fn save_screenshot() {
 ///     let mut file = File::create("./targets/example_screenshot.png").unwrap();
 ///     let images = get_images().unwrap();
 ///
