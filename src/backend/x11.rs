@@ -28,7 +28,7 @@ pub enum Error {
 /// and returns it.
 ///
 /// # Example
-/// ```no_run
+/// ```no_test
 /// use flakeshot::backend::x11::get_images;
 /// use std::fs::File;
 /// use image::ImageOutputFormat;
