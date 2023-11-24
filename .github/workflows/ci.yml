@@ -49,7 +49,7 @@ jobs:
           git push
 
       - name: Check best practices (Clippy)
-        run: cargo clippy --verbose
+        run: cargo clippy --verbose -- -Dwarnings
 
       - name: Check for build errors
         run: cargo check --verbose
