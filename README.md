@@ -5,6 +5,7 @@
   ![Commit Activity]
   ![Last Commit]
   ![Top Language]
+  ![Build with Nix Flakes]
   ![Open Issues]
   ![Open PullRequests]
   ![License]
@@ -33,6 +34,7 @@ tool which should run on X11 as good as on Wayland.
 [Commit Activity]: https://img.shields.io/github/commit-activity/m/eneoli/flakeshot/main
 [Last Commit]: https://img.shields.io/github/last-commit/eneoli/flakeshot
 [Top Language]: https://img.shields.io/github/languages/top/eneoli/flakeshot
+[Build with Nix Flakes]: https://img.shields.io/badge/build_with-Nix_Flakes-blue
 [Open Issues]: https://img.shields.io/github/issues/eneoli/flakeshot
 [Open PullRequests]: https://img.shields.io/github/issues-pr/eneoli/flakeshot
 [License]: https://img.shields.io/github/license/eneoli/flakeshot
