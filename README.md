@@ -11,7 +11,7 @@
   ![Repo Size]
   ![Work in Progress]
 
-  A screenshot tool for unix-systems which runs natively on `Wayland` *and* `X11`.
+  #### A screenshot tool for unix-systems which runs natively on `Wayland` *and* `X11`.
 </div>
 
 # Motivation
