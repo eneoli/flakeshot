@@ -1,0 +1,7 @@
+[language-server.rust-analyzer]
+command = "rust-analyzer"
+config = { procMacro = { enable = true } } 
+
+[[language]]
+name = "rust"
+language-servers = ["rust-analyzer"]
