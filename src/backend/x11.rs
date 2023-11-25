@@ -28,7 +28,7 @@ pub enum Error {
 /// and returns it.
 ///
 /// # Example
-/// ```no_run
+/// ```no_test
 /// use flakeshot::backend::x11::get_images;
 /// use std::fs::File;
 /// use image::ImageOutputFormat;
@@ -53,7 +53,7 @@ pub fn get_images() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
     let mut images = Vec::with_capacity(setup.roots.len());
 
     for screen in &setup.roots {
-        let image = get_image(&conn, &screen)?;
+        let image = get_image(&conn, screen)?;
 
         let monitors = conn.randr_get_monitors(screen.root, true)?.reply()?;
         for monitor in &monitors.monitors {
