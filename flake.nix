@@ -53,11 +53,13 @@
             toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
           in
           pkgs.mkShell rec {
-            packages = [
-              toolchain
-            ];
+            packages = with pkgs; [
+              pkg-config
+            ] ++ [ toolchain ];
 
-            buildInputs = [ ];
+            buildInputs = with pkgs; [
+              gtk3
+            ];
 
             CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER = "${pkgs.llvmPackages.clangUseLLVM}/bin/clang";
             CARGO_ENCODED_RUSTFLAGS = "-Clink-arg=-fuse-ld=${pkgs.mold}/bin/mold";
