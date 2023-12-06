@@ -56,7 +56,7 @@
             {
               stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
             }
-            {
+            rec {
               packages = with pkgs; [
                 pkg-config
                 patchelf
@@ -67,6 +67,8 @@
                 gdk-pixbuf
                 libappindicator
               ] ++ [ toolchain ];
+
+              LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${builtins.toString (pkgs.lib.makeLibraryPath packages)}";
             };
       });
     };
