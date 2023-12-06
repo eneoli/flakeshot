@@ -58,15 +58,15 @@
             }
             {
               packages = with pkgs; [
-              pkg-config
-              patchelf
-              gtk3
-              pango
-              cairo
-              glib
-              gdk-pixbuf
-              libappindicator
-            ] ++[ toolchain ];
+                pkg-config
+                patchelf
+                gtk3
+                pango
+                cairo
+                glib
+                gdk-pixbuf
+                libappindicator
+              ] ++ [ toolchain ];
             };
       });
     };
