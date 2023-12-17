@@ -2,25 +2,21 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     rust-overlay.url = "github:oxalica/rust-overlay";
+    systems.url = "github:nix-systems/default-linux";
   };
 
-  outputs = { nixpkgs, rust-overlay, ... }:
+  outputs = { self, nixpkgs, rust-overlay, systems, ... }:
     let
-      forAllSystems = function:
-        nixpkgs.lib.genAttrs [
-          "x86_64-linux"
-        ]
-          (system: function (import nixpkgs {
-            inherit system;
+      eachSystem = nixpkgs.lib.genAttrs (import systems);
 
-            overlays = [ rust-overlay.overlays.default ];
-          }));
-
-      mkFlakeshot = { rustPlatform, lib, ... }: rustPlatform.buildRustPackage {
+      mkFlakeshot = { rustPlatform, lib, ... }: rustPlatform.buildRustPackage rec {
         pname = "flakeshot";
         version = "0.0.1";
 
-        src = ./.;
+        src = builtins.path {
+          path = ./.;
+          name = pname;
+        };
         cargoLock.lockFile = ./Cargo.lock;
 
         meta = {
@@ -31,35 +27,46 @@
       };
     in
     {
-      apps = forAllSystems
-        (pkgs:
-          let
-            flakeshotPkg = pkgs.callPackage mkFlakeshot { };
-          in
-          {
-            default = {
-              type = "app";
-              program = "${flakeshotPkg}/bin/flakeshot";
-            };
-          });
+      apps = eachSystem (system: {
+        default = {
+          type = "app";
+          program = "${self.packages.${system}.default}/bin/flakeshot";
+        };
+      });
+
+      packages = eachSystem (system:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+          };
+        in
+        {
+          default = pkgs.callPackage mkFlakeshot { };
+        });
 
       overlays.default = final: prev: {
         flakeshot = prev.callPackage mkFlakeshot { };
       };
 
-      devShells = forAllSystems (pkgs: {
-        default =
-          let
-            toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
-          in
-          pkgs.mkShell.override
+      devShells = eachSystem (system:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+
+            overlays = [ rust-overlay.overlays.default ];
+          };
+
+          toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+        in
+        {
+          default = pkgs.mkShell.override
             {
               stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
             }
             {
               packages = [ toolchain ];
             };
-      });
+        });
     };
 }
 
