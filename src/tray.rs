@@ -1,10 +1,7 @@
-use tray_icon::TrayIconBuilder;
+struct Tray {}
+
+impl ksni::Tray for Tray {}
 
 pub fn start() {
-    let tray_icon = TrayIconBuilder::new()
-        .with_tooltip("I use Arch btw.")
-        .build()
-        .unwrap();
-
-    loop {}
+    println!("test");
 }

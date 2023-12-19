@@ -59,13 +59,7 @@
             rec {
               packages = with pkgs; [
                 pkg-config
-                patchelf
-                gtk3
-                pango
-                cairo
-                glib
-                gdk-pixbuf
-                libappindicator
+                gtk4
               ] ++ [ toolchain ];
 
               LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${builtins.toString (pkgs.lib.makeLibraryPath packages)}";
