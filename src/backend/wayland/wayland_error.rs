@@ -21,7 +21,4 @@ pub enum WaylandError {
 
     #[error("The Wayland Compositor did not provide a format for the screenshot it made")]
     MissingFormat,
-
-    #[error("Failed to spawn a thread")]
-    ThreadSpawnFailed(#[from] tokio::task::JoinError),
 }
