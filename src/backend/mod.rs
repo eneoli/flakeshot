@@ -16,7 +16,7 @@ pub enum Error {
 pub type Pixel = u16;
 
 /// Contains additional values depending on the backend.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum MonitorInfo {
     /// Some additional values in the X11 context.
     X11 { name: u32 },
@@ -26,7 +26,7 @@ pub enum MonitorInfo {
 }
 
 /// Some general information about an output.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OutputInfo {
     /// The width of the output.
     pub width: Pixel,
@@ -56,7 +56,7 @@ pub struct OutputInfo {
 /// # Return value
 /// A tuple where the first value contains some general information about the output and is
 /// mapped to the given image in the second value of the tuple.
-pub async fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
+pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
     let xorg_is_running = { x11rb::connect(None).is_ok() };
 
     if xorg_is_running {

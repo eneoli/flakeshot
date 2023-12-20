@@ -38,7 +38,7 @@ pub(crate) mod wayland_shared_memory;
 ///     image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
 /// }
 /// ```
-pub async fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImage)>> {
+pub fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImage)>> {
     let mut manager = WaylandScreenshotManager::new()?;
     let queue_handle = manager.get_queue_handle();
 

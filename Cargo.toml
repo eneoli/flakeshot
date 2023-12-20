@@ -20,3 +20,10 @@ memfd = "0.6"
 wayland-client = "0.31"
 wayland-protocols = { version = "0.31", features = ["client", "unstable"] }
 wayland-protocols-wlr = { version = "0.2", features = ["client"] }
+smithay-client-toolkit = "0.18.0"
+cairo-rs = "0.18.3"
+gtk-layer-shell = "0.8.0"
+gtk = { version = "0.7.3", package = "gtk4" }
+gtk4-layer-shell = "0.2.0"
+gio = "0.18.3"
+glib = "0.18.3"
