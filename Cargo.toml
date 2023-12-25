@@ -12,7 +12,7 @@ authors = ["eneoli", "TornaxO7"]
 image = "0.24"
 thiserror = "1.0"
 x11rb = { version = "0.13", features = ["randr"] }
-arboard = "3.3"
+arboard = { version = "3.3", features = ["wayland-data-control"] }
 clap = { version = "4.4", features = ["derive", "cargo"] }
 anyhow = "1.0"
 memfd = "0.6"
