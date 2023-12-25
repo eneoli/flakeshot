@@ -1,8 +1,10 @@
 use clap::Parser;
-use flakeshot::cli::Cli;
+use flakeshot::{cli::Cli, tray};
 
 async fn run() -> Result<(), ()> {
     let _cli = Cli::parse();
+
+    tray::start();
 
     Ok(())
 }

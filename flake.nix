@@ -56,8 +56,13 @@
             {
               stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
             }
-            {
-              packages = [ toolchain ];
+            rec {
+              packages = with pkgs; [
+                pkg-config
+                gtk4
+              ] ++ [ toolchain ];
+
+              LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${builtins.toString (pkgs.lib.makeLibraryPath packages)}";
             };
       });
     };
