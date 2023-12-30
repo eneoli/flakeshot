@@ -4,6 +4,8 @@ use gtk4_layer_shell::LayerShell;
 use relm4::prelude::*;
 use relm4::SimpleComponent;
 
+use crate::backend::is_wayland;
+
 pub struct FileChooserInit {
     pub on_submit: Box<dyn Fn(Option<String>) -> ()>,
 }
@@ -40,8 +42,6 @@ impl SimpleComponent for FileChooser {
 
     view! {
         root = gtk::Window {
-            init_layer_shell: (),
-            set_layer: Layer::Overlay,
             set_keyboard_mode: gtk4_layer_shell::KeyboardMode::OnDemand,
             gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
@@ -100,6 +100,11 @@ impl SimpleComponent for FileChooser {
         root: &Self::Root,
         sender: relm4::prelude::ComponentSender<Self>,
     ) -> relm4::prelude::ComponentParts<Self> {
+        if is_wayland() {
+            root.init_layer_shell();
+            root.set_layer(Layer::Overlay);
+        }
+
         let widgets = view_output!();
 
         let model = FileChooser {

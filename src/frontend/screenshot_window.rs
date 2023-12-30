@@ -12,6 +12,8 @@ use relm4::{
     SimpleComponent,
 };
 
+use crate::backend::is_wayland;
+
 use super::{
     main_window::AppModel,
     ui::{
@@ -93,12 +95,16 @@ impl SimpleComponent for ScreenshotWindowModel {
     fn init_root() -> Self::Root {
         let window = gtk::Window::new();
 
-        window.init_layer_shell();
-        window.set_anchor(gtk4_layer_shell::Edge::Bottom, true);
-        window.set_anchor(gtk4_layer_shell::Edge::Left, true);
-        window.set_anchor(gtk4_layer_shell::Edge::Right, true);
-        window.set_layer(gtk4_layer_shell::Layer::Overlay);
-        window.set_keyboard_mode(gtk4_layer_shell::KeyboardMode::OnDemand);
+        if is_wayland() {
+            window.init_layer_shell();
+            window.set_anchor(gtk4_layer_shell::Edge::Bottom, true);
+            window.set_anchor(gtk4_layer_shell::Edge::Left, true);
+            window.set_anchor(gtk4_layer_shell::Edge::Right, true);
+            window.set_layer(gtk4_layer_shell::Layer::Overlay);
+            window.set_keyboard_mode(gtk4_layer_shell::KeyboardMode::OnDemand);
+        } else {
+            window.fullscreen();
+        }
 
         window
     }

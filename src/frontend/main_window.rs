@@ -60,39 +60,42 @@ impl SimpleComponent for AppModel {
 
         let model = Self::init(total_width, total_height);
 
-        let screenshots = backend::wayland::create_screenshots()
-            .expect("We couldn't create the initial screenshots.");
+        let screenshots =
+            backend::create_screenshots().expect("We couldn't create the initial screenshots.");
         for (output_info, image) in screenshots {
-            if let MonitorInfo::Wayland { ref name, .. } = output_info.monitor_info {
-                let monitor = monitors
-                    .remove(&name.to_string())
-                    .expect("We tried to access a non-existend monitor.");
+            let monitor_name = match output_info.monitor_info {
+                MonitorInfo::Wayland { name, .. } => name,
+                MonitorInfo::X11 { .. } => todo!(), // TODO #58
+            };
 
-                model
-                    .canvas
-                    .borrow_mut()
-                    .stamp_image(
-                        monitor.geometry().x() as f64,
-                        monitor.geometry().y() as f64,
-                        &image,
-                    )
-                    .expect("Couldn't stamp image.");
+            let monitor = monitors
+                .remove(&monitor_name.to_string())
+                .expect("We tried to access a non-existend monitor.");
 
-                let window = ScreenshotWindowModel::builder();
-                app.add_window(&window.root);
-                register_keyboard_events(&window.root);
+            model
+                .canvas
+                .borrow_mut()
+                .stamp_image(
+                    monitor.geometry().x() as f64,
+                    monitor.geometry().y() as f64,
+                    &image,
+                )
+                .expect("Couldn't stamp image.");
 
-                window
-                    .launch(ScreenshotWindowInit {
-                        monitor,
-                        parent_sender: sender_ref.clone(),
-                        canvas: model.canvas.clone(),
-                    })
-                    .forward(&(sender_ref.input_sender()), |event| {
-                        AppInput::ScreenshotWindowOutput(event)
-                    })
-                    .detach_runtime();
-            }
+            let window = ScreenshotWindowModel::builder();
+            app.add_window(&window.root);
+            register_keyboard_events(&window.root);
+
+            window
+                .launch(ScreenshotWindowInit {
+                    monitor,
+                    parent_sender: sender_ref.clone(),
+                    canvas: model.canvas.clone(),
+                })
+                .forward(&(sender_ref.input_sender()), |event| {
+                    AppInput::ScreenshotWindowOutput(event)
+                })
+                .detach_runtime();
         }
 
         ComponentParts { model, widgets: () }
