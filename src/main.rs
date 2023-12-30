@@ -1,5 +1,8 @@
 use flakeshot::frontend::main_window::AppModel;
-use relm4::{RelmApp, gtk::{CssProvider, self}};
+use relm4::{
+    gtk::{self, CssProvider},
+    RelmApp,
+};
 
 fn main() {
     let app = RelmApp::new("org.flakeshot.app");
