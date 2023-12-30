@@ -1,5 +1,6 @@
-use std::{cell::RefCell, rc::Rc};
+use std::rc::Rc;
 
+use cairo::ImageSurface;
 use gdk4::prelude::MonitorExt;
 use gtk4_layer_shell::LayerShell;
 use relm4::{
@@ -16,28 +17,24 @@ use crate::backend::is_wayland;
 
 use super::{
     main_window::AppModel,
-    ui::{
-        canvas::Canvas,
-        toolbar::{Toolbar, ToolbarEvent},
-    },
+    ui::toolbar::{Toolbar, ToolbarEvent},
 };
 
 pub struct ScreenshotWindowInit {
     pub monitor: gdk4::Monitor,
     pub parent_sender: Rc<relm4::ComponentSender<AppModel>>,
-    pub canvas: Rc<RefCell<Canvas>>,
 }
 
-#[derive(Debug)]
 pub struct ScreenshotWindowModel {
     monitor: gdk4::Monitor,
     draw_handler: DrawHandler,
-    canvas: Rc<RefCell<Canvas>>,
+    surface: Option<ImageSurface>,
     toolbar: Controller<Toolbar>,
 }
 
 #[derive(Debug)]
 pub enum ScreenshotWindowInput {
+    Draw(ImageSurface),
     Redraw,
     EnterWindow,
     LeaveWindow,
@@ -60,28 +57,24 @@ impl ScreenshotWindowModel {
         ScreenshotWindowModel {
             monitor: payload.monitor,
             draw_handler: DrawHandler::new(),
-            canvas: payload.canvas,
             toolbar,
+            surface: None,
         }
     }
 
-    fn draw(&mut self) {
-        let x = self.monitor.geometry().x() as f64;
-        let y = self.monitor.geometry().y() as f64;
-        let width = self.monitor.geometry().width();
-        let height = self.monitor.geometry().height();
-
+    fn draw(&mut self, surface: Option<ImageSurface>) {
         let ctx = self.draw_handler.get_context();
-        let canvas = self.canvas.borrow();
 
-        let surface_portion = canvas
-            .crop(x, y, width, height)
-            .expect("Couldn't get surface portion.");
+        if let Some(surface) = surface {
+            self.surface = Some(surface);
+        }
 
-        ctx.set_source_surface(&surface_portion, 0.0, 0.0)
-            .expect("Couldn't set source surface.");
+        if let Some(surface) = &self.surface {
+            ctx.set_source_surface(&surface, 0.0, 0.0)
+                .expect("Couldn't set source surface.");
 
-        ctx.paint().expect("Couldn't paint.");
+            ctx.paint().expect("Couldn't paint.");
+        }
     }
 }
 
@@ -105,6 +98,9 @@ impl SimpleComponent for ScreenshotWindowModel {
         } else {
             window.fullscreen();
         }
+
+        window.set_decorated(false);
+        window.add_css_class("screenshot_window");
 
         window
     }
@@ -146,9 +142,8 @@ impl SimpleComponent for ScreenshotWindowModel {
             let s = realize_sender.clone();
 
             // make sure window is finished rendering before first draw
-            gtk::glib::idle_add(move || {
+            gtk::glib::idle_add_local_once(move || {
                 s.input(ScreenshotWindowInput::Redraw);
-                gtk::glib::ControlFlow::Continue
             });
         });
 
@@ -174,7 +169,8 @@ impl SimpleComponent for ScreenshotWindowModel {
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         match message {
-            ScreenshotWindowInput::Redraw => self.draw(),
+            ScreenshotWindowInput::Draw(surface) => self.draw(Some(surface)),
+            ScreenshotWindowInput::Redraw => self.draw(None),
             ScreenshotWindowInput::LeaveWindow => self.toolbar.widget().hide(),
             ScreenshotWindowInput::EnterWindow => self.toolbar.widget().show(),
             ScreenshotWindowInput::ToolbarEvent(event) => sender

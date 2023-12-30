@@ -1,32 +1,31 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{collections::HashMap, rc::Rc};
 
 use super::{
-    screenshot_window::{ScreenshotWindowInit, ScreenshotWindowModel, ScreenshotWindowOutput},
-    ui::{canvas::Canvas, toolbar::ToolbarEvent},
+    screenshot_window::{
+        ScreenshotWindowInit, ScreenshotWindowInput, ScreenshotWindowModel, ScreenshotWindowOutput,
+    },
+    ui_manager::UiManager,
 };
-use crate::{
-    backend::{self, MonitorInfo},
-    frontend::file_chooser::FileChooser,
-};
+use crate::backend::{self, MonitorInfo, OutputInfo};
 use gtk::prelude::*;
-use relm4::prelude::*;
+use image::DynamicImage;
+use relm4::{gtk::Application, prelude::*, Sender};
 
 #[derive(Debug)]
 pub enum AppInput {
     ScreenshotWindowOutput(ScreenshotWindowOutput),
 }
 
-#[derive(Debug)]
 pub struct AppModel {
-    canvas: Rc<RefCell<Canvas>>,
+    ui_manager: UiManager,
+    window_senders: Vec<Sender<ScreenshotWindowInput>>,
 }
 
 impl AppModel {
     fn init(total_width: i32, total_height: i32) -> Self {
         AppModel {
-            canvas: Rc::new(RefCell::new(
-                Canvas::new(total_width, total_height).expect("Couldn't create the canvas."),
-            )),
+            ui_manager: UiManager::new(total_width, total_height),
+            window_senders: vec![],
         }
     }
 }
@@ -58,44 +57,12 @@ impl SimpleComponent for AppModel {
         let mut monitors = get_monitors();
         let (total_width, total_height) = get_total_view_size(&monitors.values().collect());
 
-        let model = Self::init(total_width, total_height);
+        let mut model = Self::init(total_width, total_height);
 
         let screenshots =
             backend::create_screenshots().expect("We couldn't create the initial screenshots.");
-        for (output_info, image) in screenshots {
-            let monitor_name = match output_info.monitor_info {
-                MonitorInfo::Wayland { name, .. } => name,
-                MonitorInfo::X11 { .. } => todo!(), // TODO #58
-            };
-
-            let monitor = monitors
-                .remove(&monitor_name.to_string())
-                .expect("We tried to access a non-existend monitor.");
-
-            model
-                .canvas
-                .borrow_mut()
-                .stamp_image(
-                    monitor.geometry().x() as f64,
-                    monitor.geometry().y() as f64,
-                    &image,
-                )
-                .expect("Couldn't stamp image.");
-
-            let window = ScreenshotWindowModel::builder();
-            app.add_window(&window.root);
-            register_keyboard_events(&window.root);
-
-            window
-                .launch(ScreenshotWindowInit {
-                    monitor,
-                    parent_sender: sender_ref.clone(),
-                    canvas: model.canvas.clone(),
-                })
-                .forward(&(sender_ref.input_sender()), |event| {
-                    AppInput::ScreenshotWindowOutput(event)
-                })
-                .detach_runtime();
+        for screenshot in screenshots {
+            init_monitor(&app, &mut model, &sender_ref, &screenshot, &mut monitors);
         }
 
         ComponentParts { model, widgets: () }
@@ -104,29 +71,73 @@ impl SimpleComponent for AppModel {
     fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
             AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::ToolbarEvent(event)) => {
-                match event {
-                    ToolbarEvent::SaveAsFile => {
-                        let canvas_ref = self.canvas.clone();
-
-                        FileChooser::open(move |file| {
-                            if let Some(path) = file {
-                                let width = canvas_ref.borrow().width() as u32;
-                                let height = canvas_ref.borrow().height() as u32;
-
-                                canvas_ref
-                                    .borrow()
-                                    .crop_to_image(0.0, 0.0, width, height)
-                                    .expect("Couldn't crop canvas")
-                                    .save(path)
-                                    .expect("Couldn't save image.");
-                            }
-                        });
-                    }
-                    ToolbarEvent::SaveIntoClipboard => {}
-                }
+                self.ui_manager.handle_tool_event(event)
             }
         }
     }
+}
+
+fn init_monitor(
+    app: &Application,
+    model: &mut AppModel,
+    sender_ref: &Rc<ComponentSender<AppModel>>,
+    (output_info, image): &(OutputInfo, DynamicImage),
+    monitors: &mut HashMap<String, gdk4::Monitor>,
+) {
+    let (monitor, x, y, width, height) = {
+        let monitor_name = match &output_info.monitor_info {
+            MonitorInfo::Wayland { name, .. } => name,
+            MonitorInfo::X11 { .. } => todo!(), // TODO #58
+        };
+
+        let monitor = monitors
+            .remove(&monitor_name.to_string())
+            .expect("We tried to access a non-existend monitor.");
+
+        let x = monitor.geometry().x();
+        let y = monitor.geometry().y();
+        let width = monitor.geometry().width();
+        let height = monitor.geometry().height();
+
+        (monitor, x, y, width, height)
+    };
+
+    let window = ScreenshotWindowModel::builder();
+    register_keyboard_events(&window.root);
+    app.add_window(&window.root);
+
+    // launch + forward messages to main window
+    let mut window_controller = window
+        .launch(ScreenshotWindowInit {
+            monitor,
+            parent_sender: sender_ref.clone(),
+        })
+        .forward(&(sender_ref.input_sender()), |event| {
+            AppInput::ScreenshotWindowOutput(event)
+        });
+
+    model
+        .window_senders
+        .push(window_controller.sender().clone());
+
+    window_controller.detach_runtime();
+
+    // subscribe to canvas changes
+    let sender_ui = window_controller.sender().clone();
+    model.ui_manager.on_render(move |ui_manager| {
+        let surface = ui_manager
+            .crop(x as f64, y as f64, width, height)
+            .expect("Couldn't crop surface for monitor.");
+        sender_ui
+            .send(ScreenshotWindowInput::Draw(surface))
+            .expect("Letting window redraw canvas failed.");
+    });
+
+    // add screenshot of monitor to image
+    model
+        .ui_manager
+        .stamp_image(x as f64, y as f64, &image)
+        .expect("Couldn't stamp image.");
 }
 
 fn get_monitors() -> HashMap<String, gdk4::Monitor> {

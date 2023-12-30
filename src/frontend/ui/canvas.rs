@@ -1,15 +1,18 @@
 use cairo::{Context, Format, ImageSurface};
 use image::{DynamicImage, RgbaImage};
 
-#[derive(Debug)]
+use super::drawable::Drawable;
+
 pub struct Canvas {
     surface: ImageSurface,
+    drawables: Vec<Box<dyn Drawable>>,
 }
 
 impl Canvas {
     pub fn new(width: i32, height: i32) -> anyhow::Result<Self> {
         Ok(Canvas {
             surface: ImageSurface::create(Format::ARgb32, width, height)?,
+            drawables: vec![],
         })
     }
 
@@ -19,6 +22,18 @@ impl Canvas {
 
     pub fn height(&self) -> i32 {
         self.surface.height()
+    }
+
+    pub fn render(&self) -> anyhow::Result<()> {
+        let ctx = Context::new(&self.surface)?;
+        // ctx.restore().unwrap();
+        // ctx.save().unwrap();
+
+        for drawable in &self.drawables {
+            drawable.draw(&ctx);
+        }
+
+        Ok(())
     }
 
     pub fn stamp_image(&self, x: f64, y: f64, image: &DynamicImage) -> anyhow::Result<()> {
@@ -37,6 +52,7 @@ impl Canvas {
 
         ctx.set_source_surface(&image_surface, x, y)?;
         ctx.paint()?;
+        // ctx.save()?;
 
         Ok(())
     }
