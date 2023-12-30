@@ -1,13 +1,12 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use super::{
-    file_chooser::FileChooserInit,
     screenshot_window::{ScreenshotWindowInit, ScreenshotWindowModel, ScreenshotWindowOutput},
     ui::{canvas::Canvas, toolbar::ToolbarEvent},
 };
 use crate::{
     backend::{self, MonitorInfo},
-    frontend::file_chooser::FileChooserModel,
+    frontend::file_chooser::FileChooser,
 };
 use gtk::prelude::*;
 use relm4::prelude::*;
@@ -106,23 +105,19 @@ impl SimpleComponent for AppModel {
                     ToolbarEvent::SaveAsFile => {
                         let canvas_ref = self.canvas.clone();
 
-                        let mut fc = FileChooserModel::builder().launch(FileChooserInit {
-                            on_submit: Box::new(move |file| {
-                                let width = canvas_ref.borrow().width();
-                                let height = canvas_ref.borrow().height();
+                        FileChooser::open(move |file| {
+                            if let Some(path) = file {
+                                let width = canvas_ref.borrow().width() as u32;
+                                let height = canvas_ref.borrow().height() as u32;
 
-                                let img = canvas_ref
+                                canvas_ref
                                     .borrow()
-                                    .crop_to_image(0.0, 0.0, width as u32, height as u32)
-                                    .unwrap();
-
-                                if let Some(path) = file {
-                                    img.save(path).unwrap();
-                                }
-                            }),
+                                    .crop_to_image(0.0, 0.0, width, height)
+                                    .expect("Couldn't crop canvas")
+                                    .save(path)
+                                    .expect("Couldn't save image.");
+                            }
                         });
-                        fc.widget().show();
-                        fc.detach_runtime();
                     }
                     ToolbarEvent::SaveIntoClipboard => {}
                 }

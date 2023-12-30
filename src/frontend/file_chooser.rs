@@ -5,7 +5,7 @@ use relm4::prelude::*;
 use relm4::SimpleComponent;
 
 pub struct FileChooserInit {
-    pub on_submit: fn(Option<String>) -> (),
+    pub on_submit: Box<dyn Fn(Option<String>) -> ()>,
 }
 
 #[derive(Debug)]
@@ -14,13 +14,26 @@ pub enum FileChooserEvent {
     Save(String),
 }
 
-#[derive(Debug)]
-pub struct FileChooserModel {
-    on_submit: fn(Option<String>) -> (),
+pub struct FileChooser {
+    on_submit: Box<dyn Fn(Option<String>) -> ()>,
+}
+
+impl FileChooser {
+    pub fn open<F>(on_submit: F)
+    where
+        F: Fn(Option<String>) -> () + 'static,
+    {
+        let mut file_chooser = FileChooser::builder().launch(FileChooserInit {
+            on_submit: Box::new(on_submit),
+        });
+
+        file_chooser.widget().show();
+        file_chooser.detach_runtime();
+    }
 }
 
 #[relm4::component(pub)]
-impl SimpleComponent for FileChooserModel {
+impl SimpleComponent for FileChooser {
     type Init = FileChooserInit;
     type Input = FileChooserEvent;
     type Output = ();
@@ -64,7 +77,7 @@ impl SimpleComponent for FileChooserModel {
                                  .into_string()
                                  .expect("Path is not UTF-8 encoded.")
                             });
-                            
+
                             if let Some(path) = file {
                                 root.destroy();
                                 sender.input(FileChooserEvent::Save(path));
@@ -89,14 +102,14 @@ impl SimpleComponent for FileChooserModel {
     ) -> relm4::prelude::ComponentParts<Self> {
         let widgets = view_output!();
 
-        let model = FileChooserModel {
+        let model = FileChooser {
             on_submit: init.on_submit,
         };
 
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
             FileChooserEvent::Cancel => {
                 (self.on_submit)(None);
