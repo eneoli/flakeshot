@@ -38,7 +38,7 @@ pub(crate) mod wayland_shared_memory;
 ///     image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
 /// }
 /// ```
-pub fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImage)>> {
+pub fn create_screenshots() -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandError> {
     let mut manager = WaylandScreenshotManager::new()?;
     let queue_handle = manager.get_queue_handle();
 
@@ -63,7 +63,8 @@ pub fn create_screenshots() -> anyhow::Result<Vec<(OutputInfo, DynamicImage)>> {
             // read from shared memory
             // data holds our screenshot
             let mut data = vec![];
-            shared_memory.get_memfile().read_to_end(&mut data)?;
+            shared_memory.get_memfile().read_to_end(&mut data)
+                .map_err(|_| WaylandError::GenericError("Couldn't read shared memory file"))?;
 
             let img = {
                 let width = shared_memory.width();
@@ -94,7 +95,7 @@ fn image_from_wayland(
     width: u32,
     height: u32,
     format: Format,
-) -> anyhow::Result<DynamicImage> {
+) -> Result<DynamicImage, WaylandError> {
     let result = match format {
         Format::Argb8888 | Format::Abgr8888 | Format::Xrgb8888 | Format::Xbgr8888 => ImageRgba8(
             RgbaImage::from_vec(width, height, data).ok_or(WaylandError::ConvertImageFailed)?,

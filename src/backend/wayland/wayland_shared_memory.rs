@@ -8,6 +8,8 @@ use wayland_client::protocol::wl_shm::{Format, WlShm};
 use wayland_client::protocol::wl_shm_pool::WlShmPool;
 use wayland_client::QueueHandle;
 
+use super::wayland_error::WaylandError;
+
 ///
 /// Wrapper around wayland shared memory.
 /// Handles shared memory a bit more comfortable.
@@ -29,8 +31,9 @@ impl WaylandSharedMemory {
         height: u32,
         stride: u32,
         format: Format,
-    ) -> anyhow::Result<WaylandSharedMemory> {
-        let memfile = create_shm_file("flakeshot_pool", (height * stride) as u64)?;
+    ) -> Result<WaylandSharedMemory, WaylandError> {
+        let memfile = create_shm_file("flakeshot_pool", (height * stride) as u64)
+            .map_err(|_| WaylandError::ShmCreationFailed)?;
 
         let shm_pool =
             wl_shm.create_pool(memfile.as_fd(), (height * stride) as i32, queue_handle, ());
