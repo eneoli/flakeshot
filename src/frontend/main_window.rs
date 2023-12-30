@@ -1,20 +1,35 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use super::{
-    screenshot_window::{ScreenshotWindowInit, ScreenshotWindowModel, ScreenshotWindowInput},
-    ui::canvas::Canvas,
+    file_chooser::FileChooserInit,
+    screenshot_window::{ScreenshotWindowInit, ScreenshotWindowModel, ScreenshotWindowOutput},
+    ui::{canvas::Canvas, toolbar::ToolbarEvent},
 };
-use crate::backend::{self, MonitorInfo};
+use crate::{
+    backend::{self, MonitorInfo},
+    frontend::file_chooser::FileChooserModel,
+};
 use gtk::prelude::*;
 use relm4::prelude::*;
 
 #[derive(Debug)]
-pub enum AppInput {}
+pub enum AppInput {
+    ScreenshotWindowOutput(ScreenshotWindowOutput),
+}
 
 #[derive(Debug)]
 pub struct AppModel {
-    window_senders: Vec<relm4::Sender<ScreenshotWindowInput>>,
     canvas: Rc<RefCell<Canvas>>,
+}
+
+impl AppModel {
+    fn init(total_width: i32, total_height: i32) -> Self {
+        AppModel {
+            canvas: Rc::new(RefCell::new(
+                Canvas::new(total_width, total_height).expect("Couldn't create the canvas."),
+            )),
+        }
+    }
 }
 
 impl SimpleComponent for AppModel {
@@ -35,25 +50,19 @@ impl SimpleComponent for AppModel {
 
     fn init(
         _payload: Self::Init,
-        root: &Self::Root,
+        _root: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
+        let app = relm4::main_application();
+        let sender_ref = Rc::new(sender);
+
         let mut monitors = get_monitors();
         let (total_width, total_height) = get_total_view_size(&monitors.values().collect());
 
-        let mut model = AppModel {
-            window_senders: vec![],
-            canvas: Rc::new(RefCell::new(
-                Canvas::new(total_width, total_height).expect("Couldn't create the canvas."),
-            )),
-        };
-        let app = relm4::main_application();
-        register_keyboard_events(root);
+        let model = Self::init(total_width, total_height);
 
-        let sender_ref = Rc::new(sender);
-
-        let screenshots = backend::wayland::create_screenshots().unwrap();
-
+        let screenshots = backend::wayland::create_screenshots()
+            .expect("We couldn't create the initial screenshots.");
         for (output_info, image) in screenshots {
             if let MonitorInfo::Wayland { ref name, .. } = output_info.monitor_info {
                 let monitor = monitors
@@ -72,25 +81,54 @@ impl SimpleComponent for AppModel {
 
                 let window = ScreenshotWindowModel::builder();
                 app.add_window(&window.root);
+                register_keyboard_events(&window.root);
 
-                let mut window_connector = window.launch(ScreenshotWindowInit {
-                    output_info: output_info.clone(),
-                    monitor,
-                    parent_sender: sender_ref.clone(),
-                    canvas: model.canvas.clone(),
-                });
-
-                let window_sender = window_connector.sender().to_owned();
-                model.window_senders.push(window_sender);
-
-                window_connector.detach_runtime();
+                window
+                    .launch(ScreenshotWindowInit {
+                        monitor,
+                        parent_sender: sender_ref.clone(),
+                        canvas: model.canvas.clone(),
+                    })
+                    .forward(&(sender_ref.input_sender()), |event| {
+                        AppInput::ScreenshotWindowOutput(event)
+                    })
+                    .detach_runtime();
             }
         }
 
         ComponentParts { model, widgets: () }
     }
 
-    fn update(&mut self, _message: Self::Input, _sender: ComponentSender<Self>) {}
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
+        match message {
+            AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::ToolbarEvent(event)) => {
+                match event {
+                    ToolbarEvent::SaveAsFile => {
+                        let canvas_ref = self.canvas.clone();
+
+                        let mut fc = FileChooserModel::builder().launch(FileChooserInit {
+                            on_submit: Box::new(move |file| {
+                                let width = canvas_ref.borrow().width();
+                                let height = canvas_ref.borrow().height();
+
+                                let img = canvas_ref
+                                    .borrow()
+                                    .crop_to_image(0.0, 0.0, width as u32, height as u32)
+                                    .unwrap();
+
+                                if let Some(path) = file {
+                                    img.save(path).unwrap();
+                                }
+                            }),
+                        });
+                        fc.widget().show();
+                        fc.detach_runtime();
+                    }
+                    ToolbarEvent::SaveIntoClipboard => {}
+                }
+            }
+        }
+    }
 }
 
 fn get_monitors() -> HashMap<String, gdk4::Monitor> {
