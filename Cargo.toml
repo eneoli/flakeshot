@@ -22,7 +22,7 @@ wayland-protocols-wlr = { version = "0.2", features = ["client"] }
 cairo-rs = "0.18.3"
 relm4 = "0.7.0-alpha.2"
 relm4-components = "0.7.0-alpha.2"
-relm4-icons = { version = "0.7.0-alpha.2", features = ["paper", "copy"] }
+relm4-icons = { version = "0.7.0-alpha.2", features = ["paper", "copy", "crop"] }
 gtk4-layer-shell = "0.2.0"
 gdk4 = "0.7.3"
 gdk-pixbuf = "0.18.3"
