@@ -13,6 +13,14 @@ impl Canvas {
         })
     }
 
+    pub fn width(&self) -> i32 {
+        self.surface.width()
+    }
+
+    pub fn height(&self) -> i32 {
+        self.surface.height()
+    }
+
     pub fn stamp_image(&self, x: f64, y: f64, image: &DynamicImage) -> anyhow::Result<()> {
         let ctx = Context::new(&self.surface)?;
 
