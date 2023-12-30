@@ -63,7 +63,9 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandEr
             // read from shared memory
             // data holds our screenshot
             let mut data = vec![];
-            shared_memory.get_memfile().read_to_end(&mut data)
+            shared_memory
+                .get_memfile()
+                .read_to_end(&mut data)
                 .map_err(|_| WaylandError::GenericError("Couldn't read shared memory file"))?;
 
             let img = {
