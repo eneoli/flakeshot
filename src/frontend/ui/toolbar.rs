@@ -38,7 +38,7 @@ impl SimpleComponent for Toolbar {
             gtk::Button {
                 set_icon_name: "copy",
                 add_css_class: "toolbar-button",
-                set_tooltip_text: Some("Copy to clipboard"),
+                set_tooltip_text: Some("Copy to clipboard (TODO)"),
                 connect_clicked[sender] => move |_| {
                     sender.output(ToolbarEvent::SaveIntoClipboard).unwrap();
                 },
