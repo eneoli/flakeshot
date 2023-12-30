@@ -14,8 +14,7 @@ pub struct WaylandScreenshotManager {
 
 impl WaylandScreenshotManager {
     pub fn new() -> Result<WaylandScreenshotManager, WaylandError> {
-        let connection = Connection::connect_to_env()
-            .map_err(WaylandError::from)?;
+        let connection = Connection::connect_to_env().map_err(WaylandError::from)?;
 
         let mut queue = {
             let display = connection.display();
@@ -31,8 +30,7 @@ impl WaylandScreenshotManager {
 
         let mut state = WaylandScreenshotState::default();
 
-        queue.roundtrip(&mut state)
-            .map_err(WaylandError::from)?;
+        queue.roundtrip(&mut state).map_err(WaylandError::from)?;
 
         Ok(Self {
             connection,
@@ -44,7 +42,9 @@ impl WaylandScreenshotManager {
     pub fn get_queue_handle(&self) -> QueueHandle<WaylandScreenshotState> {
         self.queue.handle()
     }
-    pub fn get_zwlr_screencopy_manager_v1(&mut self) -> Result<&ZwlrScreencopyManagerV1, WaylandError> {
+    pub fn get_zwlr_screencopy_manager_v1(
+        &mut self,
+    ) -> Result<&ZwlrScreencopyManagerV1, WaylandError> {
         self.poll_queue_until(|state| state.zwlr_screencopy_manager_v1.is_some())
             .map_err(WaylandError::from)?;
 
@@ -97,12 +97,13 @@ impl WaylandScreenshotManager {
         let start = SystemTime::now();
 
         while !until(&self.state) {
-            self.queue.blocking_dispatch(&mut self.state)
+            self.queue
+                .blocking_dispatch(&mut self.state)
                 .map_err(WaylandError::from)?;
-            self.connection.flush()
-                .map_err(WaylandError::from)?;
+            self.connection.flush().map_err(WaylandError::from)?;
 
-            let diff = SystemTime::now().duration_since(start)
+            let diff = SystemTime::now()
+                .duration_since(start)
                 .map_err(|_| WaylandError::GenericError("Failed to read system time"))?;
 
             if diff.as_secs() > 120 {

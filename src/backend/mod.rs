@@ -52,8 +52,8 @@ pub struct OutputInfo {
 }
 
 /// Checks if system is using Xorg
-pub fn is_xorg() -> bool {
-    x11rb::connect(None).is_ok()
+pub fn is_wayland() -> bool {
+    wayland_client::Connection::connect_to_env().is_ok()
 }
 
 /// The main function of this module.
@@ -66,9 +66,9 @@ pub fn is_xorg() -> bool {
 /// A tuple where the first value contains some general information about the output and is
 /// mapped to the given image in the second value of the tuple.
 pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
-    if is_xorg() {
-        x11::get_images().map_err(Error::from)
-    } else {
+    if is_wayland() {
         wayland::create_screenshots().map_err(Error::from)
+    } else {
+        x11::get_images().map_err(Error::from)
     }
 }
