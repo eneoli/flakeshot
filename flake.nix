@@ -60,6 +60,7 @@
               packages = with pkgs; [
                 pkg-config
                 gtk4
+                gtk4-layer-shell
                 libadwaita
                 pango
                 gdk-pixbuf
