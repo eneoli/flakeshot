@@ -112,7 +112,7 @@ fn init_monitor(
             monitor,
             parent_sender: sender_ref.clone(),
         })
-        .forward(&(sender_ref.input_sender()), |event| {
+        .forward(sender_ref.input_sender(), |event| {
             AppInput::ScreenshotWindowOutput(event)
         });
 
@@ -136,7 +136,7 @@ fn init_monitor(
     // add screenshot of monitor to image
     model
         .ui_manager
-        .stamp_image(x as f64, y as f64, &image)
+        .stamp_image(x as f64, y as f64, image)
         .expect("Couldn't stamp image.");
 }
 
@@ -188,12 +188,10 @@ fn register_keyboard_events(window: &gtk::Window) {
     let event_controller = gtk::EventControllerKey::new();
 
     event_controller.connect_key_pressed(|_, key, _, _| {
-        match key {
-            gdk4::Key::Escape => {
-                std::process::exit(0);
-            }
-            _ => (),
+        if let gdk4::Key::Escape = key {
+            std::process::exit(0);
         }
+
         gtk::glib::Propagation::Proceed
     });
 

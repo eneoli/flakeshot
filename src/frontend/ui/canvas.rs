@@ -47,7 +47,7 @@ impl Canvas {
             cairo::Format::ARgb32,
             image.width() as i32,
             image.height() as i32,
-            Format::stride_for_width(Format::ARgb32, image.width() as u32)?,
+            Format::stride_for_width(Format::ARgb32, image.width())?,
         )?;
 
         ctx.set_source_surface(&image_surface, x, y)?;

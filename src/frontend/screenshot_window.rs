@@ -70,7 +70,7 @@ impl ScreenshotWindowModel {
         }
 
         if let Some(surface) = &self.surface {
-            ctx.set_source_surface(&surface, 0.0, 0.0)
+            ctx.set_source_surface(surface, 0.0, 0.0)
                 .expect("Couldn't set source surface.");
 
             ctx.paint().expect("Couldn't paint.");
@@ -110,7 +110,7 @@ impl SimpleComponent for ScreenshotWindowModel {
         window: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
-        let mut model = ScreenshotWindowModel::init(payload, &sender.input_sender());
+        let mut model = ScreenshotWindowModel::init(payload, sender.input_sender());
 
         let width = model.monitor.geometry().width();
         let height = model.monitor.geometry().height();
