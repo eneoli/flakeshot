@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use gtk::prelude::*;
 use gtk4_layer_shell::Layer;
 use gtk4_layer_shell::LayerShell;
@@ -7,23 +9,23 @@ use relm4::SimpleComponent;
 use crate::backend::is_wayland;
 
 pub struct FileChooserInit {
-    pub on_submit: Box<dyn Fn(Option<String>) -> ()>,
+    pub on_submit: Box<dyn Fn(Option<PathBuf>)>,
 }
 
 #[derive(Debug)]
 pub enum FileChooserEvent {
     Cancel,
-    Save(String),
+    Save(PathBuf),
 }
 
 pub struct FileChooser {
-    on_submit: Box<dyn Fn(Option<String>) -> ()>,
+    on_submit: Box<dyn Fn(Option<PathBuf>)>,
 }
 
 impl FileChooser {
     pub fn open<F>(on_submit: F)
     where
-        F: Fn(Option<String>) -> () + 'static,
+        F: Fn(Option<PathBuf>) + 'static,
     {
         let mut file_chooser = FileChooser::builder().launch(FileChooserInit {
             on_submit: Box::new(on_submit),
@@ -72,10 +74,7 @@ impl SimpleComponent for FileChooser {
                             .file()
                             .map(|f| {
                                 f.path()
-                                 .expect("FileChooser returned invalid file?")
-                                 .into_os_string()
-                                 .into_string()
-                                 .expect("Path is not UTF-8 encoded.")
+                                 .expect("FileChooser didn't return a path?")
                             });
 
                             if let Some(path) = file {
