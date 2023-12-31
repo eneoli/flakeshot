@@ -61,10 +61,9 @@
                 pango
               ];
               packages = with pkgs; [
+                pkg-config
                 pango
               ] ++ [ toolchain ];
-
-              # PKG_CONFIG_PATH= "$PKG_CONFIG_PATH:${builtins.toString (pkgs.lib.makeLibraryPath buildInputs)}";
             };
       });
     };
