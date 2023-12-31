@@ -52,7 +52,6 @@ impl UiManager {
         self.on_render_handler.push(Box::new(handler));
     }
 
-
     fn notify_render_handler(&self) {
         for handler in &self.on_render_handler {
             handler(self);
