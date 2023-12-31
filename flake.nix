@@ -56,13 +56,11 @@
             {
               stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
             }
-            rec {
-              buildInputs = with pkgs; [
-                pango
-              ];
+            {
               packages = with pkgs; [
                 pkg-config
                 pango
+                gdk-pixbuf
               ] ++ [ toolchain ];
             };
       });
