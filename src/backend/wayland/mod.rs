@@ -26,10 +26,9 @@ pub(crate) mod wayland_shared_memory;
 /// use std::fs::File;
 /// use image::ImageOutputFormat;
 ///
-/// #[tokio::main]
-/// async fn main() {
+/// fn main() {
 ///     let mut file = File::create("./targets/example_screenshot.png").unwrap();
-///     let images = create_screenshots().await.unwrap();
+///     let images = create_screenshots().unwrap();
 ///
 ///     // we will only use the first screenshot for this example
 ///     let first_screen = images.first().unwrap();
