@@ -57,7 +57,9 @@
               stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
             }
             {
-              packages = [ toolchain ];
+              packages = with pkgs; [
+                pango
+              ] ++ [ toolchain ];
             };
       });
     };
