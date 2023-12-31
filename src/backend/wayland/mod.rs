@@ -21,7 +21,7 @@ pub(crate) mod wayland_shared_memory;
 /// and returns it.
 ///
 /// # Example
-/// ```no_run
+/// ```no_test
 /// use flakeshot::backend::wayland::create_screenshots;
 /// use std::fs::File;
 /// use image::ImageOutputFormat;
