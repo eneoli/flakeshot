@@ -51,7 +51,6 @@
         default =
           let
             toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
-            pango = pkgs.pango;
           in
           pkgs.mkShell.override
             {
