@@ -60,6 +60,7 @@
               packages = with pkgs; [
                 pkg-config
                 gtk4
+                libadwaita
                 pango
                 gdk-pixbuf
               ] ++ [ toolchain ];
