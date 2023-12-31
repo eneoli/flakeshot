@@ -8,7 +8,7 @@ use super::{
     ui::{canvas::Canvas, toolbar::ToolbarEvent},
 };
 
-type RenderHandler = dyn Fn(&UiManager) -> ();
+type RenderHandler = dyn Fn(&UiManager);
 
 pub struct UiManager {
     canvas: Rc<RefCell<Canvas>>,
@@ -47,10 +47,11 @@ impl UiManager {
 
     pub fn on_render<F>(&mut self, handler: F)
     where
-        F: Fn(&Self) -> () + 'static,
+        F: Fn(&Self) + 'static,
     {
         self.on_render_handler.push(Box::new(handler));
     }
+
 
     fn notify_render_handler(&self) {
         for handler in &self.on_render_handler {
