@@ -59,6 +59,7 @@
             {
               packages = with pkgs; [
                 pkg-config
+                gtk4
                 pango
                 gdk-pixbuf
               ] ++ [ toolchain ];
