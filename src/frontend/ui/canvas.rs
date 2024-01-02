@@ -45,9 +45,8 @@ impl Canvas {
 
         // reverse RGB, keep Alpha
         for i in (0..image_bytes.len()).step_by(4) {
-            image_bytes[i..i+3].reverse();
+            image_bytes[i..i + 3].reverse();
         }
-        
         let image_surface = ImageSurface::create_for_data(
             image_bytes,
             cairo::Format::ARgb32,
