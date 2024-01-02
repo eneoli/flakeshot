@@ -1,5 +1,5 @@
 use cairo::{Context, Format, ImageSurface};
-use image::{DynamicImage, RgbaImage};
+use image::{DynamicImage, RgbaImage, GenericImageView};
 
 use super::drawable::Drawable;
 
@@ -24,10 +24,12 @@ impl Canvas {
         self.surface.height()
     }
 
+    pub fn add_drawable(&mut self, drawable: Box<dyn Drawable>) {
+        self.drawables.push(drawable);
+    }
+
     pub fn render(&self) -> anyhow::Result<()> {
         let ctx = Context::new(&self.surface)?;
-        // ctx.restore().unwrap();
-        // ctx.save().unwrap();
 
         for drawable in &self.drawables {
             drawable.draw(&ctx);
@@ -40,8 +42,12 @@ impl Canvas {
         let ctx = Context::new(&self.surface)?;
 
         let mut image_bytes = Vec::from(image.as_bytes());
-        Self::invert_rgba_vec(&mut image_bytes);
 
+        // reverse RGB, keep Alpha
+        for i in (0..image_bytes.len()).step_by(4) {
+            image_bytes[i..i+3].reverse();
+        }
+        
         let image_surface = ImageSurface::create_for_data(
             image_bytes,
             cairo::Format::ARgb32,
@@ -52,7 +58,6 @@ impl Canvas {
 
         ctx.set_source_surface(&image_surface, x, y)?;
         ctx.paint()?;
-        // ctx.save()?;
 
         Ok(())
     }
@@ -77,26 +82,15 @@ impl Canvas {
         let mut output_surface = self.crop(x, y, width as i32, height as i32)?;
         let output_data = output_surface.data()?;
 
-        let mut data_vec = output_data.to_vec();
-        Self::invert_rgba_vec(&mut data_vec);
-
-        let img = RgbaImage::from_vec(width, height, data_vec)
+        let data_vec = output_data.to_vec();
+        let mut img = RgbaImage::from_vec(width, height, data_vec)
             .expect("Couldn't create image from buffer");
 
-        Ok(DynamicImage::from(img))
-    }
-
-    fn invert_rgba_vec(data: &mut Vec<u8>) {
-        for i in (0..data.len()).step_by(4) {
-            let r = data[i];
-            let g = data[i + 1];
-            let b = data[i + 2];
-            let a = data[i + 3];
-
-            data[i] = b;
-            data[i + 1] = g;
-            data[i + 2] = r;
-            data[i + 3] = a;
+        // Reverse RGB, keep Alpha
+        for pixel in img.pixels_mut() {
+            pixel.0[0..3].reverse();
         }
+
+        Ok(DynamicImage::from(img))
     }
 }
