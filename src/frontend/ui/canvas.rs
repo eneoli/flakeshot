@@ -1,5 +1,5 @@
 use cairo::{Context, Format, ImageSurface};
-use image::{DynamicImage, RgbaImage, GenericImageView};
+use image::{DynamicImage, RgbaImage};
 
 use super::drawable::Drawable;
 
