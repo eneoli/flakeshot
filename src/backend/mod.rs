@@ -11,7 +11,7 @@ pub enum Error {
     #[error(transparent)]
     X11(#[from] x11::Error),
 
-    /// Represents that an error occured while trying to get a screenshoton Wayland.
+    /// Represents that an error occured while trying to get a screenshot on Wayland.
     #[error(transparent)]
     Wayland(#[from] wayland::wayland_error::WaylandError),
 }
