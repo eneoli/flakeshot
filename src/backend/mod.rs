@@ -51,7 +51,7 @@ pub struct OutputInfo {
     pub monitor_info: MonitorInfo,
 }
 
-/// Checks if system is using Xorg
+/// Checks if system is using Wayland
 pub fn is_wayland() -> bool {
     wayland_client::Connection::connect_to_env().is_ok()
 }
