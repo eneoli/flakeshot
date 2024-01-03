@@ -12,11 +12,17 @@ authors = ["eneoli", "TornaxO7"]
 image = "0.24"
 thiserror = "1.0"
 x11rb = { version = "0.13", features = ["randr"] }
-tokio = { version = "1.35", features = ["full"] }
-arboard = "3.3"
+arboard = { version = "3.3", features = ["wayland-data-control"] }
 clap = { version = "4.4", features = ["derive", "cargo"] }
 anyhow = "1.0"
 memfd = "0.6"
 wayland-client = "0.31"
 wayland-protocols = { version = "0.31", features = ["client", "unstable"] }
 wayland-protocols-wlr = { version = "0.2", features = ["client"] }
+cairo-rs = "0.18.3"
+relm4 = "0.7.0-alpha.2"
+relm4-components = "0.7.0-alpha.2"
+relm4-icons = { version = "0.7.0-alpha.2", features = ["paper", "copy", "crop"] }
+gtk4-layer-shell = "0.2.0"
+gdk4 = "0.7.3"
+gdk-pixbuf = "0.18.3"

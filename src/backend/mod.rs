@@ -10,13 +10,17 @@ pub enum Error {
     /// Represents that an error occured while trying to get a screenshot on X11.
     #[error(transparent)]
     X11(#[from] x11::Error),
+
+    /// Represents that an error occured while trying to get a screenshot on Wayland.
+    #[error(transparent)]
+    Wayland(#[from] wayland::wayland_error::WaylandError),
 }
 
 /// An alias type for better code readability.
 pub type Pixel = u16;
 
 /// Contains additional values depending on the backend.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum MonitorInfo {
     /// Some additional values in the X11 context.
     X11 { name: u32 },
@@ -26,7 +30,7 @@ pub enum MonitorInfo {
 }
 
 /// Some general information about an output.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct OutputInfo {
     /// The width of the output.
     pub width: Pixel,
@@ -47,6 +51,11 @@ pub struct OutputInfo {
     pub monitor_info: MonitorInfo,
 }
 
+/// Checks if system is using Wayland
+pub fn is_wayland() -> bool {
+    wayland_client::Connection::connect_to_env().is_ok()
+}
+
 /// The main function of this module.
 ///
 /// # General description
@@ -56,12 +65,10 @@ pub struct OutputInfo {
 /// # Return value
 /// A tuple where the first value contains some general information about the output and is
 /// mapped to the given image in the second value of the tuple.
-pub async fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
-    let xorg_is_running = { x11rb::connect(None).is_ok() };
-
-    if xorg_is_running {
-        x11::get_images().map_err(Error::from)
+pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
+    if is_wayland() {
+        wayland::create_screenshots().map_err(Error::from)
     } else {
-        todo!()
+        x11::get_images().map_err(Error::from)
     }
 }

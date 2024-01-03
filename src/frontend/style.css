@@ -1,0 +1,14 @@
+.toolbar {
+  background-color: black;
+  opacity: 0.8;
+  margin: 10px;
+  padding: 10px;
+  border-radius: 10px;
+}
+
+.toolbar-button:hover {
+}
+
+.screenshot_window {
+  background: transparent;
+}

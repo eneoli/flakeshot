@@ -1,6 +1,7 @@
 //! Welcome to the code-documentation of flakeshot!
 pub mod backend;
 pub mod cli;
+pub mod frontend;
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 ///

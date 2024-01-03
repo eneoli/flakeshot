@@ -13,8 +13,8 @@ pub struct WaylandScreenshotManager {
 }
 
 impl WaylandScreenshotManager {
-    pub fn new() -> anyhow::Result<WaylandScreenshotManager> {
-        let connection = Connection::connect_to_env()?;
+    pub fn new() -> Result<WaylandScreenshotManager, WaylandError> {
+        let connection = Connection::connect_to_env().map_err(WaylandError::from)?;
 
         let mut queue = {
             let display = connection.display();
@@ -30,7 +30,7 @@ impl WaylandScreenshotManager {
 
         let mut state = WaylandScreenshotState::default();
 
-        queue.roundtrip(&mut state)?;
+        queue.roundtrip(&mut state).map_err(WaylandError::from)?;
 
         Ok(Self {
             connection,
@@ -42,23 +42,26 @@ impl WaylandScreenshotManager {
     pub fn get_queue_handle(&self) -> QueueHandle<WaylandScreenshotState> {
         self.queue.handle()
     }
-    pub fn get_zwlr_screencopy_manager_v1(&mut self) -> anyhow::Result<&ZwlrScreencopyManagerV1> {
-        self.poll_queue_until(|state| state.zwlr_screencopy_manager_v1.is_some())?;
+    pub fn get_zwlr_screencopy_manager_v1(
+        &mut self,
+    ) -> Result<&ZwlrScreencopyManagerV1, WaylandError> {
+        self.poll_queue_until(|state| state.zwlr_screencopy_manager_v1.is_some())
+            .map_err(WaylandError::from)?;
 
         Ok(self.state.zwlr_screencopy_manager_v1.as_ref().unwrap())
     }
 
-    pub fn get_outputs(&mut self) -> anyhow::Result<&Vec<WaylandOutputInfo>> {
+    pub fn get_outputs(&mut self) -> Result<&Vec<WaylandOutputInfo>, WaylandError> {
         self.poll_queue_until(|state| state.outputs_fetched)?;
 
         Ok(&self.state.outputs)
     }
 
-    pub fn await_screenshot(&mut self) -> anyhow::Result<()> {
+    pub fn await_screenshot(&mut self) -> Result<(), WaylandError> {
         self.poll_queue_until(|state| state.screenshot_ready)
     }
 
-    pub fn create_shared_memory(&mut self) -> anyhow::Result<WaylandSharedMemory> {
+    pub fn create_shared_memory(&mut self) -> Result<WaylandSharedMemory, WaylandError> {
         self.poll_queue_until(|state| state.current_frame.is_some())?;
 
         let (width, height, stride, format) = {
@@ -90,17 +93,21 @@ impl WaylandScreenshotManager {
     fn poll_queue_until(
         &mut self,
         until: impl Fn(&WaylandScreenshotState) -> bool,
-    ) -> anyhow::Result<()> {
+    ) -> Result<(), WaylandError> {
         let start = SystemTime::now();
 
         while !until(&self.state) {
-            self.queue.blocking_dispatch(&mut self.state)?;
-            self.connection.flush()?;
+            self.queue
+                .blocking_dispatch(&mut self.state)
+                .map_err(WaylandError::from)?;
+            self.connection.flush().map_err(WaylandError::from)?;
 
-            let diff = SystemTime::now().duration_since(start)?;
+            let diff = SystemTime::now()
+                .duration_since(start)
+                .map_err(|_| WaylandError::GenericError("Failed to read system time"))?;
 
             if diff.as_secs() > 120 {
-                return Err(WaylandError::EventQueueTimeout.into());
+                return Err(WaylandError::EventQueueTimeout);
             }
         }
 
