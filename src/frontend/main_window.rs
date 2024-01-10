@@ -87,7 +87,7 @@ fn init_monitor(
     let (monitor, x, y, width, height) = {
         let monitor_name = match &output_info.monitor_info {
             MonitorInfo::Wayland { name, .. } => name,
-            MonitorInfo::X11 { .. } => todo!(), // TODO #58
+            MonitorInfo::X11 { name } => name,
         };
 
         let monitor = monitors
