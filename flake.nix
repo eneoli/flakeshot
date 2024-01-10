@@ -24,6 +24,8 @@
             , gtk4
             , gtk4-layer-shell
             , libadwaita
+            , wrapGAppsHook
+            , glib
             , ...
             }: rustPlatform.buildRustPackage.override
               {
@@ -35,6 +37,8 @@
                   pkg-config
                   pango
                   gdk-pixbuf
+                  wrapGAppsHook
+                  glib
                 ];
 
                 buildInputs = [
@@ -88,6 +92,7 @@
               {
                 packages = [ rust-toolchain ] ++ flakeshot.nativeBuildInputs ++ flakeshot.buildInputs;
               };
+
         };
     };
 }
