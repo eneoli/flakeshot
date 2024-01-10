@@ -57,8 +57,8 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
 
     for screen in &setup.roots {
         let image = get_image(&conn, screen)?;
-
         let monitors = conn.randr_get_monitors(screen.root, true)?.reply()?;
+
         for monitor in &monitors.monitors {
             assert!(
                 monitor.outputs.len() == 1,
