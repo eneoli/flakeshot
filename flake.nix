@@ -24,8 +24,9 @@
             , gtk4
             , gtk4-layer-shell
             , libadwaita
-            , wrapGAppsHook
+            , wrapGAppsHook4
             , glib
+            , gsettings-desktop-schemas
             , ...
             }: rustPlatform.buildRustPackage.override
               {
@@ -37,8 +38,9 @@
                   pkg-config
                   pango
                   gdk-pixbuf
-                  wrapGAppsHook
                   glib
+                  wrapGAppsHook4
+                  gsettings-desktop-schemas
                 ];
 
                 buildInputs = [
@@ -91,8 +93,9 @@
               }
               {
                 packages = [ rust-toolchain ] ++ flakeshot.nativeBuildInputs ++ flakeshot.buildInputs;
-              };
 
+                XDG_DATA_DIRS = "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk4}/share/gsettings-schemas/${pkgs.gtk4.name}:$XDG_DATA_DIRS";
+              };
         };
     };
 }

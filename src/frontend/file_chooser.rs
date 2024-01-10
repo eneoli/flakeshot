@@ -44,7 +44,6 @@ impl SimpleComponent for FileChooser {
 
     view! {
         root = gtk::Window {
-            set_keyboard_mode: gtk4_layer_shell::KeyboardMode::OnDemand,
             gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 gtk::HeaderBar {
@@ -100,6 +99,7 @@ impl SimpleComponent for FileChooser {
         sender: relm4::prelude::ComponentSender<Self>,
     ) -> relm4::prelude::ComponentParts<Self> {
         if is_wayland() {
+            root.set_keyboard_mode(gtk4_layer_shell::KeyboardMode::OnDemand);
             root.init_layer_shell();
             root.set_layer(Layer::Overlay);
         }
