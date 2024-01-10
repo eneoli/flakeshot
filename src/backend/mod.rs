@@ -23,7 +23,7 @@ pub type Pixel = u16;
 #[derive(Debug, Clone)]
 pub enum MonitorInfo {
     /// Some additional values in the X11 context.
-    X11 { name: u32 },
+    X11 { output_name: String },
 
     /// Some additional values in the wayland context.
     Wayland { name: String, description: String },
@@ -69,6 +69,6 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
     if is_wayland() {
         wayland::create_screenshots().map_err(Error::from)
     } else {
-        x11::get_images().map_err(Error::from)
+        x11::create_screenshots().map_err(Error::from)
     }
 }

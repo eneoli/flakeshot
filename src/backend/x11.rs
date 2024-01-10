@@ -20,6 +20,9 @@ pub enum Error {
 
     #[error("Couldn't request an image from the xorg-server: {0}")]
     ReplyError(#[from] x11rb::errors::ReplyError),
+
+    #[error(transparent)]
+    StringUtf8(#[from] std::string::FromUtf8Error),
 }
 
 /// The main function of this module.
@@ -44,7 +47,7 @@ pub enum Error {
 ///     image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
 /// }
 /// ```
-pub fn get_images() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
+pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
     use x11rb::protocol::randr::ConnectionExt;
 
     let (conn, _) = x11rb::connect(None)?;
@@ -57,7 +60,29 @@ pub fn get_images() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
 
         let monitors = conn.randr_get_monitors(screen.root, true)?.reply()?;
         for monitor in &monitors.monitors {
-            let monitor_info = MonitorInfo::X11 { name: monitor.name };
+            assert!(
+                monitor.outputs.len() == 1,
+                "We currently support only one output for each monitor. Please create an issue if you encounter this assert."
+            );
+
+            let monitor_info = {
+                let screen_resources = conn
+                    .randr_get_screen_resources_current(screen.root)?
+                    .reply()?;
+
+                let output_name = {
+                    let output_info = conn
+                        .randr_get_output_info(
+                            monitor.outputs[0],
+                            screen_resources.config_timestamp,
+                        )?
+                        .reply()?;
+
+                    String::from_utf8(output_info.name)?
+                };
+
+                MonitorInfo::X11 { output_name }
+            };
 
             let output_info = OutputInfo {
                 id: screen.root,
