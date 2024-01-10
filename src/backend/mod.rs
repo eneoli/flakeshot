@@ -23,7 +23,7 @@ pub type Pixel = u16;
 #[derive(Debug, Clone)]
 pub enum MonitorInfo {
     /// Some additional values in the X11 context.
-    X11 { output_name: String },
+    X11 { name: String },
 
     /// Some additional values in the wayland context.
     Wayland { name: String, description: String },

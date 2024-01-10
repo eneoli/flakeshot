@@ -81,7 +81,7 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
                     String::from_utf8(output_info.name)?
                 };
 
-                MonitorInfo::X11 { output_name }
+                MonitorInfo::X11 { name: output_name }
             };
 
             let output_info = OutputInfo {
