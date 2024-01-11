@@ -2,6 +2,7 @@
 pub mod backend;
 pub mod cli;
 pub mod tray;
+pub mod frontend;
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 ///

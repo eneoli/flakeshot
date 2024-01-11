@@ -56,13 +56,15 @@
             {
               stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
             }
-            rec {
+            {
               packages = with pkgs; [
                 pkg-config
                 gtk4
+                gtk4-layer-shell
+                libadwaita
+                pango
+                gdk-pixbuf
               ] ++ [ toolchain ];
-
-              LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${builtins.toString (pkgs.lib.makeLibraryPath packages)}";
             };
       });
     };
