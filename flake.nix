@@ -6,67 +6,66 @@
   };
 
   outputs = inputs@{ flake-parts, ... }:
-    flake-parts.lib.mkFlake { inherit inputs; } {
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-      ];
+    let
+      mkFlakeshot =
+        { rustPlatform
+        , pkgs
+        , lib
+        , pkg-config
+        , pango
+        , gdk-pixbuf
+        , gtk4
+        , gtk4-layer-shell
+        , libadwaita
+        , wrapGAppsHook4
+        , glib
+        , ...
+        }: rustPlatform.buildRustPackage.override
+          {
+            stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
+          }
+          rec {
 
-      perSystem = { self', lib, system, pkgs, config, ... }:
-        let
+            nativeBuildInputs = [
+              pkg-config
+              pango
+              gdk-pixbuf
+              glib
+              wrapGAppsHook4
+            ];
 
-          mkFlakeshot =
-            { rustPlatform
-            , lib
-            , pkg-config
-            , pango
-            , gdk-pixbuf
-            , gtk4
-            , gtk4-layer-shell
-            , libadwaita
-            , wrapGAppsHook4
-            , glib
-            , gsettings-desktop-schemas
-            , ...
-            }: rustPlatform.buildRustPackage.override
-              {
-                stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
-              }
-              rec {
+            buildInputs = [
+              gtk4
+              gtk4-layer-shell
+              libadwaita
+            ];
 
-                nativeBuildInputs = [
-                  pkg-config
-                  pango
-                  gdk-pixbuf
-                  glib
-                  wrapGAppsHook4
-                  gsettings-desktop-schemas
-                ];
+            pname = "flakeshot";
+            version = "0.0.1";
 
-                buildInputs = [
-                  gtk4
-                  gtk4-layer-shell
-                  libadwaita
-                ];
+            src = builtins.path {
+              path = ./.;
+            };
 
-                pname = "flakeshot";
-                version = "0.0.1";
+            cargoLock.lockFile = ./Cargo.lock;
 
-                src = builtins.path {
-                  path = ./.;
-                };
+            meta = {
+              description = "A screenshot tool for wayland and x11!";
+              homepage = "https://github.com/eneoli/flakeshot/";
+              license = lib.licenses.gpl2;
+              mainProgram = pname;
+            };
+          };
+    in
 
-                cargoLock.lockFile = ./Cargo.lock;
+    flake-parts.lib.mkFlake { inherit inputs; }
+      {
+        systems = [
+          "x86_64-linux"
+          "aarch64-linux"
+        ];
 
-                meta = {
-                  description = "A screenshot tool for wayland and x11!";
-                  homepage = "https://github.com/eneoli/flakeshot/";
-                  license = lib.licenses.gpl2;
-                  mainProgram = pname;
-                };
-              };
-        in
-        {
+        perSystem = { self', lib, system, pkgs, config, ... }: {
           _module.args.pkgs = import inputs.nixpkgs {
             inherit system;
 
@@ -75,16 +74,9 @@
             ];
           };
 
-          apps.default = {
-            type = "app";
-            program = lib.meta.getExe self'.packages.default;
-          };
-
-          packages.default = pkgs.callPackage mkFlakeshot { };
-
           devShells.default =
             let
-              flakeshot = self'.packages.default;
+              flakeshot = pkgs.callPackage mkFlakeshot { };
               rust-toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
             in
             pkgs.mkShell.override
@@ -93,10 +85,12 @@
               }
               {
                 packages = [ rust-toolchain ] ++ flakeshot.nativeBuildInputs ++ flakeshot.buildInputs;
-
-                XDG_DATA_DIRS = "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}:${pkgs.gtk4}/share/gsettings-schemas/${pkgs.gtk4.name}:$XDG_DATA_DIRS";
               };
         };
-    };
+
+        flake.overlays.default = prev: final: {
+          flakeshot = prev.callPackage mkFlakeshot { };
+        };
+      };
 }
 
