@@ -11,6 +11,7 @@ defaults:
 on:
   pull_request:
     branches: [ "main" ]
+    types: [opened, synchronize, reopened, ready_for_review]
 
 env:
   CARGO_TERM_COLOR: always
