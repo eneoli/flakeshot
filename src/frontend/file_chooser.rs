@@ -44,7 +44,6 @@ impl SimpleComponent for FileChooser {
 
     view! {
         root = gtk::Window {
-            set_keyboard_mode: gtk4_layer_shell::KeyboardMode::OnDemand,
             gtk::Box {
                 set_orientation: gtk::Orientation::Vertical,
                 gtk::HeaderBar {
@@ -102,6 +101,7 @@ impl SimpleComponent for FileChooser {
         if is_wayland() {
             root.init_layer_shell();
             root.set_layer(Layer::Overlay);
+            root.set_keyboard_mode(gtk4_layer_shell::KeyboardMode::OnDemand);
         }
 
         let widgets = view_output!();
