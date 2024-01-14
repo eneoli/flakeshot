@@ -99,9 +99,9 @@ impl SimpleComponent for FileChooser {
         sender: relm4::prelude::ComponentSender<Self>,
     ) -> relm4::prelude::ComponentParts<Self> {
         if is_wayland() {
-            root.set_keyboard_mode(gtk4_layer_shell::KeyboardMode::OnDemand);
             root.init_layer_shell();
             root.set_layer(Layer::Overlay);
+            root.set_keyboard_mode(gtk4_layer_shell::KeyboardMode::OnDemand);
         }
 
         let widgets = view_output!();
