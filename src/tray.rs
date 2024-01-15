@@ -13,7 +13,7 @@ impl ksni::Tray for Tray {
     }
 
     fn activate(&mut self, _x: i32, _y: i32) {
-        println!("Leftclick action is still under development.");
+        crate::start_gui();
     }
 
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
