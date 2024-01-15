@@ -3,6 +3,7 @@
 use frontend::main_window::AppModel;
 use gtk4::CssProvider;
 use relm4::RelmApp;
+
 pub mod backend;
 pub mod cli;
 pub mod frontend;
