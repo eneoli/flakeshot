@@ -84,7 +84,10 @@
                 stdenv = pkgs.stdenvAdapters.useMoldLinker pkgs.clangStdenv;
               }
               {
-                packages = [ rust-toolchain ] ++ flakeshot.nativeBuildInputs ++ flakeshot.buildInputs;
+                packages = with pkgs; [
+                  snixembed
+                  stalonetray
+                ] ++ [ rust-toolchain ] ++ flakeshot.nativeBuildInputs ++ flakeshot.buildInputs;
               };
         };
 
