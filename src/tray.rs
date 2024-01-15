@@ -12,6 +12,10 @@ impl ksni::Tray for Tray {
         env!("CARGO_PKG_NAME").into()
     }
 
+    fn activate(&mut self, _x: i32, _y: i32) {
+        println!("Leftclick action is still under development.");
+    }
+
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
         use ksni::menu::*;
         vec![SubMenu {
