@@ -13,7 +13,7 @@ image = "0.24"
 thiserror = "1.0"
 x11rb = { version = "0.13", features = ["randr"] }
 arboard = { version = "3.3", features = ["wayland-data-control"] }
-clap = { version = "4.4", features = ["derive", "cargo"] }
+clap = { version = "4.4", features = ["derive", "cargo", "string"] }
 anyhow = "1.0"
 memfd = "0.6"
 wayland-client = "0.31"
@@ -34,4 +34,5 @@ gdk4 = "0.7.3"
 gdk-pixbuf = "0.18.3"
 
 tracing = "0.1"
-tracing-subscriber = "0.3"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+xdg = "2.5"

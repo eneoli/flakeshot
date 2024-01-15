@@ -1,4 +1,5 @@
 use ksni;
+use tracing::Level;
 
 #[derive(Debug)]
 struct Tray;
@@ -27,6 +28,11 @@ impl ksni::Tray for Tray {
 }
 
 pub fn start() {
+    let span = tracing::span!(Level::TRACE, "tray");
+    let _enter = span.enter();
+
+    tracing::debug!("Starting tray");
+
     let _ = ksni::spawn(Tray).unwrap();
 
     loop {

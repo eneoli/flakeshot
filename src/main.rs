@@ -6,18 +6,15 @@ use relm4::{
     gtk::{self, CssProvider},
     RelmApp,
 };
+use tracing::Level;
 
 fn main() {
     let cli = Cli::parse();
 
-    match cli.command() {
-        Command::Gui => {
-            let app = RelmApp::new("org.flakeshot.app");
-            relm4_icons::initialize_icons();
-            initialize_css();
+    flakeshot::init_logging(&cli.log_level, &cli.log_path);
 
-            app.run::<AppModel>(());
-        }
+    match cli.command() {
+        Command::Gui => start_gui(),
         Command::Tray => tray::start(),
     };
 }
@@ -31,4 +28,17 @@ fn initialize_css() {
         &provider,
         gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
+}
+
+fn start_gui() {
+    let span = tracing::span!(Level::TRACE, "gui");
+    let _enter = span.enter();
+
+    tracing::debug!("Starting gui");
+
+    let app = RelmApp::new("org.flakeshot.app");
+    relm4_icons::initialize_icons();
+    initialize_css();
+
+    app.run::<AppModel>(());
 }
