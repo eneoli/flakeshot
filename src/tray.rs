@@ -28,7 +28,7 @@ impl ksni::Tray for Tray {
 }
 
 pub fn start() {
-    let _ = ksni::spawn(Tray).unwrap();
+    ksni::spawn(Tray).expect("Couldn't spawn tray.");
 
     loop {
         std::thread::park();
