@@ -18,14 +18,12 @@ impl ksni::Tray for Tray {
 
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
         use ksni::menu::*;
-        vec![
-          StandardItem {
-              label: "Quit".into(),
-              activate: Box::new(|_| std::process::exit(0)),
-              ..Default::default()
-          }
-          .into(),
-        ]
+        vec![StandardItem {
+            label: "Quit".into(),
+            activate: Box::new(|_| std::process::exit(0)),
+            ..Default::default()
+        }
+        .into()]
     }
 }
 
