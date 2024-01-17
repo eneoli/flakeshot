@@ -70,10 +70,15 @@ impl Display for LogLevel {
 }
 
 fn get_default_log_path() -> PathBuf {
-    let xdg = xdg::BaseDirectories::new().unwrap();
+    let xdg = xdg::BaseDirectories::new().expect("Couldn't access XDG env variables.");
 
-    let mut log_file_path = xdg.create_state_directory(crate_name!()).unwrap();
+    let mut log_file_path = xdg
+        .create_state_directory(crate_name!())
+        .expect("Couldn't access state directory.");
     log_file_path.push(LOG_FILE);
 
-    xdg.place_state_file(log_file_path).unwrap()
+    xdg.place_state_file(&log_file_path).expect(&format!(
+        "Couldn't access log file path: {}",
+        log_file_path.to_string_lossy()
+    ))
 }

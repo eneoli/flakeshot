@@ -30,7 +30,10 @@ pub enum Error {
 }
 
 pub fn init_logging(level: &LogLevel, path: &PathBuf) {
-    let log_file = File::create(path).unwrap();
+    let log_file = File::create(path).expect(&format!(
+        "Couldn't create and open log path: {}",
+        path.to_string_lossy()
+    ));
 
     let subscriber_builder = tracing_subscriber::fmt()
         .with_writer(log_file)

@@ -29,9 +29,6 @@ impl ksni::Tray for Tray {
 }
 
 pub fn start() {
-    let span = tracing::span!(Level::TRACE, "tray");
-    let _enter = span.enter();
-
     tracing::debug!("Starting tray");
 
     ksni::spawn(Tray).expect("Couldn't spawn tray.");
