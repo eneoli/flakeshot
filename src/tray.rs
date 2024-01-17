@@ -1,5 +1,4 @@
 use ksni;
-use tracing::Level;
 
 #[derive(Debug)]
 struct Tray;

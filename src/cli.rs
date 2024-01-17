@@ -77,8 +77,6 @@ fn get_default_log_path() -> PathBuf {
         .expect("Couldn't access state directory.");
     log_file_path.push(LOG_FILE);
 
-    xdg.place_state_file(&log_file_path).expect(&format!(
-        "Couldn't access log file path: {}",
-        log_file_path.to_string_lossy()
-    ))
+    xdg.place_state_file(&log_file_path)
+        .unwrap_or_else(|e| panic!("Couldn't access log file path: {}", e))
 }
