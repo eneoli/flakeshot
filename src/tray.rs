@@ -14,13 +14,14 @@ impl ksni::Tray for Tray {
     }
 
     fn activate(&mut self, _x: i32, _y: i32) {
-        println!("Leftclick action is still under development.");
+        crate::start_gui();
     }
 
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
         use ksni::menu::*;
-        vec![SubMenu {
-            label: "System tray is under development".into(),
+        vec![StandardItem {
+            label: "Quit".into(),
+            activate: Box::new(|_| std::process::exit(0)),
             ..Default::default()
         }
         .into()]
@@ -33,7 +34,7 @@ pub fn start() {
 
     tracing::debug!("Starting tray");
 
-    let _ = ksni::spawn(Tray).unwrap();
+    ksni::spawn(Tray).expect("Couldn't spawn tray.");
 
     loop {
         std::thread::park();

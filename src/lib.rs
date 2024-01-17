@@ -3,8 +3,12 @@
 use std::{fs::File, path::PathBuf};
 
 use cli::LogLevel;
+use frontend::main_window::AppModel;
+use gtk4::CssProvider;
+use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
+
 pub mod backend;
 pub mod cli;
 pub mod frontend;
@@ -45,4 +49,23 @@ pub fn init_logging(level: &LogLevel, path: &PathBuf) {
     }
 
     tracing::debug!("Logger initialised");
+}
+
+pub fn start_gui() {
+    let app = RelmApp::new("org.flakeshot.app");
+    relm4_icons::initialize_icons();
+    initialize_css();
+
+    app.run::<AppModel>(());
+}
+
+fn initialize_css() {
+    let provider = CssProvider::new();
+    provider.load_from_data(include_str!("frontend/style.css"));
+
+    gtk4::style_context_add_provider_for_display(
+        &gdk4::Display::default().unwrap(),
+        &provider,
+        gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
+    );
 }
