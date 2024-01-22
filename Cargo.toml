@@ -32,7 +32,6 @@ relm4-icons = { version = "0.7.0-alpha.2", features = [
 gtk4-layer-shell = "0.2.0"
 gdk4 = "0.7.3"
 gdk-pixbuf = "0.18.3"
-
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 xdg = "2.5"
