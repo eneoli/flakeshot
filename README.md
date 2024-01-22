@@ -2,6 +2,7 @@
   <img src="assets/flakeshot.svg" alt="Flakeshot" width="50%"/>
 
   <br/>
+  <br/>
 
   ![GitHub Workflow]
   ![Commit Activity]
