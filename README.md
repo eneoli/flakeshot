@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/flakeshot.svg" alt="Flakeshot" width="50%"/>
+  <img src="assets/flakeshot.svg" alt="Flakeshot" width="60%"/>
 
   <br/>
   <br/>
