@@ -1,5 +1,8 @@
 <div align="center">
-  <h1>❄ Flakeshot 📷</h1>
+  <img src="assets/flakeshot.svg" alt="Flakeshot" width="60%"/>
+
+  <br/>
+  <br/>
 
   ![GitHub Workflow]
   ![Commit Activity]
