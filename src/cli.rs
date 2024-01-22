@@ -12,7 +12,6 @@ pub struct Cli {
     #[arg(short, long, default_value_t = LogLevel::Error,  help = "",
         long_help = concat!(
         "*Note*: You can also set the log level through the `RUST_LOG` environment variable and filter the logs.\n",
-        "See https://docs.rs/tracing-subscriber/latest/tracing_subscriber/filter/struct.EnvFilter.html#directives\n",
         "\n",
         "Example: `RUST_LOG=debug ", crate_name!(), " - This will enable logs in debug mode."
     ))]
