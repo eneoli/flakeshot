@@ -28,6 +28,8 @@ impl ksni::Tray for Tray {
 }
 
 pub fn start() {
+    tracing::debug!("Starting tray");
+
     ksni::spawn(Tray).expect("Couldn't spawn tray.");
 
     loop {
