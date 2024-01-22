@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/flakeshot.svg" alt="Flakeshot" style="padding: 10px" width="80%"/>
+  <img src="assets/flakeshot.svg" alt="Flakeshot" style="margin: 25px" width="50%"/>
 
   ![GitHub Workflow]
   ![Commit Activity]
