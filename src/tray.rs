@@ -1,11 +1,53 @@
+use std::io::Cursor;
+
+use image::Rgba;
 use ksni;
 
 #[derive(Debug)]
-struct Tray;
+struct Tray {
+    icon: ksni::Icon,
+}
+
+impl Tray {
+    pub fn new() -> Self {
+        let rgba_image = {
+            let cursor = {
+                let image_bytes = include_bytes!("../assets/flakeshot_logo_dpi_96.png");
+                Cursor::new(image_bytes.to_owned())
+            };
+            image::io::Reader::with_format(cursor, image::ImageFormat::Png)
+                .decode()
+                .unwrap()
+                .to_rgba8()
+        };
+
+        let (width, height) = rgba_image.dimensions();
+
+        let data = rgba_image
+            .pixels()
+            // rgba => argb
+            .map(|pixel| Rgba::from([pixel[3], pixel[0], pixel[1], pixel[2]]))
+            .fold(
+                Vec::with_capacity((width * height) as usize),
+                |mut prev, pixel| {
+                    prev.extend_from_slice(&pixel.0);
+                    prev
+                },
+            );
+
+        Self {
+            icon: ksni::Icon {
+                width: width as i32,
+                height: height as i32,
+                data,
+            },
+        }
+    }
+}
 
 impl ksni::Tray for Tray {
-    fn icon_name(&self) -> String {
-        "flakeshot-tray".into()
+    fn icon_pixmap(&self) -> Vec<ksni::Icon> {
+        vec![self.icon.clone()]
     }
 
     fn id(&self) -> String {
@@ -30,7 +72,7 @@ impl ksni::Tray for Tray {
 pub fn start() {
     tracing::debug!("Starting tray");
 
-    ksni::spawn(Tray).expect("Couldn't spawn tray.");
+    ksni::spawn(Tray::new()).expect("Couldn't spawn tray.");
 
     loop {
         std::thread::park();
