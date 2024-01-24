@@ -7,9 +7,8 @@ use super::{
     ui_manager::UiManager,
 };
 use crate::backend::{self, MonitorInfo, OutputInfo};
-use cairo::glib::Bytes;
 use gtk::prelude::*;
-use image::{DynamicImage, RgbaImage};
+use image::DynamicImage;
 use relm4::{gtk::Application, prelude::*, Sender};
 
 #[derive(Debug)]
@@ -136,17 +135,6 @@ fn init_monitor(
             .send(ScreenshotWindowInput::Draw(surface))
             .expect("Letting window redraw canvas failed.");
     });
-
-    // let resized_image = {
-        // let img = image::imageops::resize(
-            // image,
-            // width as u32,
-            // height as u32,
-            // image::imageops::FilterType::Triangle,
-        // );
-
-        // DynamicImage::ImageRgba8(img)
-    // };
 
     // add screenshot of monitor to image
     model
