@@ -1,4 +1,6 @@
-use cairo::{Context, Format, ImageSurface};
+use std::rc::Rc;
+
+use cairo::{Context, Format, ImageSurface, SurfacePattern};
 use image::{DynamicImage, RgbaImage};
 
 use super::drawable::Drawable;
@@ -24,7 +26,7 @@ impl Canvas {
         self.surface.height()
     }
 
-    pub fn add_drawable(&mut self, drawable: Box<dyn Drawable>) {
+    pub fn add_drawable(&mut self, drawable: Rc<Box<dyn Drawable>>) {
         self.drawables.push(drawable);
     }
 
@@ -38,7 +40,7 @@ impl Canvas {
         Ok(())
     }
 
-    pub fn stamp_image(&self, x: f64, y: f64, image: &DynamicImage) -> anyhow::Result<()> {
+    pub fn stamp_image(&self, x: f64, y: f64, width: f64, height: f64, image: &DynamicImage,) -> anyhow::Result<()> {
         let ctx = Context::new(&self.surface)?;
 
         let mut image_bytes = Vec::from(image.as_bytes());
@@ -55,7 +57,9 @@ impl Canvas {
             Format::stride_for_width(Format::ARgb32, image.width())?,
         )?;
 
+        ctx.scale(width / image.width() as f64, height / image.height() as f64);
         ctx.set_source_surface(&image_surface, x, y)?;
+        ctx.source().set_filter(cairo::Filter::Best);
         ctx.paint()?;
 
         Ok(())

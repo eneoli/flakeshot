@@ -7,8 +7,9 @@ use super::{
     ui_manager::UiManager,
 };
 use crate::backend::{self, MonitorInfo, OutputInfo};
+use cairo::glib::Bytes;
 use gtk::prelude::*;
-use image::DynamicImage;
+use image::{DynamicImage, RgbaImage};
 use relm4::{gtk::Application, prelude::*, Sender};
 
 #[derive(Debug)]
@@ -73,6 +74,9 @@ impl SimpleComponent for AppModel {
             AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::ToolbarEvent(event)) => {
                 self.ui_manager.handle_tool_event(event)
             }
+            AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::MouseEvent(event)) => {
+                self.ui_manager.handle_mouse_event(event)
+            }
         }
     }
 }
@@ -133,10 +137,21 @@ fn init_monitor(
             .expect("Letting window redraw canvas failed.");
     });
 
+    // let resized_image = {
+        // let img = image::imageops::resize(
+            // image,
+            // width as u32,
+            // height as u32,
+            // image::imageops::FilterType::Triangle,
+        // );
+
+        // DynamicImage::ImageRgba8(img)
+    // };
+
     // add screenshot of monitor to image
     model
         .ui_manager
-        .stamp_image(x as f64, y as f64, image)
+        .stamp_image(x as f64, y as f64, width as f64, height as f64, &image)
         .expect("Couldn't stamp image.");
 }
 

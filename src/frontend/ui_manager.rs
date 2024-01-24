@@ -5,7 +5,7 @@ use image::DynamicImage;
 
 use super::{
     file_chooser::FileChooser,
-    ui::{canvas::Canvas, toolbar::ToolbarEvent},
+    ui::{canvas::Canvas, toolbar::ToolbarEvent, tool::{Tool, crop::Crop}}, screenshot_window::MouseEvent,
 };
 
 type RenderHandler = dyn Fn(&UiManager);
@@ -13,6 +13,7 @@ type RenderHandler = dyn Fn(&UiManager);
 pub struct UiManager {
     canvas: Rc<RefCell<Canvas>>,
     on_render_handler: Vec<Box<RenderHandler>>,
+    active_tool: Option<Box<dyn Tool>>,
 }
 
 impl UiManager {
@@ -22,11 +23,12 @@ impl UiManager {
                 Canvas::new(total_width, total_height).expect("Couldn't create canvas."),
             )),
             on_render_handler: vec![],
+            active_tool: Some(Box::new(Crop::new())),
         }
     }
 
-    pub fn stamp_image(&self, x: f64, y: f64, image: &DynamicImage) -> anyhow::Result<()> {
-        self.canvas.borrow().stamp_image(x, y, image)?;
+    pub fn stamp_image(&self, x: f64, y: f64, width: f64, height: f64, image: &DynamicImage) -> anyhow::Result<()> {
+        self.canvas.borrow().stamp_image(x, y, width, height, image)?;
 
         self.notify_render_handler();
 
@@ -41,8 +43,23 @@ impl UiManager {
         match event {
             ToolbarEvent::SaveAsFile => self.save_canvas_to_file(),
             ToolbarEvent::SaveIntoClipboard => {}
-            ToolbarEvent::Crop => {}
+            ToolbarEvent::Crop => {
+                let drawable = self.active_tool.as_ref().unwrap().get_drawable();
+                self.canvas.borrow_mut().add_drawable(drawable);
+                self.render();
+            }
         }
+    }
+
+    pub fn handle_mouse_event(&mut self, event: MouseEvent) {
+        if let Some(tool) = &mut self.active_tool {
+            tool.handle_mouse_event(event);
+        }
+    }
+
+    pub fn render(&mut self) {
+        self.canvas.borrow_mut().render().unwrap();
+        self.notify_render_handler();
     }
 
     pub fn on_render<F>(&mut self, handler: F)

@@ -33,17 +33,26 @@ pub struct ScreenshotWindowModel {
 }
 
 #[derive(Debug)]
+pub enum MouseEvent {
+    MouseMove(f64, f64),
+    MosePress(i32, f64, f64),
+    MouseRelease(i32, f64, f64),
+}
+
+#[derive(Debug)]
 pub enum ScreenshotWindowInput {
     Draw(ImageSurface),
     Redraw,
     EnterWindow,
     LeaveWindow,
     ToolbarEvent(ToolbarEvent),
+    MouseEvent(MouseEvent),
 }
 
 #[derive(Debug)]
 pub enum ScreenshotWindowOutput {
     ToolbarEvent(ToolbarEvent),
+    MouseEvent(MouseEvent),
 }
 
 impl ScreenshotWindowModel {
@@ -114,6 +123,8 @@ impl SimpleComponent for ScreenshotWindowModel {
 
         let width = model.monitor.geometry().width();
         let height = model.monitor.geometry().height();
+        let monitor_x = model.monitor.geometry().x() as f64;
+        let monitor_y = model.monitor.geometry().y() as f64;
 
         // Window size
         window.hide(); // unrealize window to prevent wayland protocol error when resizing
@@ -147,10 +158,11 @@ impl SimpleComponent for ScreenshotWindowModel {
             });
         });
 
-        // On Mouse Enter/Leave
+        // On Mouse Move/Enter/Leave
         let motion = gtk::EventControllerMotion::new();
         let motion_sender_enter = sender.clone();
         let motion_sender_leave = sender.clone();
+        let motion_sender_move = sender.clone();
 
         motion.connect_enter(move |_, _, _| {
             motion_sender_enter.input(ScreenshotWindowInput::EnterWindow);
@@ -160,7 +172,35 @@ impl SimpleComponent for ScreenshotWindowModel {
             motion_sender_leave.input(ScreenshotWindowInput::LeaveWindow);
         });
 
+        motion.connect_motion(move |_, x, y| {
+            motion_sender_move.input(ScreenshotWindowInput::MouseEvent(MouseEvent::MouseMove(
+                monitor_x + x,
+                monitor_y + y,
+            )));
+        });
+
         overlay.add_controller(motion);
+
+        // On Mouse Press/Release
+        let gesture = gtk::GestureClick::new();
+
+        let gesture_sender_pressed = sender.clone();
+        gesture.connect_pressed(move |_, i, x, y| {
+            gesture_sender_pressed.input(ScreenshotWindowInput::MouseEvent(MouseEvent::MosePress(
+                i,
+                monitor_x + x,
+                monitor_y + y,
+            )));
+        });
+
+        let gesture_sender_released = sender.clone();
+        gesture.connect_released(move |_, i, x, y| {
+            gesture_sender_released.input(ScreenshotWindowInput::MouseEvent(
+                MouseEvent::MouseRelease(i, monitor_x + x, monitor_y + y),
+            ));
+        });
+
+        overlay.add_controller(gesture);
 
         window.present();
 
@@ -173,6 +213,9 @@ impl SimpleComponent for ScreenshotWindowModel {
             ScreenshotWindowInput::Redraw => self.draw(None),
             ScreenshotWindowInput::LeaveWindow => self.toolbar.widget().hide(),
             ScreenshotWindowInput::EnterWindow => self.toolbar.widget().show(),
+            ScreenshotWindowInput::MouseEvent(event) => sender
+                .output_sender()
+                .emit(ScreenshotWindowOutput::MouseEvent(event)),
             ScreenshotWindowInput::ToolbarEvent(event) => sender
                 .output_sender()
                 .emit(ScreenshotWindowOutput::ToolbarEvent(event)),
