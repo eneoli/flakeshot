@@ -1,9 +1,10 @@
 //! Welcome to the code-documentation of flakeshot!
 
-use std::{fs::File, path::PathBuf, sync::OnceLock};
+use std::{fs::File, io::Write, os::unix::net::UnixStream, path::PathBuf, sync::OnceLock};
 
 use clap::crate_name;
 use cli::LogLevel;
+use daemon::message::Message;
 use frontend::main_window::AppModel;
 use gtk4::CssProvider;
 use relm4::RelmApp;
@@ -20,8 +21,8 @@ pub mod tray;
 pub static XDG: OnceLock<BaseDirectories> = OnceLock::new();
 
 // The following paths must be relative to `XDG`!
-pub const SOCKET_PATH: &str = "daemon.sock";
-const LOG_FILE: &str = "log.log";
+pub const SOCKET_FILENAME: &str = "daemon.sock";
+const LOG_FILENAME: &str = "log.log";
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 ///
@@ -60,23 +61,14 @@ pub fn init_logging(level: &LogLevel, path: &PathBuf) {
     tracing::debug!("Logger initialised");
 }
 
-pub fn start_gui() {
-    let app = RelmApp::new("org.flakeshot.app");
-    relm4_icons::initialize_icons();
-    initialize_css();
+pub fn send_message(msg: Message) -> anyhow::Result<()> {
+    let socket_path = get_socket_file_path();
+    let mut stream = UnixStream::connect(socket_path)?;
 
-    app.run::<AppModel>(());
-}
+    let msg_string = ron::to_string(&msg)?;
+    stream.write_all(msg_string.as_bytes())?;
 
-fn initialize_css() {
-    let provider = CssProvider::new();
-    provider.load_from_data(include_str!("frontend/style.css"));
-
-    gtk4::style_context_add_provider_for_display(
-        &gdk4::Display::default().unwrap(),
-        &provider,
-        gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
-    );
+    Ok(())
 }
 
 pub fn init_xdg() {
@@ -87,6 +79,13 @@ pub fn init_xdg() {
 pub fn get_default_log_path() -> PathBuf {
     XDG.get()
         .unwrap()
-        .place_state_file(LOG_FILE)
+        .place_state_file(LOG_FILENAME)
         .unwrap_or_else(|e| panic!("Couldn't access log file path: {}", e))
+}
+
+pub fn get_socket_file_path() -> PathBuf {
+    XDG.get()
+        .unwrap()
+        .place_runtime_file(SOCKET_FILENAME)
+        .unwrap_or_else(|e| panic!("Couldn't access socket file path: {}", e))
 }

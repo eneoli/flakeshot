@@ -1,12 +1,11 @@
 use anyhow::Context;
-use tokio::{
-    io::Interest,
-    net::{UnixListener, UnixStream},
-};
+use gtk4::CssProvider;
+use relm4::RelmApp;
+use tokio::{io::Interest, net::UnixListener};
 
 pub mod message;
 
-use crate::{SOCKET_PATH, XDG};
+use crate::{frontend::main_window::AppModel, get_socket_file_path, SOCKET_FILENAME, XDG};
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -38,7 +37,7 @@ async fn _start() -> anyhow::Result<()> {
 
         match stream.try_read_buf(&mut buffer) {
             Ok(0) => return Ok(()), // socket got closed for whatever reason
-            Ok(_) => {}
+            Ok(_) => process_message(&mut buffer),
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => continue,
             Err(e) => return Err(e.into()),
         }
@@ -46,16 +45,11 @@ async fn _start() -> anyhow::Result<()> {
 }
 
 async fn aquire_socket() -> anyhow::Result<UnixListener> {
-    let path = XDG
-        .get()
-        .unwrap()
-        .place_runtime_file(SOCKET_PATH)
-        .expect("Couldn't get lock file path");
-
-    let socket = UnixListener::bind(path.clone()).context(
+    let socket_path = get_socket_file_path();
+    let socket = UnixListener::bind(socket_path.clone()).context(
         format!(
             "Couldn't bind to the given socket: {}",
-            path.to_string_lossy()
+            socket_path.to_string_lossy()
         )
         .leak(),
     )?;
@@ -74,4 +68,27 @@ async fn aquire_socket() -> anyhow::Result<UnixListener> {
     };
 
     Ok(socket)
+}
+
+fn process_message(buffer: &mut Vec<u8>) {
+    tracing::debug!("success!");
+}
+
+fn start_gui() {
+    let app = RelmApp::new("org.flakeshot.app");
+    relm4_icons::initialize_icons();
+    initialize_css();
+
+    app.run::<AppModel>(());
+}
+
+fn initialize_css() {
+    let provider = CssProvider::new();
+    provider.load_from_data(include_str!("../frontend/style.css"));
+
+    gtk4::style_context_add_provider_for_display(
+        &gdk4::Display::default().unwrap(),
+        &provider,
+        gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
+    );
 }
