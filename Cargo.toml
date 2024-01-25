@@ -36,6 +36,6 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing-unwrap = "0.10"
 xdg = "2.5"
-rustix = "0.38"
+rustix = { version = "0.38", features = ["fs"] }
 serde = "1.0.195"
 ron = "0.8.1"

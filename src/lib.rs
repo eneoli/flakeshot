@@ -19,7 +19,7 @@ pub mod frontend;
 pub mod message;
 pub mod tray;
 
-static XDG: OnceLock<BaseDirectories> = OnceLock::new();
+pub static XDG: OnceLock<BaseDirectories> = OnceLock::new();
 pub static SOCKET_PATH: OnceLock<PathBuf> = OnceLock::new();
 
 const LOG_FILE: &str = "log.log";
