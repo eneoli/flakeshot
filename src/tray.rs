@@ -1,5 +1,7 @@
 use ksni;
 
+use crate::daemon::message::Message;
+
 #[derive(Debug)]
 struct Tray;
 
@@ -13,7 +15,8 @@ impl ksni::Tray for Tray {
     }
 
     fn activate(&mut self, _x: i32, _y: i32) {
-        crate::start_gui();
+        crate::send_message(Message::CreateScreenshot)
+            .unwrap_or_else(|_| todo!("Better error handling"));
     }
 
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {

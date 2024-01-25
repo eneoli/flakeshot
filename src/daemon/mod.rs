@@ -1,11 +1,20 @@
+use std::fs::File;
+
 use anyhow::Context;
 use gtk4::CssProvider;
 use relm4::RelmApp;
-use tokio::{io::Interest, net::UnixListener};
+use tokio::{
+    io::{AsyncReadExt, Interest},
+    net::UnixListener,
+};
 
 pub mod message;
 
-use crate::{frontend::main_window::AppModel, get_socket_file_path, SOCKET_FILENAME, XDG};
+use crate::{frontend::main_window::AppModel, get_socket_file_path, XDG};
+
+use self::message::Message;
+
+const LOCK_FILE: &str = "daemon.lock";
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -17,6 +26,18 @@ pub enum Error {
 }
 
 pub fn start() -> anyhow::Result<()> {
+    let _lock_guard = aquire_lock()?;
+
+    // there's no daemon yet => remove, if it exists, the socket file for the new one
+    {
+        let sock_path = get_socket_file_path();
+        if let Err(e) = std::fs::remove_file(sock_path) {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                return Err(Error::IO(e).into());
+            }
+        }
+    }
+
     let rt = tokio::runtime::Runtime::new()?;
     rt.block_on(_start())?;
 
@@ -24,54 +45,66 @@ pub fn start() -> anyhow::Result<()> {
 }
 
 async fn _start() -> anyhow::Result<()> {
-    let listener = aquire_socket().await?;
-    let (stream, _addr) = listener
-        .accept()
-        .await
-        .context("Can't start accepting listeners on socket")?;
+    let listener = {
+        let socket_path = get_socket_file_path();
+        UnixListener::bind(socket_path).context("Couldn't bind to socket.")?
+    };
+
+    // let (stream, _addr) = listener
+    //     .accept()
+    //     .await
+    //     .context("Can't start accepting listeners on socket")?;
 
     let mut buffer: Vec<u8> = Vec::new();
 
-    loop {
-        let _ = stream.ready(Interest::READABLE).await?;
+    // loop {
+    //     let _ = stream.ready(Interest::READABLE).await?;
 
-        match stream.try_read_buf(&mut buffer) {
-            Ok(0) => return Ok(()), // socket got closed for whatever reason
-            Ok(_) => process_message(&mut buffer),
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => continue,
-            Err(e) => return Err(e.into()),
-        }
-    }
+    //     match stream.try_read_buf(&mut buffer) {
+    //         Ok(0) => return Ok(()), // socket got closed for whatever reason
+    //         Ok(_) => process_message(&mut buffer),
+    //         Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => continue,
+    //         Err(e) => return Err(e.into()),
+    //     };
+
+    //     break;
+    // }
+    start_gui();
+
+    Ok(())
 }
 
-async fn aquire_socket() -> anyhow::Result<UnixListener> {
-    let socket_path = get_socket_file_path();
-    let socket = UnixListener::bind(socket_path.clone()).context(
-        format!(
-            "Couldn't bind to the given socket: {}",
-            socket_path.to_string_lossy()
-        )
-        .leak(),
-    )?;
+pub fn aquire_lock() -> anyhow::Result<Option<File>> {
+    let lock_file_path = XDG.get().unwrap().place_runtime_file(LOCK_FILE).unwrap();
 
+    let lock_file = File::create(lock_file_path)?;
     if let Err(err) = rustix::fs::flock(
-        &socket,
+        &lock_file,
         rustix::fs::FlockOperation::NonBlockingLockExclusive,
     ) {
         let daemon_already_exists = err == rustix::io::Errno::WOULDBLOCK;
 
         if daemon_already_exists {
-            std::process::exit(0);
+            tracing::info!("Daemon is already running");
+            return Ok(None);
         } else {
             return Err(Error::AquireSocket(err).into());
         }
-    };
+    }
 
-    Ok(socket)
+    Ok(Some(lock_file))
 }
 
 fn process_message(buffer: &mut Vec<u8>) {
-    tracing::debug!("success!");
+    let msg: Message = {
+        let bytes = std::mem::take(buffer);
+        let string = String::from_utf8(bytes).unwrap();
+        ron::from_str(&string).unwrap()
+    };
+
+    match msg {
+        Message::CreateScreenshot => start_gui(),
+    }
 }
 
 fn start_gui() {

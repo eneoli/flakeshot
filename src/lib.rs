@@ -21,7 +21,7 @@ pub mod tray;
 pub static XDG: OnceLock<BaseDirectories> = OnceLock::new();
 
 // The following paths must be relative to `XDG`!
-pub const SOCKET_FILENAME: &str = "daemon.sock";
+pub const SOCKET_FILENAME: &str = "daemon.socket";
 const LOG_FILENAME: &str = "log.log";
 
 /// An enum error which contains all possible error sources while executing flakeshot.

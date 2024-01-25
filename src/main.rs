@@ -1,5 +1,6 @@
 use clap::Parser;
 use flakeshot::cli::Command;
+use flakeshot::daemon::message::Message;
 use flakeshot::{cli::Cli, daemon, tray};
 
 fn main() {
@@ -17,7 +18,8 @@ fn main() {
     flakeshot::init_logging(&cli.log_level, &cli.log_path);
 
     match cli.command() {
-        Command::Gui => flakeshot::start_gui(),
+        Command::Gui => flakeshot::send_message(Message::CreateScreenshot)
+            .expect("Couldn't send message to daemon"),
         Command::Tray => tray::start(),
         Command::Daemon => daemon::start().expect("An error occured while running the daemon"),
     };
