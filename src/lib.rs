@@ -18,8 +18,9 @@ pub mod frontend;
 pub mod tray;
 
 pub static XDG: OnceLock<BaseDirectories> = OnceLock::new();
-pub static SOCKET_PATH: OnceLock<PathBuf> = OnceLock::new();
 
+// The following paths must be relative to `XDG`!
+pub const SOCKET_PATH: &str = "daemon.sock";
 const LOG_FILE: &str = "log.log";
 
 /// An enum error which contains all possible error sources while executing flakeshot.
@@ -81,19 +82,6 @@ fn initialize_css() {
 pub fn init_xdg() {
     let xdg = xdg::BaseDirectories::with_prefix(crate_name!()).expect("Couldn't access XDG");
     XDG.set(xdg).unwrap();
-}
-
-pub fn init_socket_path() {
-    let socket_name = format!("{}.sock", crate_name!());
-    let socket_file_path = XDG
-        .get()
-        .unwrap()
-        .place_runtime_file(socket_name)
-        .expect("Couldn't create socket file path.");
-
-    SOCKET_PATH
-        .set(socket_file_path)
-        .expect("Couldn't set the socket file path in the code.");
 }
 
 pub fn get_default_log_path() -> PathBuf {

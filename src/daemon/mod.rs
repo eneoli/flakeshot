@@ -1,77 +1,77 @@
-use std::fs::File;
-
-use tokio::{io::Interest, net::UnixStream, runtime::Runtime};
+use anyhow::Context;
+use tokio::{
+    io::Interest,
+    net::{UnixListener, UnixStream},
+};
 
 pub mod message;
 
 use crate::{SOCKET_PATH, XDG};
 
-const LOCK_FILE: &str = "daemon.lock";
-
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error(transparent)]
     IO(#[from] std::io::Error),
+
+    #[error("Couldn't aquire the socket: {0}")]
+    AquireSocket(rustix::io::Errno),
 }
 
-pub fn start() -> Result<(), Error> {
-    let Some(_lock_file) = aquire_lock_file() else {
-        std::process::exit(0)
-    };
-
-    let rt = Runtime::new()?;
+pub fn start() -> anyhow::Result<()> {
+    let rt = tokio::runtime::Runtime::new()?;
     rt.block_on(_start())?;
 
     Ok(())
 }
 
-async fn _start() -> Result<(), Error> {
-    let socket = UnixStream::connect(SOCKET_PATH.get().unwrap()).await?;
+async fn _start() -> anyhow::Result<()> {
+    let listener = aquire_socket().await?;
+    let (stream, _addr) = listener
+        .accept()
+        .await
+        .context("Can't start accepting listeners on socket")?;
+
+    let mut buffer: Vec<u8> = Vec::new();
 
     loop {
-        let ready = socket
-            .ready(Interest::READABLE | Interest::WRITABLE)
-            .await?;
+        let _ = stream.ready(Interest::READABLE).await?;
 
-        if ready.is_readable() {}
-
-        if ready.is_writable() {}
+        match stream.try_read_buf(&mut buffer) {
+            Ok(0) => return Ok(()),
+            Ok(_) => {}
+            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => continue,
+            Err(e) => return Err(e.into()),
+        }
     }
-
-    Ok(())
 }
 
-fn aquire_lock_file() -> Option<File> {
+async fn aquire_socket() -> anyhow::Result<UnixListener> {
     let path = XDG
         .get()
         .unwrap()
-        .place_runtime_file(LOCK_FILE)
+        .place_runtime_file(SOCKET_PATH)
         .expect("Couldn't get lock file path");
 
-    let lock_file = File::open(path.clone()).unwrap_or_else(|e| {
-        panic!(
-            "Couldn't open lock file '{}'. Error: {}",
-            path.to_string_lossy(),
-            e
+    let socket = UnixListener::bind(path.clone()).context(
+        format!(
+            "Couldn't bind to the given socket: {}",
+            path.to_string_lossy()
         )
-    });
+        .leak(),
+    )?;
 
     if let Err(err) = rustix::fs::flock(
-        &lock_file,
+        &socket,
         rustix::fs::FlockOperation::NonBlockingLockExclusive,
     ) {
-        if err == rustix::io::Errno::WOULDBLOCK {
-            return None;
-        } else {
-            let msg = format!(
-                "An error occured while trying to acquire the lock. Error code: {}",
-                err
-            );
+        let daemon_already_exists = err == rustix::io::Errno::WOULDBLOCK;
 
-            tracing::error!(msg);
-            panic!("{}", msg);
+        if daemon_already_exists {
+            std::process::exit(0);
+        } else {
+            return Err(Error::AquireSocket(err).into());
         }
     };
 
-    Some(lock_file)
+    Ok(socket)
 }
