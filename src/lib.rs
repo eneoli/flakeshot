@@ -1,18 +1,23 @@
 //! Welcome to the code-documentation of flakeshot!
 
-use std::{fs::File, path::PathBuf};
+use std::{cell::OnceCell, fs::File, path::PathBuf};
 
+use clap::crate_name;
 use cli::LogLevel;
 use frontend::main_window::AppModel;
 use gtk4::CssProvider;
 use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
+use tracing_unwrap::ResultExt;
 
 pub mod backend;
 pub mod cli;
+pub mod daemon;
 pub mod frontend;
 pub mod tray;
+
+pub const SOCKET_PATH: OnceCell<PathBuf> = OnceCell::new();
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 ///
@@ -69,4 +74,16 @@ fn initialize_css() {
         &provider,
         gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
+}
+
+pub fn init_socket_path() {
+    let socket_name = format!("{}.sock", crate_name!());
+    let xdg = xdg::BaseDirectories::new().expect_or_log("Couldn't access XDG.");
+    let socket_file_path = xdg
+        .place_runtime_file(socket_name)
+        .expect_or_log("Couldn't create socket file path.");
+
+    SOCKET_PATH
+        .set(socket_file_path)
+        .expect_or_log("Couldn't set the socket file path in the code.");
 }

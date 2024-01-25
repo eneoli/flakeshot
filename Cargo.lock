@@ -784,9 +784,11 @@ dependencies = [
  "relm4",
  "relm4-components",
  "relm4-icons",
+ "rustix 0.38.30",
  "thiserror",
  "tracing",
  "tracing-subscriber",
+ "tracing-unwrap",
  "wayland-client",
  "wayland-protocols",
  "wayland-protocols-wlr",
@@ -2600,6 +2602,15 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log",
+]
+
+[[package]]
+name = "tracing-unwrap"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "77934bd2f10b38daeb37d0e24fb94f7bb83e08b474a0568d6ba71876c797c02e"
+dependencies = [
+ "tracing",
 ]
 
 [[package]]

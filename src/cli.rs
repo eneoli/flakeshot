@@ -37,6 +37,9 @@ pub enum Command {
 
     /// Start the system tray of flakeshot. (default)
     Tray,
+
+    /// Start the daemon.
+    Daemon,
 }
 
 #[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
