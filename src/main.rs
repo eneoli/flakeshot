@@ -17,10 +17,13 @@ fn main() {
     let cli = Cli::parse();
     flakeshot::init_logging(&cli.log_level, &cli.log_path);
 
-    match cli.command() {
-        Command::Gui => flakeshot::send_message(Message::CreateScreenshot)
-            .expect("Couldn't send message to daemon"),
+    let err = match cli.command() {
+        Command::Gui => flakeshot::daemon::send_message(Message::CreateScreenshot),
         Command::Tray => tray::start(),
-        Command::Daemon => daemon::start().expect("An error occured while running the daemon"),
+        Command::Daemon => daemon::start(),
     };
+
+    if let Err(err) = err {
+        eprintln!("{}", err);
+    }
 }

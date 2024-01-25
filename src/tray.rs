@@ -15,7 +15,7 @@ impl ksni::Tray for Tray {
     }
 
     fn activate(&mut self, _x: i32, _y: i32) {
-        crate::send_message(Message::CreateScreenshot)
+        crate::daemon::send_message(Message::CreateScreenshot)
             .unwrap_or_else(|_| todo!("Better error handling"));
     }
 
@@ -30,7 +30,7 @@ impl ksni::Tray for Tray {
     }
 }
 
-pub fn start() {
+pub fn start() -> ! {
     tracing::debug!("Starting tray");
 
     ksni::spawn(Tray).expect("Couldn't spawn tray.");

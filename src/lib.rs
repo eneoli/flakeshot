@@ -61,16 +61,6 @@ pub fn init_logging(level: &LogLevel, path: &PathBuf) {
     tracing::debug!("Logger initialised");
 }
 
-pub fn send_message(msg: Message) -> anyhow::Result<()> {
-    let socket_path = get_socket_file_path();
-    let mut stream = UnixStream::connect(socket_path)?;
-
-    let msg_string = ron::to_string(&msg)?;
-    stream.write_all(msg_string.as_bytes())?;
-
-    Ok(())
-}
-
 pub fn init_xdg() {
     let xdg = xdg::BaseDirectories::with_prefix(crate_name!()).expect("Couldn't access XDG");
     XDG.set(xdg).unwrap();

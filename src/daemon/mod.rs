@@ -1,12 +1,9 @@
-use std::fs::File;
+use std::{fs::File, io::Write, os::unix::net::UnixStream};
 
 use anyhow::Context;
 use gtk4::CssProvider;
 use relm4::RelmApp;
-use tokio::{
-    io::{AsyncReadExt, Interest},
-    net::UnixListener,
-};
+use tokio::net::UnixListener;
 
 pub mod message;
 
@@ -23,6 +20,9 @@ pub enum Error {
 
     #[error("Couldn't aquire the socket: {0}")]
     AquireSocket(rustix::io::Errno),
+
+    #[error("The daemon isn't running yet. Please start it. (See help page.)")]
+    NotRunning,
 }
 
 pub fn start() -> anyhow::Result<()> {
@@ -74,7 +74,7 @@ async fn _start() -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn aquire_lock() -> anyhow::Result<Option<File>> {
+fn aquire_lock() -> anyhow::Result<Option<File>> {
     let lock_file_path = XDG.get().unwrap().place_runtime_file(LOCK_FILE).unwrap();
 
     let lock_file = File::create(lock_file_path)?;
@@ -93,6 +93,20 @@ pub fn aquire_lock() -> anyhow::Result<Option<File>> {
     }
 
     Ok(Some(lock_file))
+}
+
+pub fn send_message(msg: Message) -> anyhow::Result<()> {
+    if aquire_lock()?.is_some() {
+        return Err(Error::NotRunning.into());
+    }
+
+    let socket_path = get_socket_file_path();
+    let mut stream = UnixStream::connect(socket_path)?;
+
+    let msg_string = ron::to_string(&msg)?;
+    stream.write_all(msg_string.as_bytes())?;
+
+    Ok(())
 }
 
 fn process_message(buffer: &mut Vec<u8>) {
