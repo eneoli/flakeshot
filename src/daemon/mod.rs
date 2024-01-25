@@ -37,7 +37,7 @@ async fn _start() -> anyhow::Result<()> {
         let _ = stream.ready(Interest::READABLE).await?;
 
         match stream.try_read_buf(&mut buffer) {
-            Ok(0) => return Ok(()),
+            Ok(0) => return Ok(()), // socket got closed for whatever reason
             Ok(_) => {}
             Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => continue,
             Err(e) => return Err(e.into()),
