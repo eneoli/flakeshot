@@ -797,9 +797,10 @@ dependencies = [
  "rustix 0.38.30",
  "serde",
  "thiserror",
+ "tokio",
  "tracing",
+ "tracing-panic",
  "tracing-subscriber",
- "tracing-unwrap",
  "wayland-client",
  "wayland-protocols",
  "wayland-protocols-wlr",
@@ -2610,6 +2611,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "tracing-panic"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eaf80030ce049691c9922d75be63cadf345110a245cd4581833c66f87c02ad25"
+dependencies = [
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "tracing-subscriber"
 version = "0.3.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2625,15 +2636,6 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log",
-]
-
-[[package]]
-name = "tracing-unwrap"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77934bd2f10b38daeb37d0e24fb94f7bb83e08b474a0568d6ba71876c797c02e"
-dependencies = [
- "tracing",
 ]
 
 [[package]]

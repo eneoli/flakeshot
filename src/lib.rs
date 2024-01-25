@@ -9,14 +9,12 @@ use gtk4::CssProvider;
 use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
-use tracing_unwrap::ResultExt;
 use xdg::BaseDirectories;
 
 pub mod backend;
 pub mod cli;
 pub mod daemon;
 pub mod frontend;
-pub mod message;
 pub mod tray;
 
 pub static XDG: OnceLock<BaseDirectories> = OnceLock::new();
@@ -40,7 +38,7 @@ pub enum Error {
 }
 
 pub fn init_logging(level: &LogLevel, path: &PathBuf) {
-    let log_file = File::create(path).expect_or_log("Couldn't create and open log path");
+    let log_file = File::create(path).expect("Couldn't create and open log path");
 
     let subscriber_builder = tracing_subscriber::fmt()
         .with_writer(log_file)
@@ -81,7 +79,7 @@ fn initialize_css() {
 }
 
 pub fn init_xdg() {
-    let xdg = xdg::BaseDirectories::with_prefix(crate_name!()).expect_or_log("Couldn't access XDG");
+    let xdg = xdg::BaseDirectories::with_prefix(crate_name!()).expect("Couldn't access XDG");
     XDG.set(xdg).unwrap();
 }
 
@@ -91,11 +89,11 @@ pub fn init_socket_path() {
         .get()
         .unwrap()
         .place_runtime_file(socket_name)
-        .expect_or_log("Couldn't create socket file path.");
+        .expect("Couldn't create socket file path.");
 
     SOCKET_PATH
         .set(socket_file_path)
-        .expect_or_log("Couldn't set the socket file path in the code.");
+        .expect("Couldn't set the socket file path in the code.");
 }
 
 pub fn get_default_log_path() -> PathBuf {
