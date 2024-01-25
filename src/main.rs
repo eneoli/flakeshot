@@ -3,8 +3,9 @@ use flakeshot::cli::Command;
 use flakeshot::{cli::Cli, daemon, tray};
 
 fn main() {
-    let cli = Cli::parse();
+    flakeshot::init_xdg();
 
+    let cli = Cli::parse();
     flakeshot::init_logging(&cli.log_level, &cli.log_path);
     flakeshot::init_socket_path();
 

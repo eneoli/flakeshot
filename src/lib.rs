@@ -1,6 +1,6 @@
 //! Welcome to the code-documentation of flakeshot!
 
-use std::{cell::OnceCell, fs::File, path::PathBuf};
+use std::{fs::File, path::PathBuf, sync::OnceLock};
 
 use clap::crate_name;
 use cli::LogLevel;
@@ -10,14 +10,17 @@ use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 use tracing_unwrap::ResultExt;
+use xdg::BaseDirectories;
 
 pub mod backend;
 pub mod cli;
 pub mod daemon;
 pub mod frontend;
+pub mod message;
 pub mod tray;
 
-pub const SOCKET_PATH: OnceCell<PathBuf> = OnceCell::new();
+pub static XDG: OnceLock<BaseDirectories> = OnceLock::new();
+pub static SOCKET_PATH: OnceLock<PathBuf> = OnceLock::new();
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 ///
@@ -35,8 +38,7 @@ pub enum Error {
 }
 
 pub fn init_logging(level: &LogLevel, path: &PathBuf) {
-    let log_file =
-        File::create(path).unwrap_or_else(|e| panic!("Couldn't create and open log path: {e}",));
+    let log_file = File::create(path).expect_or_log("Couldn't create and open log path");
 
     let subscriber_builder = tracing_subscriber::fmt()
         .with_writer(log_file)
@@ -76,10 +78,16 @@ fn initialize_css() {
     );
 }
 
+pub fn init_xdg() {
+    let xdg = xdg::BaseDirectories::with_prefix(crate_name!()).expect_or_log("Couldn't access XDG");
+    XDG.set(xdg).unwrap();
+}
+
 pub fn init_socket_path() {
     let socket_name = format!("{}.sock", crate_name!());
-    let xdg = xdg::BaseDirectories::new().expect_or_log("Couldn't access XDG.");
-    let socket_file_path = xdg
+    let socket_file_path = XDG
+        .get()
+        .unwrap()
         .place_runtime_file(socket_name)
         .expect_or_log("Couldn't create socket file path.");
 
