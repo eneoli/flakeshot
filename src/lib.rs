@@ -19,8 +19,10 @@ pub mod frontend;
 pub mod message;
 pub mod tray;
 
-pub static XDG: OnceLock<BaseDirectories> = OnceLock::new();
+static XDG: OnceLock<BaseDirectories> = OnceLock::new();
 pub static SOCKET_PATH: OnceLock<PathBuf> = OnceLock::new();
+
+const LOG_FILE: &str = "log.log";
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 ///
@@ -94,4 +96,11 @@ pub fn init_socket_path() {
     SOCKET_PATH
         .set(socket_file_path)
         .expect_or_log("Couldn't set the socket file path in the code.");
+}
+
+pub fn get_default_log_path() -> PathBuf {
+    XDG.get()
+        .unwrap()
+        .place_state_file(LOG_FILE)
+        .unwrap_or_else(|e| panic!("Couldn't access log file path: {}", e))
 }
