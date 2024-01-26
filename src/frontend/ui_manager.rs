@@ -1,6 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use cairo::ImageSurface;
+use gdk_pixbuf::prelude::ApplicationExtManual;
 use image::DynamicImage;
 
 use super::{
@@ -60,6 +61,11 @@ impl UiManager {
 
     fn save_canvas_to_file(&self) {
         let canvas_ref = self.canvas.clone();
+
+        relm4::main_application().connect_open(|_| {
+            println!("tets");
+            todo!();
+        });
 
         FileChooser::open(move |file| {
             if let Some(path) = file {

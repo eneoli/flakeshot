@@ -1,6 +1,7 @@
 use std::{fs::File, io::Write, os::unix::net::UnixStream};
 
 use anyhow::Context;
+use gdk_pixbuf::{gio::ApplicationFlags, prelude::ApplicationExt};
 use gtk4::CssProvider;
 use relm4::RelmApp;
 use tokio::net::UnixListener;
@@ -138,8 +139,17 @@ fn process_message(buffer: &mut Vec<u8>) {
     }
 }
 
+#[tracing::instrument]
 fn start_gui() {
-    let app = RelmApp::new("org.flakeshot.app");
+    let app = {
+        gtk4::init().unwrap();
+        let app = gtk4::Application::builder()
+            .application_id("org.flakeshot.app")
+            .flags(ApplicationFlags::HANDLES_OPEN)
+            .build();
+
+        RelmApp::from_app(app)
+    };
     relm4_icons::initialize_icons();
     initialize_css();
 

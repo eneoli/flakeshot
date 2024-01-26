@@ -7,6 +7,7 @@ use super::{
     ui_manager::UiManager,
 };
 use crate::backend::{self, MonitorInfo, OutputInfo};
+use gdk_pixbuf::gio::ApplicationFlags;
 use gtk::prelude::*;
 use image::DynamicImage;
 use relm4::{gtk::Application, prelude::*, Sender};
