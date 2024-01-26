@@ -3,7 +3,7 @@ use flakeshot::cli::Command;
 use flakeshot::daemon::message::Message;
 use flakeshot::{cli::Cli, daemon, tray};
 
-fn main() {
+fn main() -> anyhow::Result<()> {
     {
         let prev_hook = std::panic::take_hook();
         std::panic::set_hook(Box::new(move |panic_info| {
@@ -12,18 +12,12 @@ fn main() {
         }));
     };
 
-    flakeshot::init_xdg();
-
     let cli = Cli::parse();
     flakeshot::init_logging(&cli.log_level, &cli.log_path);
 
-    let err = match cli.command() {
+    match cli.command() {
         Command::Gui => flakeshot::daemon::send_message(Message::CreateScreenshot),
         Command::Tray => tray::start(),
         Command::Daemon => daemon::start(),
-    };
-
-    if let Err(err) = err {
-        eprintln!("{}", err);
     }
 }

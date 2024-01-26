@@ -18,7 +18,7 @@ pub mod daemon;
 pub mod frontend;
 pub mod tray;
 
-pub static XDG: OnceLock<BaseDirectories> = OnceLock::new();
+static XDG: OnceLock<BaseDirectories> = OnceLock::new();
 
 // The following paths must be relative to `XDG`!
 pub const SOCKET_FILENAME: &str = "daemon.socket";
@@ -61,9 +61,10 @@ pub fn init_logging(level: &LogLevel, path: &PathBuf) {
     tracing::debug!("Logger initialised");
 }
 
-pub fn init_xdg() {
-    let xdg = xdg::BaseDirectories::with_prefix(crate_name!()).expect("Couldn't access XDG");
-    XDG.set(xdg).unwrap();
+pub fn get_xdg() -> &'static BaseDirectories {
+    XDG.get_or_init(|| {
+        xdg::BaseDirectories::with_prefix(crate_name!()).expect("Couldn't access XDG")
+    })
 }
 
 pub fn get_default_log_path() -> PathBuf {

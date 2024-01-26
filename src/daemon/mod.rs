@@ -4,6 +4,7 @@ use anyhow::Context;
 use gtk4::CssProvider;
 use relm4::RelmApp;
 use tokio::net::UnixListener;
+use tracing::{debug, error, info};
 
 pub mod message;
 
@@ -25,17 +26,25 @@ pub enum Error {
     NotRunning,
 }
 
+#[tracing::instrument]
 pub fn start() -> anyhow::Result<()> {
     let _lock_guard = aquire_lock()?;
+    debug!("Starting daemon");
 
-    // there's no daemon yet => remove, if it exists, the socket file for the new one
+    // there's no daemon yet => remove the socket file to be able to create a new one
     {
         let sock_path = get_socket_file_path();
-        if let Err(e) = std::fs::remove_file(sock_path) {
-            if e.kind() == std::io::ErrorKind::NotFound {
+        if let Err(e) = std::fs::remove_file(sock_path.clone()) {
+            if e.kind() != std::io::ErrorKind::NotFound {
+                error!(
+                    "Couldn't remove socket file '{}': {}",
+                    sock_path.to_string_lossy(),
+                    e
+                );
                 return Err(Error::IO(e).into());
             }
         }
+        debug!("Old socket path successfully removed");
     }
 
     let rt = tokio::runtime::Runtime::new()?;
@@ -44,11 +53,13 @@ pub fn start() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[tracing::instrument]
 async fn _start() -> anyhow::Result<()> {
     let listener = {
         let socket_path = get_socket_file_path();
         UnixListener::bind(socket_path).context("Couldn't bind to socket.")?
     };
+    debug!("Socket listener created");
 
     // let (stream, _addr) = listener
     //     .accept()
@@ -74,10 +85,11 @@ async fn _start() -> anyhow::Result<()> {
     Ok(())
 }
 
+#[tracing::instrument]
 fn aquire_lock() -> anyhow::Result<Option<File>> {
     let lock_file_path = XDG.get().unwrap().place_runtime_file(LOCK_FILE).unwrap();
 
-    let lock_file = File::create(lock_file_path)?;
+    let lock_file = File::create(lock_file_path).context("Create daemon lock file")?;
     if let Err(err) = rustix::fs::flock(
         &lock_file,
         rustix::fs::FlockOperation::NonBlockingLockExclusive,
@@ -85,9 +97,10 @@ fn aquire_lock() -> anyhow::Result<Option<File>> {
         let daemon_already_exists = err == rustix::io::Errno::WOULDBLOCK;
 
         if daemon_already_exists {
-            tracing::info!("Daemon is already running");
+            info!("Daemon is already running");
             return Ok(None);
         } else {
+            error!("Couldn't acquire lock: {}", err);
             return Err(Error::AquireSocket(err).into());
         }
     }
