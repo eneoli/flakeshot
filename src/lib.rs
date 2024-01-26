@@ -74,3 +74,12 @@ pub fn get_socket_file_path() -> PathBuf {
         .place_runtime_file(SOCKET_FILENAME)
         .unwrap_or_else(|e| panic!("Couldn't access socket file path: {}", e))
 }
+
+pub fn start() -> anyhow::Result<()> {
+    if daemon::acquire_lock()?.is_some() {
+        return Err(daemon::Error::NotRunning.into());
+    }
+
+    daemon::send_message(daemon::message::Message::CreateScreenshot)?;
+    Ok(())
+}

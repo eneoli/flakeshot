@@ -1,6 +1,5 @@
 use clap::Parser;
 use flakeshot::cli::Command;
-use flakeshot::daemon::message::Message;
 use flakeshot::{cli::Cli, daemon, tray};
 
 fn main() -> anyhow::Result<()> {
@@ -16,7 +15,7 @@ fn main() -> anyhow::Result<()> {
     flakeshot::init_logging(&cli.log_level, &cli.log_path);
 
     match cli.command() {
-        Command::Gui => flakeshot::daemon::send_message(Message::CreateScreenshot),
+        Command::Gui => flakeshot::start(),
         Command::Tray => tray::start(),
         Command::Daemon => daemon::start(),
     }

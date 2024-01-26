@@ -1,6 +1,8 @@
+use clap::crate_name;
 use ksni;
+use notify_rust::Notification;
 
-use crate::daemon::message::Message;
+use crate::daemon::{self, message::Message};
 
 #[derive(Debug)]
 struct Tray;
@@ -15,8 +17,33 @@ impl ksni::Tray for Tray {
     }
 
     fn activate(&mut self, _x: i32, _y: i32) {
-        crate::daemon::send_message(Message::CreateScreenshot)
-            .unwrap_or_else(|_| todo!("Better error handling"));
+        kekw();
+        // match daemon::acquire_lock() {
+        //     Ok(Some(_)) => Notification::new()
+        //         .appname(crate_name!())
+        //         .summary(&format!("{}", daemon::Error::NotRunning))
+        //         .show(),
+        //     Err(e) => Notification::new()
+        //         .appname(crate_name!())
+        //         .summary(&format!("Couldn't test, if the daemon is running: {}", e))
+        //         .show(),
+        //     // Ok(None) => match daemon::send_message(Message::CreateScreenshot) {
+        //     //     Ok(_) => Notification::new()
+        //     //         .appname(crate_name!())
+        //     //         .summary("Successfully created screenshot")
+        //     //         .show(),
+        //     //     Err(e) => Notification::new()
+        //     //         .appname(crate_name!())
+        //     //         .summary("Couldn't create screenshot")
+        //     //         .body(&format!("{}", e))
+        //     //         .show(),
+        //     // },
+        //     Ok(None) => Notification::new()
+        //         .appname(crate_name!())
+        //         .summary("Penis")
+        //         .show(),
+        // }
+        // .unwrap();
     }
 
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
@@ -38,4 +65,12 @@ pub fn start() -> ! {
     loop {
         std::thread::park();
     }
+}
+
+fn kekw() {
+    Notification::new()
+        .appname(crate_name!())
+        .summary("I use arch btw.")
+        .show()
+        .unwrap();
 }

@@ -19,8 +19,8 @@ pub enum Error {
     #[error(transparent)]
     IO(#[from] std::io::Error),
 
-    #[error("Couldn't aquire the socket: {0}")]
-    AquireSocket(rustix::io::Errno),
+    #[error("Couldn't acquire the socket: {0}")]
+    AcquireSocket(rustix::io::Errno),
 
     #[error("The daemon isn't running yet. Please start it. (See help page.)")]
     NotRunning,
@@ -28,7 +28,7 @@ pub enum Error {
 
 #[tracing::instrument]
 pub fn start() -> anyhow::Result<()> {
-    let _lock_guard = aquire_lock()?;
+    let _lock_guard = acquire_lock()?;
     debug!("Starting daemon");
 
     // there's no daemon yet => remove the socket file to be able to create a new one
@@ -85,7 +85,7 @@ async fn _start() -> anyhow::Result<()> {
 }
 
 #[tracing::instrument]
-fn aquire_lock() -> anyhow::Result<Option<File>> {
+pub fn acquire_lock() -> anyhow::Result<Option<File>> {
     let lock_file_path = get_xdg().place_runtime_file(LOCK_FILE).unwrap();
 
     let lock_file = File::create(lock_file_path).context("Create daemon lock file")?;
@@ -100,7 +100,7 @@ fn aquire_lock() -> anyhow::Result<Option<File>> {
             return Ok(None);
         } else {
             error!("Couldn't acquire lock: {}", err);
-            return Err(Error::AquireSocket(err).into());
+            return Err(Error::AcquireSocket(err).into());
         }
     }
 
@@ -108,11 +108,6 @@ fn aquire_lock() -> anyhow::Result<Option<File>> {
 }
 
 pub fn send_message(msg: Message) -> anyhow::Result<()> {
-    if aquire_lock()?.is_some() {
-        info!("Daemon is not running.");
-        return Err(Error::NotRunning.into());
-    }
-
     let socket_path = get_socket_file_path();
     let mut stream =
         UnixStream::connect(socket_path).context("Couldn't conenct to daemon socket")?;
