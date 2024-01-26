@@ -4,10 +4,6 @@ use std::{fs::File, io::Write, os::unix::net::UnixStream, path::PathBuf, sync::O
 
 use clap::crate_name;
 use cli::LogLevel;
-use daemon::message::Message;
-use frontend::main_window::AppModel;
-use gtk4::CssProvider;
-use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 use xdg::BaseDirectories;
@@ -68,15 +64,13 @@ pub fn get_xdg() -> &'static BaseDirectories {
 }
 
 pub fn get_default_log_path() -> PathBuf {
-    XDG.get()
-        .unwrap()
+    get_xdg()
         .place_state_file(LOG_FILENAME)
         .unwrap_or_else(|e| panic!("Couldn't access log file path: {}", e))
 }
 
 pub fn get_socket_file_path() -> PathBuf {
-    XDG.get()
-        .unwrap()
+    get_xdg()
         .place_runtime_file(SOCKET_FILENAME)
         .unwrap_or_else(|e| panic!("Couldn't access socket file path: {}", e))
 }

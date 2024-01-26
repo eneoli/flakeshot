@@ -8,7 +8,7 @@ use tracing::{debug, error, info};
 
 pub mod message;
 
-use crate::{frontend::main_window::AppModel, get_socket_file_path, XDG};
+use crate::{frontend::main_window::AppModel, get_socket_file_path, get_xdg};
 
 use self::message::Message;
 
@@ -87,7 +87,7 @@ async fn _start() -> anyhow::Result<()> {
 
 #[tracing::instrument]
 fn aquire_lock() -> anyhow::Result<Option<File>> {
-    let lock_file_path = XDG.get().unwrap().place_runtime_file(LOCK_FILE).unwrap();
+    let lock_file_path = get_xdg().place_runtime_file(LOCK_FILE).unwrap();
 
     let lock_file = File::create(lock_file_path).context("Create daemon lock file")?;
     if let Err(err) = rustix::fs::flock(
@@ -110,14 +110,18 @@ fn aquire_lock() -> anyhow::Result<Option<File>> {
 
 pub fn send_message(msg: Message) -> anyhow::Result<()> {
     if aquire_lock()?.is_some() {
+        info!("Daemon is not running.");
         return Err(Error::NotRunning.into());
     }
 
     let socket_path = get_socket_file_path();
-    let mut stream = UnixStream::connect(socket_path)?;
+    let mut stream =
+        UnixStream::connect(socket_path).context("Couldn't conenct to daemon socket")?;
 
     let msg_string = ron::to_string(&msg)?;
-    stream.write_all(msg_string.as_bytes())?;
+    stream
+        .write_all(msg_string.as_bytes())
+        .context("Couldn't write message to daemon socket")?;
 
     Ok(())
 }
