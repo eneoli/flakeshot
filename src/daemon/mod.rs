@@ -1,10 +1,9 @@
 use std::{fs::File, io::Write, os::unix::net::UnixStream};
 
 use anyhow::Context;
-use gdk_pixbuf::{gio::ApplicationFlags, prelude::ApplicationExt};
 use gtk4::CssProvider;
 use relm4::RelmApp;
-use tokio::net::UnixListener;
+use tokio::{io::Interest, net::UnixListener};
 use tracing::{debug, error, info};
 
 pub mod message;
@@ -62,26 +61,25 @@ async fn _start() -> anyhow::Result<()> {
     };
     debug!("Socket listener created");
 
-    // let (stream, _addr) = listener
-    //     .accept()
-    //     .await
-    //     .context("Can't start accepting listeners on socket")?;
+    let (stream, _addr) = listener
+        .accept()
+        .await
+        .context("Can't start accepting listeners on socket")?;
 
     let mut buffer: Vec<u8> = Vec::new();
 
-    // loop {
-    //     let _ = stream.ready(Interest::READABLE).await?;
+    loop {
+        let _ = stream.ready(Interest::READABLE).await?;
 
-    //     match stream.try_read_buf(&mut buffer) {
-    //         Ok(0) => return Ok(()), // socket got closed for whatever reason
-    //         Ok(_) => process_message(&mut buffer),
-    //         Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => continue,
-    //         Err(e) => return Err(e.into()),
-    //     };
+        match stream.try_read_buf(&mut buffer) {
+            Ok(0) => return Ok(()), // socket got closed for whatever reason
+            Ok(_) => process_message(&mut buffer),
+            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => continue,
+            Err(e) => return Err(e.into()),
+        };
 
-    //     break;
-    // }
-    start_gui();
+        break;
+    }
 
     Ok(())
 }
@@ -141,15 +139,7 @@ fn process_message(buffer: &mut Vec<u8>) {
 
 #[tracing::instrument]
 fn start_gui() {
-    let app = {
-        gtk4::init().unwrap();
-        let app = gtk4::Application::builder()
-            .application_id("org.flakeshot.app")
-            .flags(ApplicationFlags::HANDLES_OPEN)
-            .build();
-
-        RelmApp::from_app(app)
-    };
+    let app = RelmApp::new("org.flakeshot.app").with_args(vec![]);
     relm4_icons::initialize_icons();
     initialize_css();
 

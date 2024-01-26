@@ -1,6 +1,6 @@
 //! Welcome to the code-documentation of flakeshot!
 
-use std::{fs::File, io::Write, os::unix::net::UnixStream, path::PathBuf, sync::OnceLock};
+use std::{fs::File, path::PathBuf, sync::OnceLock};
 
 use clap::crate_name;
 use cli::LogLevel;
