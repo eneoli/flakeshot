@@ -23,17 +23,10 @@ impl Tray {
 
         let (width, height) = rgba_image.dimensions();
 
-        let data = rgba_image
-            .pixels()
-            // rgba => argb
-            .map(|pixel| Rgba::from([pixel[3], pixel[0], pixel[1], pixel[2]]))
-            .fold(
-                Vec::with_capacity((width * height) as usize),
-                |mut prev, pixel| {
-                    prev.extend_from_slice(&pixel.0);
-                    prev
-                },
-            );
+        let mut data: Vec<u8> = rgba_image.into_vec();
+
+        // rgba => argb
+        data.chunks_mut(4).for_each(|pixel| pixel.rotate_right(1));
 
         Self {
             icon: ksni::Icon {
