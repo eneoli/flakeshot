@@ -137,11 +137,17 @@ fn process_message(buffer: &mut Vec<u8>) {
 
 #[tracing::instrument]
 fn start_gui() {
-    let app = RelmApp::new("org.flakeshot.app").with_args(vec![]);
-    relm4_icons::initialize_icons();
-    initialize_css();
+    let session = std::thread::spawn(|| {
+        let app = RelmApp::new("org.flakeshot.app").with_args(vec![]);
+        relm4_icons::initialize_icons();
+        initialize_css();
 
-    app.run::<AppModel>(());
+        app.run::<AppModel>(());
+    });
+
+    if let Err(e) = session.join() {
+        error!("{}", e.downcast::<crate::frontend::Error>().unwrap());
+    }
 }
 
 fn initialize_css() {
