@@ -1,5 +1,5 @@
 #[cfg(not(target_family = "unix"))]
-compile_error!("Flakeshot only runs on UNIX-like systems!");
+compile_error!("flakeshot only runs on UNIX-like systems.");
 
 use clap::Parser;
 use flakeshot::cli::Command;
