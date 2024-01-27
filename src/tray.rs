@@ -13,7 +13,7 @@ impl Tray {
         let rgba_image = {
             let cursor = {
                 let image_bytes = include_bytes!("../assets/flakeshot_logo_dpi_96.png");
-                Cursor::new(image_bytes.to_owned())
+                Cursor::new(image_bytes)
             };
             image::io::Reader::with_format(cursor, image::ImageFormat::Png)
                 .decode()
