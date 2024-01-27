@@ -77,7 +77,7 @@ fn get_tray_image() -> ImageBuffer<Rgba<u8>, Vec<u8>> {
 mod tests {
     use super::get_tray_image;
 
-    /// Makes sure that the tray image is always correctly loaded
+    /// Makes sure that the tray image will be always correctly loaded
     #[test]
     fn test_get_tray_image() {
         get_tray_image();
