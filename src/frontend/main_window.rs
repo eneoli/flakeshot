@@ -190,7 +190,7 @@ fn register_keyboard_events(window: &gtk::Window) {
 
     event_controller.connect_key_pressed(|_, key, _, _| {
         if let gdk4::Key::Escape = key {
-            std::process::exit(0);
+            relm4::main_application().quit();
         }
 
         gtk::glib::Propagation::Proceed

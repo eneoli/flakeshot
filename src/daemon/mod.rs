@@ -1,4 +1,4 @@
-use std::{fs::File, io::Write, os::unix::net::UnixStream};
+use std::{fs::File, io::Write};
 
 use anyhow::Context;
 use gtk4::CssProvider;
@@ -61,27 +61,31 @@ async fn _start() -> anyhow::Result<()> {
     };
     debug!("Socket listener created");
 
-    let (stream, _addr) = listener
-        .accept()
-        .await
-        .context("Can't start accepting listeners on socket")?;
-
-    let mut buffer: Vec<u8> = Vec::new();
-
+    let mut byte_buffer: Vec<u8> = vec![];
     loop {
-        let _ = stream.ready(Interest::READABLE).await?;
+        match listener.accept().await {
+            Ok((stream, _addr)) => {
+                if let Err(e) = stream.ready(Interest::READABLE).await {
+                    error!(
+                        "An IO error occured while waiting for messages of the listener: {}",
+                        e
+                    );
+                }
 
-        match stream.try_read_buf(&mut buffer) {
-            Ok(0) => return Ok(()), // socket got closed for whatever reason
-            Ok(_) => process_message(&mut buffer),
-            Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => continue,
-            Err(e) => return Err(e.into()),
-        };
-
-        break;
+                match stream.try_read_buf(&mut byte_buffer) {
+                    Ok(amount_bytes) if amount_bytes > 0 => process_message(&mut byte_buffer),
+                    Err(e) if e.kind() != std::io::ErrorKind::WouldBlock => {
+                        error!(
+                            "An error occured while trying to read the message from the socket: {}",
+                            e
+                        );
+                    }
+                    _ => {}
+                };
+            }
+            Err(e) => error!("Coulnd't connect to listener: {}", e),
+        }
     }
-
-    Ok(())
 }
 
 /// If no error occured: Returns the lock-file (if available), otherwise `None` if the lock file
@@ -111,6 +115,8 @@ pub fn acquire_lock() -> anyhow::Result<Option<File>> {
 }
 
 pub fn send_message(msg: Message) -> anyhow::Result<()> {
+    use std::os::unix::net::UnixStream;
+
     let socket_path = get_socket_file_path();
     let mut stream =
         UnixStream::connect(socket_path).context("Couldn't conenct to daemon socket")?;
