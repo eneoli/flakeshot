@@ -1,6 +1,6 @@
 use std::io::Cursor;
 
-use image::Rgba;
+use image::{ImageBuffer, Rgba};
 use ksni;
 
 #[derive(Debug)]
@@ -10,19 +10,8 @@ struct Tray {
 
 impl Tray {
     pub fn new() -> Self {
-        let rgba_image = {
-            let cursor = {
-                let image_bytes = include_bytes!("../assets/flakeshot_logo_dpi_96.png");
-                Cursor::new(image_bytes)
-            };
-            image::io::Reader::with_format(cursor, image::ImageFormat::Png)
-                .decode()
-                .unwrap()
-                .to_rgba8()
-        };
-
+        let rgba_image = get_tray_image();
         let (width, height) = rgba_image.dimensions();
-
         let data = rgba_image
             .pixels()
             // rgba => argb
@@ -76,5 +65,27 @@ pub fn start() {
 
     loop {
         std::thread::park();
+    }
+}
+
+fn get_tray_image() -> ImageBuffer<Rgba<u8>, Vec<u8>> {
+    let cursor = {
+        let image_bytes = include_bytes!("../assets/flakeshot_logo_dpi_96.png");
+        Cursor::new(image_bytes)
+    };
+    image::io::Reader::with_format(cursor, image::ImageFormat::Png)
+        .decode()
+        .unwrap()
+        .to_rgba8()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::get_tray_image;
+
+    /// Makes sure that the tray image is always correctly loaded
+    #[test]
+    fn test_get_tray_image() {
+        get_tray_image();
     }
 }
