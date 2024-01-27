@@ -84,6 +84,9 @@ async fn _start() -> anyhow::Result<()> {
     Ok(())
 }
 
+/// If no error occured: Returns the lock-file (if available), otherwise `None` if the lock file
+/// couldn't be aquired.
+/// Otherwise the error will be returned.
 #[tracing::instrument]
 pub fn acquire_lock() -> anyhow::Result<Option<File>> {
     let lock_file_path = get_xdg().place_runtime_file(LOCK_FILE).unwrap();

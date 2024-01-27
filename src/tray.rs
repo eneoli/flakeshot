@@ -1,6 +1,5 @@
-use clap::crate_name;
 use ksni;
-use notify_rust::Notification;
+use tracing::{error, info, warn};
 
 use crate::daemon::{self, message::Message};
 
@@ -17,33 +16,14 @@ impl ksni::Tray for Tray {
     }
 
     fn activate(&mut self, _x: i32, _y: i32) {
-        kekw();
-        // match daemon::acquire_lock() {
-        //     Ok(Some(_)) => Notification::new()
-        //         .appname(crate_name!())
-        //         .summary(&format!("{}", daemon::Error::NotRunning))
-        //         .show(),
-        //     Err(e) => Notification::new()
-        //         .appname(crate_name!())
-        //         .summary(&format!("Couldn't test, if the daemon is running: {}", e))
-        //         .show(),
-        //     // Ok(None) => match daemon::send_message(Message::CreateScreenshot) {
-        //     //     Ok(_) => Notification::new()
-        //     //         .appname(crate_name!())
-        //     //         .summary("Successfully created screenshot")
-        //     //         .show(),
-        //     //     Err(e) => Notification::new()
-        //     //         .appname(crate_name!())
-        //     //         .summary("Couldn't create screenshot")
-        //     //         .body(&format!("{}", e))
-        //     //         .show(),
-        //     // },
-        //     Ok(None) => Notification::new()
-        //         .appname(crate_name!())
-        //         .summary("Penis")
-        //         .show(),
-        // }
-        // .unwrap();
+        match daemon::acquire_lock() {
+            Ok(Some(_)) => warn!("{}", daemon::Error::NotRunning),
+            Err(e) => error!("Couldn't test, if the daemon is running: {}", e),
+            Ok(None) => match daemon::send_message(Message::CreateScreenshot) {
+                Ok(_) => info!("Screenshot successfully created."),
+                Err(e) => error!("Couldn't create screenshot: {}", e),
+            },
+        };
     }
 
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
@@ -65,12 +45,4 @@ pub fn start() -> ! {
     loop {
         std::thread::park();
     }
-}
-
-fn kekw() {
-    Notification::new()
-        .appname(crate_name!())
-        .summary("I use arch btw.")
-        .show()
-        .unwrap();
 }
