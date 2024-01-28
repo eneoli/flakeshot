@@ -1,5 +1,6 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, rc::Rc, time::Duration};
 
+use mouse_position::mouse_position::{Mouse};
 use super::{
     screenshot_window::{
         ScreenshotWindowInit, ScreenshotWindowInput, ScreenshotWindowModel, ScreenshotWindowOutput,
@@ -64,6 +65,8 @@ impl SimpleComponent for AppModel {
         for screenshot in screenshots {
             init_monitor(&app, &mut model, &sender_ref, &screenshot, &mut monitors);
         }
+
+        model.ui_manager.persist_canvas();
 
         ComponentParts { model, widgets: () }
     }
