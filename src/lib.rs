@@ -4,6 +4,7 @@ use std::{fs::File, path::PathBuf};
 
 use cli::LogLevel;
 use frontend::main_window::AppModel;
+use gdk_pixbuf::gio::ApplicationFlags;
 use gtk4::CssProvider;
 use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
@@ -53,7 +54,9 @@ pub fn init_logging(level: &LogLevel, path: &PathBuf) {
 }
 
 pub fn start_gui() {
-    let app = RelmApp::new("org.flakeshot.app");
+    gtk4::init().expect("Couldn't initialize gtk");
+
+    let app = RelmApp::new("org.flakeshot.app").with_args(vec![]);
     relm4_icons::initialize_icons();
     initialize_css();
 
