@@ -54,8 +54,6 @@ pub fn init_logging(level: &LogLevel, path: &PathBuf) {
 }
 
 pub fn start_gui() {
-    gtk4::init().expect("Couldn't initialize gtk");
-
     let app = RelmApp::new("org.flakeshot.app").with_args(vec![]);
     relm4_icons::initialize_icons();
     initialize_css();
