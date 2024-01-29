@@ -790,7 +790,7 @@ dependencies = [
  "image",
  "ksni",
  "memfd",
- "relm4",
+ "relm4 0.7.0-beta.2 (git+https://github.com/Relm4/Relm4)",
  "relm4-components",
  "relm4-icons",
  "ron",
@@ -2119,7 +2119,23 @@ dependencies = [
  "gtk4",
  "libadwaita",
  "once_cell",
- "relm4-macros",
+ "relm4-macros 0.7.0-beta.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
+name = "relm4"
+version = "0.7.0-beta.2"
+source = "git+https://github.com/Relm4/Relm4#e189eee06b887470e0fd65cbaf6d7c0161bed5ea"
+dependencies = [
+ "async-trait",
+ "flume",
+ "fragile",
+ "futures",
+ "gtk4",
+ "once_cell",
+ "relm4-macros 0.7.0-beta.2 (git+https://github.com/Relm4/Relm4)",
  "tokio",
  "tracing",
 ]
@@ -2131,15 +2147,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e9ca20a9e7387bda5ebe648be7edc1abeeb8afcca167603c87ffd3bbc30a088"
 dependencies = [
  "once_cell",
- "relm4",
+ "relm4 0.7.0-beta.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tracker",
 ]
 
 [[package]]
 name = "relm4-icons"
 version = "0.7.0-alpha.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0d2413577ec528e0a4de8d05e7b1f6840e60f2cf14a70b16dfd8d862654c06c"
+source = "git+https://github.com/Relm4/icons?branch=try-fix-icon-loading#03f4d0ad23b917b6b7e16c2e3e8788549f46980a"
 dependencies = [
  "gtk4",
  "gvdb",
@@ -2150,6 +2165,16 @@ name = "relm4-macros"
 version = "0.7.0-beta.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "086047e49d6426fd9f53109950f205d2ed88027d5fecfece724e6722904fe473"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.48",
+]
+
+[[package]]
+name = "relm4-macros"
+version = "0.7.0-beta.2"
+source = "git+https://github.com/Relm4/Relm4#e189eee06b887470e0fd65cbaf6d7c0161bed5ea"
 dependencies = [
  "proc-macro2",
  "quote",

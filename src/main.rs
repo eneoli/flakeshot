@@ -1,6 +1,8 @@
 use clap::Parser;
-use flakeshot::cli::Command;
-use flakeshot::{cli::Cli, daemon, tray};
+use flakeshot::{
+    cli::{Cli, Command},
+    daemon, tray,
+};
 
 fn main() -> anyhow::Result<()> {
     {

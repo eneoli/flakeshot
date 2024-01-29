@@ -22,9 +22,11 @@ wayland-protocols-wlr = { version = "0.2", features = ["client"] }
 gtk4 = "0.7"
 ksni = { git = "https://github.com/talonvoice/ksni/", branch = "zbus" }
 cairo-rs = "0.18.3"
-relm4 = "0.7.0-alpha.2"
+# relm4 = "0.7.0-alpha.2"
+relm4 = { git = "https://github.com/Relm4/Relm4" }
 relm4-components = "0.7.0-alpha.2"
-relm4-icons = { version = "0.7.0-alpha.2", features = [
+relm4-icons = { git = "https://github.com/Relm4/icons", branch = "try-fix-icon-loading", features = [
+  "plus",
   "paper",
   "copy",
   "crop",

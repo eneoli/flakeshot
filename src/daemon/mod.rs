@@ -3,7 +3,6 @@ use std::{fs::File, io::Write};
 use anyhow::Context;
 use gtk4::CssProvider;
 use relm4::RelmApp;
-use tokio::{io::Interest, net::UnixListener};
 use tracing::{debug, error, info};
 
 pub mod message;
@@ -24,11 +23,16 @@ pub enum Error {
 
     #[error("The daemon isn't running yet. Please start it. (See help page.)")]
     NotRunning,
+
+    #[error("There's already a daemon running.")]
+    AlreadyRunning,
 }
 
 #[tracing::instrument]
 pub fn start() -> anyhow::Result<()> {
-    let _lock_guard = acquire_lock()?;
+    let Some(_lock_guard) = acquire_lock()? else {
+        return Err(Error::AlreadyRunning.into());
+    };
     debug!("Starting daemon");
 
     // there's no daemon yet => remove the socket file to be able to create a new one
@@ -47,45 +51,15 @@ pub fn start() -> anyhow::Result<()> {
         debug!("Old socket path successfully removed");
     }
 
-    let rt = tokio::runtime::Runtime::new()?;
-    rt.block_on(_start())?;
+    let app = RelmApp::new("org.flakeshot.app")
+        .with_args(vec![])
+        .visible_on_activate(false);
+    relm4_icons::initialize_icons();
+    initialize_css();
+
+    app.run::<AppModel>(());
 
     Ok(())
-}
-
-#[tracing::instrument]
-async fn _start() -> anyhow::Result<()> {
-    let listener = {
-        let socket_path = get_socket_file_path();
-        UnixListener::bind(socket_path).context("Couldn't bind to socket.")?
-    };
-    debug!("Socket listener created");
-
-    let mut byte_buffer: Vec<u8> = vec![];
-    loop {
-        match listener.accept().await {
-            Ok((stream, _addr)) => {
-                if let Err(e) = stream.ready(Interest::READABLE).await {
-                    error!(
-                        "An IO error occured while waiting for messages of the listener: {}",
-                        e
-                    );
-                }
-
-                match stream.try_read_buf(&mut byte_buffer) {
-                    Ok(amount_bytes) if amount_bytes > 0 => process_message(&mut byte_buffer),
-                    Err(e) if e.kind() != std::io::ErrorKind::WouldBlock => {
-                        error!(
-                            "An error occured while trying to read the message from the socket: {}",
-                            e
-                        );
-                    }
-                    _ => {}
-                };
-            }
-            Err(e) => error!("Coulnd't connect to listener: {}", e),
-        }
-    }
 }
 
 /// If no error occured: Returns the lock-file (if available), otherwise `None` if the lock file
@@ -127,33 +101,6 @@ pub fn send_message(msg: Message) -> anyhow::Result<()> {
         .context("Couldn't write message to daemon socket")?;
 
     Ok(())
-}
-
-fn process_message(buffer: &mut Vec<u8>) {
-    let msg: Message = {
-        let bytes = std::mem::take(buffer);
-        let string = String::from_utf8(bytes).unwrap();
-        ron::from_str(&string).unwrap()
-    };
-
-    match msg {
-        Message::CreateScreenshot => start_gui(),
-    }
-}
-
-#[tracing::instrument]
-fn start_gui() {
-    let session = std::thread::spawn(|| {
-        let app = RelmApp::new("org.flakeshot.app").with_args(vec![]);
-        relm4_icons::initialize_icons();
-        initialize_css();
-
-        app.run::<AppModel>(());
-    });
-
-    if let Err(e) = session.join() {
-        error!("{}", e.downcast::<crate::frontend::Error>().unwrap());
-    }
 }
 
 fn initialize_css() {
