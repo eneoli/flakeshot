@@ -9,7 +9,7 @@ use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 use xdg::BaseDirectories;
 
-use crate::daemon::Message;
+use crate::daemon::Command;
 
 pub mod backend;
 pub mod cli;
@@ -88,7 +88,7 @@ pub fn start() -> anyhow::Result<()> {
     let mut stream =
         UnixStream::connect(socket_path).context("Couldn't conenct to daemon socket")?;
 
-    let msg_string = ron::to_string(&Message::CreateScreenshot)?;
+    let msg_string = ron::to_string(&Command::CreateScreenshot)?;
     stream
         .write_all(msg_string.as_bytes())
         .context("Couldn't write message to daemon socket")?;

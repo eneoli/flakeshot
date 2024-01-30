@@ -10,14 +10,11 @@ pub mod screenshot_window;
 pub mod ui;
 pub mod ui_manager;
 
-#[derive(thiserror::Error, Debug)]
-pub enum Error {}
-
+/// Starts the system tray of flakeshot and its daemon
 pub fn start() -> anyhow::Result<()> {
     let Some(_lock_guard) = daemon::acquire_lock()? else {
         return Err(daemon::Error::AlreadyRunning.into());
     };
-    debug!("Starting tray");
 
     // there's no daemon yet => remove the socket file to be able to create a new one
     {

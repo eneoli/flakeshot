@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
     backend::{self, MonitorInfo, OutputInfo},
-    daemon::{self, Message},
+    daemon::{self, Command},
     tray,
 };
 
@@ -41,7 +41,7 @@ impl Component for AppModel {
     type Init = ();
     type Root = gtk::Window;
     type Widgets = ();
-    type CommandOutput = Message;
+    type CommandOutput = Command;
 
     fn init_root() -> Self::Root {
         gtk::Window::new()
@@ -52,7 +52,6 @@ impl Component for AppModel {
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
-        // start listenting on the socket
         sender.command(|out, shutdown| shutdown.register(daemon::start(out)).drop_on_shutdown());
         sender.command(|out, shutdown| shutdown.register(tray::start(out)).drop_on_shutdown());
 
@@ -66,9 +65,9 @@ impl Component for AppModel {
         ComponentParts { model, widgets: () }
     }
 
-    fn update_cmd(&mut self, message: Message, sender: ComponentSender<Self>, _root: &Self::Root) {
+    fn update_cmd(&mut self, message: Command, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
-            Message::CreateScreenshot => self.start_gui(sender),
+            Command::CreateScreenshot => self.start_gui(sender),
         }
     }
 

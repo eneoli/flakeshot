@@ -4,9 +4,10 @@ use std::io::Cursor;
 use image::{ImageBuffer, Rgba};
 use ksni;
 
-use crate::daemon::Message;
+use crate::daemon::Command;
 
-pub async fn start(sender: Sender<Message>) {
+#[tracing::instrument]
+pub async fn start(sender: Sender<Command>) {
     let tray = Tray::new(sender);
 
     let (_tx, rx) = tokio::sync::mpsc::unbounded_channel();
@@ -15,12 +16,12 @@ pub async fn start(sender: Sender<Message>) {
 
 #[derive(Debug)]
 pub struct Tray {
-    sender: Sender<Message>,
+    sender: Sender<Command>,
     icon: ksni::Icon,
 }
 
 impl Tray {
-    fn new(sender: Sender<Message>) -> Self {
+    fn new(sender: Sender<Command>) -> Self {
         let rgba_image = get_tray_image();
         let (width, height) = rgba_image.dimensions();
 
@@ -50,7 +51,7 @@ impl ksni::Tray for Tray {
     }
 
     fn activate(&mut self, _x: i32, _y: i32) {
-        self.sender.send(Message::CreateScreenshot).unwrap();
+        self.sender.send(Command::CreateScreenshot).unwrap();
     }
 
     fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
