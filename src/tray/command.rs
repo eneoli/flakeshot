@@ -5,5 +5,5 @@ pub enum Command {
     CreateScreenshot,
 
     /// Send a notifiaction to the user
-    Notify(String),
+    Notify(Result<String, String>),
 }

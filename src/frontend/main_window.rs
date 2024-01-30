@@ -11,10 +11,11 @@ use crate::{
     cli, tray,
 };
 
+use anyhow::{anyhow, Context};
 use clap::crate_name;
 use gtk::prelude::*;
 use image::DynamicImage;
-use notify_rust::Notification;
+use notify_rust::{Hint, Notification};
 use relm4::{prelude::*, Sender};
 use tracing::error;
 
@@ -26,7 +27,11 @@ pub enum AppInput {
 pub struct AppModel {
     ui_manager: UiManager,
     window_senders: Vec<Sender<ScreenshotWindowInput>>,
-    cmd: cli::Command,
+
+    /// Determines the exit-behaviour:
+    /// "Gui" => Exit immediately atfer creating the screeshot
+    /// "Tray" => Just hide the screenshot window
+    mode: cli::Command,
 }
 
 impl AppModel {
@@ -34,11 +39,16 @@ impl AppModel {
         AppModel {
             ui_manager: UiManager::new(total_width, total_height),
             window_senders: vec![],
-            cmd,
+            mode: cmd,
         }
     }
 
-    fn notify_error(&self, sender: ComponentSender<Self>, msg: String) {
+    fn notify(&self, sender: ComponentSender<Self>, msg: Result<String, String>) {
+        let (msg, hint) = match msg {
+            Ok(msg) => (msg, Hint::Urgency(notify_rust::Urgency::Critical)),
+            Err(msg) => (msg, Hint::Urgency(notify_rust::Urgency::Normal)),
+        };
+
         sender.command(move |_out, shutdown| {
             shutdown
                 .register(async move {
@@ -46,6 +56,7 @@ impl AppModel {
                         .appname(&crate_name!())
                         .summary(&crate_name!())
                         .body(&msg)
+                        .hint(hint)
                         .show_async()
                         .await
                         .map_err(|err| {
@@ -78,8 +89,6 @@ impl Component for AppModel {
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
-        sender.command(|out, shutdown| shutdown.register(tray::start(out)).drop_on_shutdown());
-
         let mut model = {
             let monitors = get_monitors();
             let (total_width, total_height) = get_total_view_size(&monitors.values().collect());
@@ -89,6 +98,8 @@ impl Component for AppModel {
 
         if payload == cli::Command::Gui {
             model.start_gui(sender);
+        } else {
+            sender.command(|out, shutdown| shutdown.register(tray::start(out)).drop_on_shutdown());
         }
 
         ComponentParts { model, widgets: () }
@@ -102,7 +113,7 @@ impl Component for AppModel {
     ) {
         match message {
             tray::Command::CreateScreenshot => self.start_gui(sender),
-            tray::Command::Notify(err) => self.notify_error(sender, err),
+            tray::Command::Notify(err) => self.notify(sender, err),
         }
     }
 
@@ -117,14 +128,21 @@ impl Component for AppModel {
 
 impl AppModel {
     fn start_gui(&mut self, sender: ComponentSender<Self>) {
+        if let Err(e) = self._start_gui(sender.clone()) {
+            self.notify(sender, Err(format!("{}", e)));
+        }
+    }
+
+    fn _start_gui(&mut self, sender: ComponentSender<Self>) -> anyhow::Result<()> {
         let sender = Rc::new(sender);
-        let screenshots =
-            backend::create_screenshots().expect("We couldn't create the initial screenshots.");
+        let screenshots = backend::create_screenshots()?;
         let mut monitors = get_monitors();
 
         for screenshot in screenshots {
-            self.init_monitor(sender.clone(), &screenshot, &mut monitors);
+            self.init_monitor(sender.clone(), &screenshot, &mut monitors)?;
         }
+
+        Ok(())
     }
 
     fn init_monitor(
@@ -132,7 +150,7 @@ impl AppModel {
         sender: Rc<ComponentSender<Self>>,
         (output_info, image): &(OutputInfo, DynamicImage),
         monitors: &mut HashMap<String, gdk4::Monitor>,
-    ) {
+    ) -> anyhow::Result<()> {
         let app = relm4::main_application();
 
         let (monitor, x, y, width, height) = {
@@ -141,9 +159,9 @@ impl AppModel {
                 MonitorInfo::X11 { name } => name,
             };
 
-            let monitor = monitors
-                .remove(&monitor_name.to_string())
-                .expect("We tried to access a non-existend monitor.");
+            let monitor = monitors.remove(&monitor_name.to_string()).ok_or(anyhow!(
+                "This shouldn't happen because flakeshot tried to access a non-existend monitor."
+            ))?;
 
             let x = monitor.geometry().x();
             let y = monitor.geometry().y();
@@ -154,7 +172,7 @@ impl AppModel {
         };
 
         let window = ScreenshotWindowModel::builder();
-        register_keyboard_events(&window.root, self.cmd);
+        register_keyboard_events(&window.root, self.mode);
         app.add_window(&window.root);
 
         // launch + forward messages to main window
@@ -184,7 +202,9 @@ impl AppModel {
         // add screenshot of monitor to image
         self.ui_manager
             .stamp_image(x as f64, y as f64, image)
-            .expect("Couldn't stamp image.");
+            .context("Couldn't stamp image.")?;
+
+        Ok(())
     }
 }
 

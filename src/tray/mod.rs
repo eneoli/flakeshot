@@ -22,7 +22,7 @@ pub async fn start(sender: Sender<Command>) {
         Ok(Some(lock_file)) => lock_file,
         Ok(None) => return,
         Err(e) => {
-            sender.send(Command::Notify(format!("{}", e))).unwrap();
+            sender.send(Command::Notify(Err(format!("{}", e)))).unwrap();
             return;
         }
     };
