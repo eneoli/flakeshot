@@ -1,8 +1,5 @@
 use clap::Parser;
-use flakeshot::{
-    cli::{Cli, Command},
-    daemon, tray,
-};
+use flakeshot::cli::{Cli, Command};
 
 fn main() -> anyhow::Result<()> {
     {
@@ -18,7 +15,6 @@ fn main() -> anyhow::Result<()> {
 
     match cli.command() {
         Command::Gui => flakeshot::start(),
-        Command::Tray => tray::start(),
-        Command::Daemon => daemon::start(),
+        Command::TrayDaemon => flakeshot::tray_daemon::start(),
     }
 }

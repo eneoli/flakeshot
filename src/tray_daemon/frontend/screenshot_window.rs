@@ -16,13 +16,13 @@ use relm4::{
 use crate::backend::is_wayland;
 
 use super::{
-    main_window::AppModel,
+    main_window::TrayDaemon,
     ui::toolbar::{Toolbar, ToolbarEvent},
 };
 
 pub struct ScreenshotWindowInit {
     pub monitor: gdk4::Monitor,
-    pub parent_sender: Rc<relm4::ComponentSender<AppModel>>,
+    pub parent_sender: Rc<relm4::ComponentSender<TrayDaemon>>,
 }
 
 pub struct ScreenshotWindowModel {

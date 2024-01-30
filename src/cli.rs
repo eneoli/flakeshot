@@ -24,7 +24,7 @@ pub struct Cli {
 
 impl Cli {
     pub fn command(&self) -> Command {
-        self.command.unwrap_or(Command::Tray)
+        self.command.unwrap_or(Command::TrayDaemon)
     }
 }
 
@@ -34,10 +34,7 @@ pub enum Command {
     Gui,
 
     /// Start the system tray of flakeshot. (default)
-    Tray,
-
-    /// Start the daemon.
-    Daemon,
+    TrayDaemon,
 }
 
 #[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]

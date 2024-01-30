@@ -8,37 +8,33 @@ use super::{
 };
 use crate::{
     backend::{self, MonitorInfo, OutputInfo},
-    daemon::message::Message,
-    get_socket_file_path,
+    tray_daemon::{daemon, tray, Message},
 };
 
-use anyhow::Context;
 use gtk::prelude::*;
 use image::DynamicImage;
 use relm4::{prelude::*, Sender};
-use tokio::{io::Interest, net::UnixListener};
-use tracing::{debug, error};
 
 #[derive(Debug)]
 pub enum AppInput {
     ScreenshotWindowOutput(ScreenshotWindowOutput),
 }
 
-pub struct AppModel {
+pub struct TrayDaemon {
     ui_manager: UiManager,
     window_senders: Vec<Sender<ScreenshotWindowInput>>,
 }
 
-impl AppModel {
+impl TrayDaemon {
     fn init(total_width: i32, total_height: i32) -> Self {
-        AppModel {
+        TrayDaemon {
             ui_manager: UiManager::new(total_width, total_height),
             window_senders: vec![],
         }
     }
 }
 
-impl Component for AppModel {
+impl Component for TrayDaemon {
     type Input = AppInput;
     type Output = ();
     type Init = ();
@@ -47,12 +43,7 @@ impl Component for AppModel {
     type CommandOutput = Message;
 
     fn init_root() -> Self::Root {
-        let window = gtk::Window::new();
-
-        // we use this window only as a container for the screenshot windows
-        window.set_visible(false);
-
-        window
+        gtk::Window::new()
     }
 
     fn init(
@@ -61,7 +52,8 @@ impl Component for AppModel {
         sender: ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
         // start listenting on the socket
-        sender.command(|out, shutdown| shutdown.register(listen_to_socket(out)).drop_on_shutdown());
+        sender.command(|out, shutdown| shutdown.register(daemon::start(out)).drop_on_shutdown());
+        sender.command(|out, shutdown| shutdown.register(tray::start(out)).drop_on_shutdown());
 
         let model = {
             let monitors = get_monitors();
@@ -88,7 +80,7 @@ impl Component for AppModel {
     }
 }
 
-impl AppModel {
+impl TrayDaemon {
     fn start_gui(&mut self, sender: ComponentSender<Self>) {
         let sender = Rc::new(sender);
         let screenshots =
@@ -218,50 +210,4 @@ fn register_keyboard_events(window: &gtk::Window) {
     });
 
     window.add_controller(event_controller);
-}
-
-async fn listen_to_socket(out: Sender<Message>) {
-    let listener = {
-        let socket_path = get_socket_file_path();
-        UnixListener::bind(socket_path)
-            .context("Couldn't bind to socket.")
-            .unwrap()
-    };
-    debug!("Socket listener created");
-
-    let mut byte_buffer: Vec<u8> = vec![];
-    loop {
-        match listener.accept().await {
-            Ok((stream, _addr)) => {
-                if let Err(e) = stream.ready(Interest::READABLE).await {
-                    error!(
-                        "An IO error occured while waiting for messages of the listener: {}",
-                        e
-                    );
-                }
-
-                match stream.try_read_buf(&mut byte_buffer) {
-                    Ok(amount_bytes) if amount_bytes > 0 => process_message(&mut byte_buffer, &out),
-                    Err(e) if e.kind() != std::io::ErrorKind::WouldBlock => {
-                        error!(
-                            "An error occured while trying to read the message from the socket: {}",
-                            e
-                        );
-                    }
-                    _ => {}
-                };
-            }
-            Err(e) => error!("Coulnd't connect to listener: {}", e),
-        }
-    }
-}
-
-fn process_message(buffer: &mut Vec<u8>, out: &Sender<Message>) {
-    let msg: Message = {
-        let bytes = std::mem::take(buffer);
-        let string = String::from_utf8(bytes).unwrap();
-        ron::from_str(&string).unwrap()
-    };
-
-    out.send(msg).unwrap();
 }

@@ -1,18 +1,19 @@
 //! Welcome to the code-documentation of flakeshot!
 
-use std::{fs::File, path::PathBuf, sync::OnceLock};
+use std::{fs::File, io::Write, path::PathBuf, sync::OnceLock};
 
+use anyhow::Context;
 use clap::crate_name;
 use cli::LogLevel;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 use xdg::BaseDirectories;
 
+use crate::tray_daemon::Message;
+
 pub mod backend;
 pub mod cli;
-pub mod daemon;
-pub mod frontend;
-pub mod tray;
+pub mod tray_daemon;
 
 static XDG: OnceLock<BaseDirectories> = OnceLock::new();
 
@@ -76,10 +77,18 @@ pub fn get_socket_file_path() -> PathBuf {
 }
 
 pub fn start() -> anyhow::Result<()> {
-    if daemon::acquire_lock()?.is_some() {
-        return Err(daemon::Error::NotRunning.into());
+    use std::os::unix::net::UnixStream;
+    if tray_daemon::acquire_lock()?.is_some() {
+        return Err(tray_daemon::Error::NotRunning.into());
     }
 
-    daemon::send_message(daemon::message::Message::CreateScreenshot)?;
+    let socket_path = get_socket_file_path();
+    let mut stream =
+        UnixStream::connect(socket_path).context("Couldn't conenct to daemon socket")?;
+
+    let msg_string = ron::to_string(&Message::CreateScreenshot)?;
+    stream
+        .write_all(msg_string.as_bytes())
+        .context("Couldn't write message to daemon socket")?;
     Ok(())
 }
