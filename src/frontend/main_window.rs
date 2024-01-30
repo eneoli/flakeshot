@@ -12,9 +12,12 @@ use crate::{
     tray,
 };
 
+use clap::crate_name;
 use gtk::prelude::*;
 use image::DynamicImage;
+use notify_rust::Notification;
 use relm4::{prelude::*, Sender};
+use tracing::error;
 
 #[derive(Debug)]
 pub enum AppInput {
@@ -32,6 +35,27 @@ impl AppModel {
             ui_manager: UiManager::new(total_width, total_height),
             window_senders: vec![],
         }
+    }
+
+    fn notify_error(&self, sender: ComponentSender<Self>, msg: String) {
+        sender.command(|_out, shutdown| {
+            shutdown
+                .register(async move {
+                    Notification::new()
+                        .appname(&crate_name!())
+                        .body(&msg)
+                        .show_async()
+                        .await
+                        .map_err(|err| {
+                            error!(
+                                "An error occured while trying to send a notification: {}",
+                                err
+                            )
+                        })
+                        .unwrap()
+                })
+                .drop_on_shutdown()
+        })
     }
 }
 
@@ -68,6 +92,7 @@ impl Component for AppModel {
     fn update_cmd(&mut self, message: Command, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
             Command::CreateScreenshot => self.start_gui(sender),
+            Command::NotifyError(err) => self.notify_error(sender, err),
         }
     }
 
