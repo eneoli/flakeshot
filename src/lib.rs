@@ -69,7 +69,7 @@ pub fn get_default_log_path() -> PathBuf {
         .unwrap_or_else(|e| panic!("Couldn't access log file path: {}", e))
 }
 
-pub fn start(start_gui: bool) {
+pub fn start(mode: cli::Command) {
     let app = RelmApp::new("org.flakeshot.app")
         .with_args(vec![])
         .visible_on_activate(false);
@@ -77,7 +77,7 @@ pub fn start(start_gui: bool) {
     relm4_icons::initialize_icons();
     initialize_css();
 
-    app.run::<AppModel>(start_gui);
+    app.run::<AppModel>(mode);
 }
 
 fn initialize_css() {

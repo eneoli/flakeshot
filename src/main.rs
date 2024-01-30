@@ -2,7 +2,7 @@
 compile_error!("flakeshot only runs on UNIX-like systems.");
 
 use clap::Parser;
-use flakeshot::cli::{Cli, Command};
+use flakeshot::cli::Cli;
 
 fn main() {
     {
@@ -15,9 +15,5 @@ fn main() {
 
     let cli = Cli::parse();
     flakeshot::init_logging(&cli.log_level, &cli.log_path);
-
-    match cli.command() {
-        Command::Gui => flakeshot::start(true),
-        Command::Tray => flakeshot::start(false),
-    }
+    flakeshot::start(cli.command());
 }

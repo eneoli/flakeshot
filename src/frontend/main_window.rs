@@ -8,7 +8,7 @@ use super::{
 };
 use crate::{
     backend::{self, MonitorInfo, OutputInfo},
-    tray::{self, Command},
+    cli, tray,
 };
 
 use clap::crate_name;
@@ -26,13 +26,15 @@ pub enum AppInput {
 pub struct AppModel {
     ui_manager: UiManager,
     window_senders: Vec<Sender<ScreenshotWindowInput>>,
+    cmd: cli::Command,
 }
 
 impl AppModel {
-    fn init(total_width: i32, total_height: i32) -> Self {
+    fn init(total_width: i32, total_height: i32, cmd: cli::Command) -> Self {
         AppModel {
             ui_manager: UiManager::new(total_width, total_height),
             window_senders: vec![],
+            cmd,
         }
     }
 
@@ -62,10 +64,10 @@ impl AppModel {
 impl Component for AppModel {
     type Input = AppInput;
     type Output = ();
-    type Init = bool;
+    type Init = cli::Command;
     type Root = gtk::Window;
     type Widgets = ();
-    type CommandOutput = Command;
+    type CommandOutput = tray::Command;
 
     fn init_root() -> Self::Root {
         gtk::Window::new()
@@ -82,20 +84,25 @@ impl Component for AppModel {
             let monitors = get_monitors();
             let (total_width, total_height) = get_total_view_size(&monitors.values().collect());
 
-            Self::init(total_width, total_height)
+            Self::init(total_width, total_height, payload)
         };
 
-        if payload {
+        if payload == cli::Command::Gui {
             model.start_gui(sender);
         }
 
         ComponentParts { model, widgets: () }
     }
 
-    fn update_cmd(&mut self, message: Command, sender: ComponentSender<Self>, _root: &Self::Root) {
+    fn update_cmd(
+        &mut self,
+        message: tray::Command,
+        sender: ComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
         match message {
-            Command::CreateScreenshot => self.start_gui(sender),
-            Command::Notify(err) => self.notify_error(sender, err),
+            tray::Command::CreateScreenshot => self.start_gui(sender),
+            tray::Command::Notify(err) => self.notify_error(sender, err),
         }
     }
 
@@ -147,7 +154,7 @@ impl AppModel {
         };
 
         let window = ScreenshotWindowModel::builder();
-        register_keyboard_events(&window.root);
+        register_keyboard_events(&window.root, self.cmd);
         app.add_window(&window.root);
 
         // launch + forward messages to main window
@@ -225,13 +232,16 @@ fn get_total_view_size(monitors: &Vec<&gdk4::Monitor>) -> (i32, i32) {
     (width, height)
 }
 
-fn register_keyboard_events(window: &gtk::Window) {
+fn register_keyboard_events(window: &gtk::Window, mode: cli::Command) {
     let event_controller = gtk::EventControllerKey::new();
     let window2 = window.clone();
 
     event_controller.connect_key_pressed(move |_, key, _, _| {
         if let gdk4::Key::Escape = key {
-            window2.set_visible(false);
+            match mode {
+                cli::Command::Gui => std::process::exit(0),
+                cli::Command::Tray => window2.set_visible(false),
+            }
         }
 
         gtk::glib::Propagation::Proceed

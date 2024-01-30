@@ -28,7 +28,7 @@ impl Cli {
     }
 }
 
-#[derive(Subcommand, Debug, Clone, Copy)]
+#[derive(Subcommand, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
     /// Open the manual capture ui
     Gui,
