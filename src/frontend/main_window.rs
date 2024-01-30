@@ -8,8 +8,7 @@ use super::{
 };
 use crate::{
     backend::{self, MonitorInfo, OutputInfo},
-    daemon::{self, Command},
-    tray,
+    tray::{self, Command},
 };
 
 use clap::crate_name;
@@ -63,7 +62,7 @@ impl AppModel {
 impl Component for AppModel {
     type Input = AppInput;
     type Output = ();
-    type Init = ();
+    type Init = bool;
     type Root = gtk::Window;
     type Widgets = ();
     type CommandOutput = Command;
@@ -73,19 +72,22 @@ impl Component for AppModel {
     }
 
     fn init(
-        _payload: Self::Init,
+        payload: Self::Init,
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
-        sender.command(|out, shutdown| shutdown.register(daemon::start(out)).drop_on_shutdown());
         sender.command(|out, shutdown| shutdown.register(tray::start(out)).drop_on_shutdown());
 
-        let model = {
+        let mut model = {
             let monitors = get_monitors();
             let (total_width, total_height) = get_total_view_size(&monitors.values().collect());
 
             Self::init(total_width, total_height)
         };
+
+        if payload {
+            model.start_gui(sender);
+        }
 
         ComponentParts { model, widgets: () }
     }

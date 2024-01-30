@@ -1,17 +1,36 @@
+mod command;
+mod error;
+
+pub use command::Command;
+pub use error::Error;
+
+use anyhow::Context;
 use relm4::Sender;
-use std::io::Cursor;
+use std::{fs::File, io::Cursor};
+use tracing::{error, info};
 
 use image::{ImageBuffer, Rgba};
 use ksni;
 
-use crate::daemon::Command;
+use crate::get_xdg;
+
+const LOCK_FILE: &str = "tray.lock";
 
 #[tracing::instrument]
 pub async fn start(sender: Sender<Command>) {
-    let tray = Tray::new(sender);
+    let _lock_file = match acquire_lock() {
+        Ok(Some(lock_file)) => lock_file,
+        Ok(None) => return,
+        Err(e) => {
+            sender.send(Command::Notify(format!("{}", e))).unwrap();
+            return;
+        }
+    };
 
     let (_tx, rx) = tokio::sync::mpsc::unbounded_channel();
-    let _ = ksni::run_async(tray, rx).await;
+    ksni::run_async(Tray::new(sender), rx)
+        .await
+        .expect("Couldn't run tray");
 }
 
 #[derive(Debug)]
@@ -65,9 +84,34 @@ impl ksni::Tray for Tray {
     }
 }
 
+/// If no error occured: Returns the lock-file (if available), otherwise `None` if the lock file
+/// couldn't be aquired.
+/// Otherwise the error will be returned.
+#[tracing::instrument]
+pub fn acquire_lock() -> anyhow::Result<Option<File>> {
+    let lock_file_path = get_xdg().place_runtime_file(LOCK_FILE).unwrap();
+
+    let lock_file = File::create(lock_file_path).context("Create tray lock file")?;
+    if let Err(err) = rustix::fs::flock(
+        &lock_file,
+        rustix::fs::FlockOperation::NonBlockingLockExclusive,
+    ) {
+        let daemon_already_exists = err == rustix::io::Errno::WOULDBLOCK;
+
+        if daemon_already_exists {
+            info!("Tray is already running");
+            return Ok(None);
+        } else {
+            error!("Couldn't acquire lock: {}", err);
+            return Err(Error::AcquireSocket(err).into());
+        }
+    }
+
+    Ok(Some(lock_file))
+}
 fn get_tray_image() -> ImageBuffer<Rgba<u8>, Vec<u8>> {
     let cursor = {
-        let image_bytes = include_bytes!("../assets/flakeshot_logo_dpi_96.png");
+        let image_bytes = include_bytes!("../../assets/flakeshot_logo_dpi_96.png");
         Cursor::new(image_bytes)
     };
     image::io::Reader::with_format(cursor, image::ImageFormat::Png)
