@@ -43,10 +43,13 @@ impl AppModel {
         }
     }
 
+    /// # Message type
+    /// If `msg` is `Ok`, then it will be treated as a normal nofification.
+    /// If `msg` is `Err`, then it will be treated as an urgency notification.
     fn notify(&self, sender: ComponentSender<Self>, msg: Result<String, String>) {
         let (msg, hint) = match msg {
-            Ok(msg) => (msg, Hint::Urgency(notify_rust::Urgency::Critical)),
-            Err(msg) => (msg, Hint::Urgency(notify_rust::Urgency::Normal)),
+            Ok(msg) => (msg, Hint::Urgency(notify_rust::Urgency::Normal)),
+            Err(msg) => (msg, Hint::Urgency(notify_rust::Urgency::Critical)),
         };
 
         sender.command(move |_out, shutdown| {
