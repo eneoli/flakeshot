@@ -1,6 +1,6 @@
 use std::fs::File;
 
-use anyhow::Context;
+use anyhow::{anyhow, Context};
 use relm4::Sender;
 use tokio::{io::Interest, net::UnixListener};
 use tracing::{debug, error, info};
@@ -18,6 +18,17 @@ use crate::{get_socket_file_path, get_xdg};
 /// Starts the daemon which listens on the socket for commands.
 #[tracing::instrument]
 pub async fn start(out: Sender<Command>) {
+    if let Err(start_err) = _start(&out).await {
+        error!("{}", start_err);
+        out.send(Command::Notify(format!("{}", start_err)))
+            .expect("Couldn't send command");
+
+        // if the daemon is dead => then we can't invoke the gui anymore => should be dead as well
+        panic!("The daemon encountered an error: {}", start_err);
+    }
+}
+
+async fn _start(out: &Sender<Command>) -> anyhow::Result<()> {
     let listener = {
         let socket_path = get_socket_file_path();
         UnixListener::bind(socket_path)
@@ -30,25 +41,23 @@ pub async fn start(out: Sender<Command>) {
     loop {
         match listener.accept().await {
             Ok((stream, _addr)) => {
-                if let Err(e) = stream.ready(Interest::READABLE).await {
-                    error!(
-                        "An IO error occured while waiting for messages of the listener: {}",
-                        e
-                    );
-                }
+                stream
+                    .ready(Interest::READABLE)
+                    .await
+                    .context("An IO error occured while waiting for messages of the listener")?;
 
                 match stream.try_read_buf(&mut byte_buffer) {
                     Ok(amount_bytes) if amount_bytes > 0 => process_command(&mut byte_buffer, &out),
                     Err(e) if e.kind() != std::io::ErrorKind::WouldBlock => {
-                        error!(
+                        return Err(anyhow!(
                             "An error occured while trying to read the message from the socket: {}",
                             e
-                        );
+                        ));
                     }
                     _ => {}
                 };
             }
-            Err(e) => error!("Coulnd't connect to listener: {}", e),
+            Err(e) => return Err(anyhow!("Coulnd't connect to listener: {}", e)),
         }
     }
 }

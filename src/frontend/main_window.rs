@@ -38,11 +38,12 @@ impl AppModel {
     }
 
     fn notify_error(&self, sender: ComponentSender<Self>, msg: String) {
-        sender.command(|_out, shutdown| {
+        sender.command(move |_out, shutdown| {
             shutdown
                 .register(async move {
                     Notification::new()
                         .appname(&crate_name!())
+                        .summary(&crate_name!())
                         .body(&msg)
                         .show_async()
                         .await
@@ -92,7 +93,7 @@ impl Component for AppModel {
     fn update_cmd(&mut self, message: Command, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
             Command::CreateScreenshot => self.start_gui(sender),
-            Command::NotifyError(err) => self.notify_error(sender, err),
+            Command::Notify(err) => self.notify_error(sender, err),
         }
     }
 
