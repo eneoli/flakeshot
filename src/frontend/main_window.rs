@@ -8,7 +8,8 @@ use super::{
 };
 use crate::{
     backend::{self, MonitorInfo, OutputInfo},
-    tray_daemon::{daemon, tray, Message},
+    daemon::{self, Message},
+    tray,
 };
 
 use gtk::prelude::*;
@@ -20,21 +21,21 @@ pub enum AppInput {
     ScreenshotWindowOutput(ScreenshotWindowOutput),
 }
 
-pub struct TrayDaemon {
+pub struct AppModel {
     ui_manager: UiManager,
     window_senders: Vec<Sender<ScreenshotWindowInput>>,
 }
 
-impl TrayDaemon {
+impl AppModel {
     fn init(total_width: i32, total_height: i32) -> Self {
-        TrayDaemon {
+        AppModel {
             ui_manager: UiManager::new(total_width, total_height),
             window_senders: vec![],
         }
     }
 }
 
-impl Component for TrayDaemon {
+impl Component for AppModel {
     type Input = AppInput;
     type Output = ();
     type Init = ();
@@ -80,7 +81,7 @@ impl Component for TrayDaemon {
     }
 }
 
-impl TrayDaemon {
+impl AppModel {
     fn start_gui(&mut self, sender: ComponentSender<Self>) {
         let sender = Rc::new(sender);
         let screenshots =

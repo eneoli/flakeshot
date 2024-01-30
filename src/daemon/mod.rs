@@ -1,11 +1,19 @@
+use std::fs::File;
+
 use anyhow::Context;
 use relm4::Sender;
 use tokio::{io::Interest, net::UnixListener};
-use tracing::{debug, error};
+use tracing::{debug, error, info};
 
-use crate::get_socket_file_path;
+const LOCK_FILE: &str = "daemon.lock";
 
-use super::Message;
+mod error;
+mod message;
+
+pub use error::Error;
+pub use message::Message;
+
+use crate::{get_socket_file_path, get_xdg};
 
 pub async fn start(out: Sender<Message>) {
     let listener = {
@@ -51,4 +59,30 @@ fn process_message(buffer: &mut Vec<u8>, out: &Sender<Message>) {
     };
 
     out.send(msg).unwrap();
+}
+
+/// If no error occured: Returns the lock-file (if available), otherwise `None` if the lock file
+/// couldn't be aquired.
+/// Otherwise the error will be returned.
+#[tracing::instrument]
+pub fn acquire_lock() -> anyhow::Result<Option<File>> {
+    let lock_file_path = get_xdg().place_runtime_file(LOCK_FILE).unwrap();
+
+    let lock_file = File::create(lock_file_path).context("Create daemon lock file")?;
+    if let Err(err) = rustix::fs::flock(
+        &lock_file,
+        rustix::fs::FlockOperation::NonBlockingLockExclusive,
+    ) {
+        let daemon_already_exists = err == rustix::io::Errno::WOULDBLOCK;
+
+        if daemon_already_exists {
+            info!("Daemon is already running");
+            return Ok(None);
+        } else {
+            error!("Couldn't acquire lock: {}", err);
+            return Err(Error::AcquireSocket(err).into());
+        }
+    }
+
+    Ok(Some(lock_file))
 }

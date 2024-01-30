@@ -4,7 +4,7 @@ use std::io::Cursor;
 use image::{ImageBuffer, Rgba};
 use ksni;
 
-use super::Message;
+use crate::daemon::Message;
 
 pub async fn start(sender: Sender<Message>) {
     let tray = Tray::new(sender);
@@ -66,7 +66,7 @@ impl ksni::Tray for Tray {
 
 fn get_tray_image() -> ImageBuffer<Rgba<u8>, Vec<u8>> {
     let cursor = {
-        let image_bytes = include_bytes!("../../assets/flakeshot_logo_dpi_96.png");
+        let image_bytes = include_bytes!("../assets/flakeshot_logo_dpi_96.png");
         Cursor::new(image_bytes)
     };
     image::io::Reader::with_format(cursor, image::ImageFormat::Png)

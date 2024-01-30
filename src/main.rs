@@ -18,6 +18,6 @@ fn main() -> anyhow::Result<()> {
 
     match cli.command() {
         Command::Gui => flakeshot::start(),
-        Command::TrayDaemon => flakeshot::tray_daemon::start(),
+        Command::Tray => flakeshot::frontend::start(),
     }
 }

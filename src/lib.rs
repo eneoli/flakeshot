@@ -9,11 +9,13 @@ use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 use xdg::BaseDirectories;
 
-use crate::tray_daemon::Message;
+use crate::daemon::Message;
 
 pub mod backend;
 pub mod cli;
-pub mod tray_daemon;
+pub mod daemon;
+pub mod frontend;
+pub mod tray;
 
 static XDG: OnceLock<BaseDirectories> = OnceLock::new();
 
@@ -78,8 +80,8 @@ pub fn get_socket_file_path() -> PathBuf {
 
 pub fn start() -> anyhow::Result<()> {
     use std::os::unix::net::UnixStream;
-    if tray_daemon::acquire_lock()?.is_some() {
-        return Err(tray_daemon::Error::NotRunning.into());
+    if daemon::acquire_lock()?.is_some() {
+        return Err(daemon::Error::NotRunning.into());
     }
 
     let socket_path = get_socket_file_path();
