@@ -10,6 +10,12 @@ use super::{
 
 type RenderHandler = dyn Fn(&UiManager);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SaveDestination {
+    File,
+    Clipboard,
+}
+
 pub struct UiManager {
     canvas: Rc<RefCell<Canvas>>,
     on_render_handler: Vec<Box<RenderHandler>>,
@@ -39,8 +45,8 @@ impl UiManager {
 
     pub fn handle_tool_event(&mut self, event: ToolbarEvent) {
         match event {
-            ToolbarEvent::SaveAsFile => self.save_canvas_to_file(),
-            ToolbarEvent::SaveIntoClipboard => {}
+            ToolbarEvent::SaveAsFile => self.save_image(SaveDestination::File),
+            ToolbarEvent::SaveIntoClipboard => self.save_image(SaveDestination::Clipboard),
             ToolbarEvent::Crop => {}
         }
     }
@@ -58,20 +64,26 @@ impl UiManager {
         }
     }
 
-    fn save_canvas_to_file(&self) {
+    fn save_image(&self, dest: SaveDestination) {
         let canvas_ref = self.canvas.clone();
 
-        FileChooser::open(move |file| {
-            if let Some(path) = file {
-                let width = canvas_ref.borrow().width() as u32;
-                let height = canvas_ref.borrow().height() as u32;
-                canvas_ref
-                    .borrow()
-                    .crop_to_image(0.0, 0.0, width, height)
-                    .expect("Couldn't crop canvas.")
-                    .save(path)
-                    .expect("Couldn't save image.");
+        let width = canvas_ref.borrow().width() as u32;
+        let height = canvas_ref.borrow().height() as u32;
+
+        let image = canvas_ref
+            .borrow()
+            .crop_to_image(0.0, 0.0, width, height)
+            .expect("Couldn't crop canvas.");
+
+        match dest {
+            SaveDestination::File => {
+                FileChooser::open(move |file| {
+                    if let Some(path) = file {
+                        image.save(path).expect("Couldn't save image.");
+                    }
+                });
             }
-        });
+            SaveDestination::Clipboard => crate::backend::save_to_clipboard(image),
+        }
     }
 }

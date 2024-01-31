@@ -19,6 +19,7 @@ pub mod tray;
 static XDG: OnceLock<BaseDirectories> = OnceLock::new();
 
 const LOG_FILENAME: &str = "log.log";
+const TMP_IMG_PATH: &str = "screenshot.png";
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 ///
@@ -67,6 +68,12 @@ pub fn get_default_log_path() -> PathBuf {
     get_xdg()
         .place_state_file(LOG_FILENAME)
         .unwrap_or_else(|e| panic!("Couldn't access log file path: {}", e))
+}
+
+pub fn get_default_image_path() -> PathBuf {
+    get_xdg()
+        .place_data_file(TMP_IMG_PATH)
+        .unwrap_or_else(|e| panic!("Couldn't access temporary image save path: {}", e))
 }
 
 pub fn start(mode: cli::Command) {

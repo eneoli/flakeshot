@@ -1,5 +1,7 @@
 //! Contains the different backends to get the screenshot from.
 
+use relm4::factory::DynamicIndex;
+
 pub mod wayland;
 pub mod x11;
 
@@ -70,5 +72,22 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
         wayland::create_screenshots().map_err(Error::from)
     } else {
         x11::create_screenshots().map_err(Error::from)
+    }
+}
+
+pub fn save_to_clipboard(img: image::DynamicImage) {
+    let tmp_path = crate::get_default_image_path();
+    img.save_with_format(tmp_path.clone(), image::ImageFormat::Png)
+        .unwrap();
+
+    if is_wayland() {
+        todo!("Implement clipboard stuff for wayland");
+    } else {
+        tracing::debug!("hello");
+        std::process::Command::new("xlclip")
+            .args(["-selection", "clipboard", "-target", "image/png", "-i"])
+            .arg(tmp_path.as_os_str())
+            .spawn()
+            .unwrap();
     }
 }

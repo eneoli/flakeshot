@@ -54,6 +54,7 @@ impl SimpleComponent for Toolbar {
                 add_css_class: "toolbar-button",
                 set_tooltip_text: Some("Copy to clipboard (TODO)"),
                 connect_clicked[sender] => move |_| {
+                    tracing::debug!("clicked!");
                     sender.output(ToolbarEvent::SaveIntoClipboard).unwrap();
                 },
             }
