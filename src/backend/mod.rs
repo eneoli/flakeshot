@@ -66,7 +66,7 @@ pub fn is_wayland() -> bool {
 
 /// The main function of this module.
 ///
-/// # General description
+// # General description
 /// This function returns an image for each screen (or "monitor" in other
 /// words).
 ///

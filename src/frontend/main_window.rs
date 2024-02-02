@@ -46,10 +46,13 @@ impl AppModel {
     /// # Message type
     /// If `msg` is `Ok`, then it will be treated as a normal nofification.
     /// If `msg` is `Err`, then it will be treated as an urgency notification.
-    fn notify(&self, sender: ComponentSender<Self>, msg: Result<String, String>) {
+    fn notify(&self, sender: &ComponentSender<Self>, msg: anyhow::Result<String>) {
         let (msg, hint) = match msg {
             Ok(msg) => (msg, Hint::Urgency(notify_rust::Urgency::Normal)),
-            Err(msg) => (msg, Hint::Urgency(notify_rust::Urgency::Critical)),
+            Err(err) => (
+                format!("{}", err),
+                Hint::Urgency(notify_rust::Urgency::Critical),
+            ),
         };
 
         sender.command(move |_out, shutdown| {
@@ -116,27 +119,29 @@ impl Component for AppModel {
     ) {
         match message {
             tray::Command::CreateScreenshot => self.start_gui(sender),
-            tray::Command::Notify(err) => self.notify(sender, err),
+            tray::Command::Notify(result) => {
+                self.notify(&sender, result.map_err(|err| anyhow!("{}", err)))
+            }
         }
     }
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
-        let result = match message {
-            AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::ToolbarEvent(event)) => {
-                self.ui_manager.handle_tool_event(event)
-            }
+        let result: anyhow::Result<String> = match message {
+            AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::ToolbarEvent(event)) => self
+                .ui_manager
+                .handle_tool_event(event)
+                .map(|s| s.to_string()),
         };
 
-        if let Err(err) = result {
-            self.notify(sender, Err(format!("{}", err)));
-        }
+        self.notify(&sender, result);
     }
 }
 
+/// Implements the actual screenshot creating part.
 impl AppModel {
     fn start_gui(&mut self, sender: ComponentSender<Self>) {
-        if let Err(e) = self._start_gui(sender.clone()) {
-            self.notify(sender, Err(format!("{}", e)));
+        if let Err(err) = self._start_gui(sender.clone()) {
+            self.notify(&sender, Err(err));
         }
     }
 

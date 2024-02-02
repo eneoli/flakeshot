@@ -44,14 +44,20 @@ impl UiManager {
         self.canvas.borrow().crop(x, y, width, height)
     }
 
-    pub fn handle_tool_event(&mut self, event: ToolbarEvent) -> anyhow::Result<()> {
+    pub fn handle_tool_event(&mut self, event: ToolbarEvent) -> anyhow::Result<&'static str> {
         match event {
-            ToolbarEvent::SaveAsFile => self.save_image(SaveDestination::File)?,
-            ToolbarEvent::SaveIntoClipboard => self.save_image(SaveDestination::Clipboard)?,
-            ToolbarEvent::Crop => {}
-        };
-
-        Ok(())
+            ToolbarEvent::SaveAsFile => {
+                self.save_image(SaveDestination::File)?;
+                Ok("Image successfully save to file")
+            }
+            ToolbarEvent::SaveIntoClipboard => {
+                self.save_image(SaveDestination::Clipboard)?;
+                Ok("Image saved to clipboard")
+            }
+            ToolbarEvent::Crop => {
+                todo!()
+            }
+        }
     }
 
     pub fn on_render<F>(&mut self, handler: F)
