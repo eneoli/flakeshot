@@ -1,5 +1,11 @@
 //! Contains the different backends to get the screenshot from.
 
+use std::{
+    io::{Cursor, Write},
+    process::Stdio,
+};
+
+use image::{GenericImageView, ImageOutputFormat};
 use relm4::factory::DynamicIndex;
 
 pub mod wayland;
@@ -76,18 +82,27 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
 }
 
 pub fn save_to_clipboard(img: image::DynamicImage) {
-    let tmp_path = crate::get_default_image_path();
-    img.save_with_format(tmp_path.clone(), image::ImageFormat::Png)
-        .unwrap();
-
-    if is_wayland() {
+    let mut child = if is_wayland() {
         todo!("Implement clipboard stuff for wayland");
     } else {
         tracing::debug!("hello");
-        std::process::Command::new("xlclip")
-            .args(["-selection", "clipboard", "-target", "image/png", "-i"])
-            .arg(tmp_path.as_os_str())
+        std::process::Command::new("xclip")
+            .args(["-selection", "clipboard", "-target", "image/png"])
+            .stdin(Stdio::piped())
             .spawn()
-            .unwrap();
+            .unwrap()
+    };
+
+    let mut image_bytes: Vec<u8> = {
+        let dim = img.dimensions();
+        Vec::with_capacity((dim.0 * dim.1) as usize)
+    };
+
+    img.write_to(&mut Cursor::new(&mut image_bytes), ImageOutputFormat::Png)
+        .unwrap();
+
+    {
+        let child_stdin = child.stdin.as_mut().unwrap();
+        child_stdin.write_all(&image_bytes).unwrap();
     }
 }
