@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use cairo::ImageSurface;
 use gdk4::prelude::MonitorExt;
+use gtk::prelude::EventControllerExt;
 use gtk4_layer_shell::LayerShell;
 use relm4::{
     drawing::DrawHandler,
@@ -200,7 +201,9 @@ impl SimpleComponent for ScreenshotWindowModel {
             ));
         });
 
-        overlay.add_controller(gesture);
+        gesture.set_propagation_phase(gtk::PropagationPhase::Bubble);
+
+        drawing_area.add_controller(gesture);
 
         window.present();
 
