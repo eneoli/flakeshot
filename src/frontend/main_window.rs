@@ -29,7 +29,7 @@ pub struct AppModel {
     window_senders: Vec<Sender<ScreenshotWindowInput>>,
 
     /// Determines the exit-behaviour:
-    /// "Gui" => Exit immediately atfer creating the screeshot
+    /// "Gui" => Exit immediately atfer creating the screenshot
     /// "Tray" => Just hide the screenshot window
     mode: cli::Command,
 }
@@ -120,11 +120,15 @@ impl Component for AppModel {
         }
     }
 
-    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>, _root: &Self::Root) {
-        match message {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
+        let result = match message {
             AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::ToolbarEvent(event)) => {
                 self.ui_manager.handle_tool_event(event)
             }
+        };
+
+        if let Err(err) = result {
+            self.notify(sender, Err(format!("{}", err)));
         }
     }
 }

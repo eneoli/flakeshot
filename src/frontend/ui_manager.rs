@@ -1,5 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
+use anyhow::Context;
 use cairo::ImageSurface;
 use image::DynamicImage;
 
@@ -43,12 +44,14 @@ impl UiManager {
         self.canvas.borrow().crop(x, y, width, height)
     }
 
-    pub fn handle_tool_event(&mut self, event: ToolbarEvent) {
+    pub fn handle_tool_event(&mut self, event: ToolbarEvent) -> anyhow::Result<()> {
         match event {
-            ToolbarEvent::SaveAsFile => self.save_image(SaveDestination::File),
-            ToolbarEvent::SaveIntoClipboard => self.save_image(SaveDestination::Clipboard),
+            ToolbarEvent::SaveAsFile => self.save_image(SaveDestination::File)?,
+            ToolbarEvent::SaveIntoClipboard => self.save_image(SaveDestination::Clipboard)?,
             ToolbarEvent::Crop => {}
-        }
+        };
+
+        Ok(())
     }
 
     pub fn on_render<F>(&mut self, handler: F)
@@ -64,7 +67,7 @@ impl UiManager {
         }
     }
 
-    fn save_image(&self, dest: SaveDestination) {
+    fn save_image(&self, dest: SaveDestination) -> anyhow::Result<()> {
         let canvas_ref = self.canvas.clone();
 
         let width = canvas_ref.borrow().width() as u32;
@@ -73,7 +76,7 @@ impl UiManager {
         let image = canvas_ref
             .borrow()
             .crop_to_image(0.0, 0.0, width, height)
-            .expect("Couldn't crop canvas.");
+            .context("Couldn't crop image")?;
 
         match dest {
             SaveDestination::File => {
@@ -83,7 +86,9 @@ impl UiManager {
                     }
                 });
             }
-            SaveDestination::Clipboard => crate::backend::save_to_clipboard(image),
-        }
+            SaveDestination::Clipboard => crate::backend::save_to_clipboard(image)?,
+        };
+
+        Ok(())
     }
 }

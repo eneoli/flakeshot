@@ -5,8 +5,8 @@ use std::{
     process::Stdio,
 };
 
+use anyhow::Context;
 use image::{GenericImageView, ImageOutputFormat};
-use relm4::factory::DynamicIndex;
 
 pub mod wayland;
 pub mod x11;
@@ -81,18 +81,18 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
     }
 }
 
-pub fn save_to_clipboard(img: image::DynamicImage) {
+pub fn save_to_clipboard(img: image::DynamicImage) -> anyhow::Result<()> {
     let mut child = if is_wayland() {
         std::process::Command::new("wl-copy")
             .stdin(Stdio::piped())
             .spawn()
-            .unwrap()
+            .context("Couldn't spawn wl-copy process")?
     } else {
         std::process::Command::new("xclip")
             .args(["-selection", "clipboard", "-target", "image/png"])
             .stdin(Stdio::piped())
             .spawn()
-            .unwrap()
+            .context("Couldn't spawn xclip process")?
     };
 
     let mut image_bytes: Vec<u8> = {
@@ -101,10 +101,17 @@ pub fn save_to_clipboard(img: image::DynamicImage) {
     };
 
     img.write_to(&mut Cursor::new(&mut image_bytes), ImageOutputFormat::Png)
-        .unwrap();
+        .context("Couldn't write image to stdin of clipboard process")?;
 
     {
-        let child_stdin = child.stdin.as_mut().unwrap();
-        child_stdin.write_all(&image_bytes).unwrap();
+        let child_stdin = child
+            .stdin
+            .as_mut()
+            .context("Couldn't get stdin of clipboard-process")?;
+        child_stdin
+            .write_all(&image_bytes)
+            .context("Couldn't write image bytes into clipboard")?;
     }
+
+    Ok(())
 }
