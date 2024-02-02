@@ -1,4 +1,3 @@
-use gtk::prelude::*;
 use relm4::gtk::Align;
 use relm4::prelude::*;
 use relm4::SimpleComponent;
