@@ -4,7 +4,6 @@ use std::{fs::File, path::PathBuf};
 
 use cli::LogLevel;
 use frontend::main_window::AppModel;
-use gdk_pixbuf::gio::ApplicationFlags;
 use gtk4::CssProvider;
 use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
