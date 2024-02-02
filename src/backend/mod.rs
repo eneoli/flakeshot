@@ -83,9 +83,11 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
 
 pub fn save_to_clipboard(img: image::DynamicImage) {
     let mut child = if is_wayland() {
-        todo!("Implement clipboard stuff for wayland");
+        std::process::Command::new("wl-copy")
+            .stdin(Stdio::piped())
+            .spawn()
+            .unwrap()
     } else {
-        tracing::debug!("hello");
         std::process::Command::new("xclip")
             .args(["-selection", "clipboard", "-target", "image/png"])
             .stdin(Stdio::piped())
