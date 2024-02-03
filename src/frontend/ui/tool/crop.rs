@@ -15,8 +15,8 @@ const CONTROL_POINT_RADIUS: f64 = 7.5;
 const CONTROL_POINT_TOLERANCE: f64 = 5.0;
 
 pub struct Crop {
-    is_active: bool,
     drawable: CropDrawable,
+    is_active: bool,
     is_within: bool,
     is_dragging: bool,
     mouse_x: f64,
@@ -26,13 +26,17 @@ pub struct Crop {
 impl Crop {
     pub fn new() -> Self {
         Self {
+            drawable: CropDrawable::new(),
             is_active: false,
             is_within: false,
             is_dragging: false,
-            drawable: CropDrawable::new(),
             mouse_x: 0.0,
             mouse_y: 0.0,
         }
+    }
+
+    pub fn boxed() -> Box<Self> {
+        Box::new(Self::new())
     }
 }
 
@@ -44,7 +48,7 @@ impl Tool for Crop {
         }
 
         if self.is_within && self.is_dragging {
-            // move
+            // move box
             let delta_x = x - self.mouse_x;
             let delta_y = y - self.mouse_y;
 
@@ -59,7 +63,7 @@ impl Tool for Crop {
         self.mouse_x = x;
         self.mouse_y = y;
 
-        ToolCommand::Nop
+        ToolCommand::Noop
     }
 
     fn handle_mouse_press(&mut self, x: f64, y: f64) -> ToolCommand {
@@ -69,10 +73,8 @@ impl Tool for Crop {
             let control_point = self.drawable.is_within_control_point(x, y);
 
             if let Some(control_point) = control_point {
-                let x_left = f64::min(self.drawable.x1, self.drawable.x2);
-                let x_right = f64::max(self.drawable.x1, self.drawable.x2);
-                let y_top = f64::min(self.drawable.y1, self.drawable.y2);
-                let y_bottom = f64::max(self.drawable.y1, self.drawable.y2);
+                let (x_left, x_right, y_top, y_bottom) =
+                    self.drawable.get_control_points_orientated();
 
                 // Extend current box
                 match control_point {
@@ -109,7 +111,7 @@ impl Tool for Crop {
             self.is_dragging = true;
         }
 
-        ToolCommand::Nop
+        ToolCommand::Noop
     }
 
     fn handle_mouse_release(&mut self, x: f64, y: f64) -> ToolCommand {
@@ -151,25 +153,33 @@ impl CropDrawable {
         }
     }
 
-    pub fn is_within_selection(&self, x: f64, y: f64) -> bool {
+    pub fn get_control_points_orientated(&self) -> (f64, f64, f64, f64) {
         let x_left = f64::min(self.x1, self.x2);
         let x_right = f64::max(self.x1, self.x2);
         let y_top = f64::min(self.y1, self.y2);
         let y_bottom = f64::max(self.y1, self.y2);
 
-        x_left <= x && x_right >= x && y_top <= y && y_bottom >= y && self.is_within_control_point(x, y).is_none()
+        (x_left, x_right, y_top, y_bottom)
     }
 
-    pub fn is_within_control_point(&self, x: f64, y: f64) -> Option<ControlPoint> {
+    pub fn is_within_selection(&self, x: f64, y: f64) -> bool {
+        let (x_left, x_right, y_top, y_bottom) = self.get_control_points_orientated();
+
+        x_left <= x
+            && x_right >= x
+            && y_top <= y
+            && y_bottom >= y
+            && self.is_within_control_point(x, y).is_none()
+    }
+
+    fn is_within_control_point(&self, x: f64, y: f64) -> Option<ControlPoint> {
         let is_within_point = |xc: f64, yc: f64, x: f64, y: f64| {
             let radius = CONTROL_POINT_RADIUS + CONTROL_POINT_TOLERANCE;
+
             xc - radius <= x && xc + radius >= x && yc - radius <= y && yc + radius >= y
         };
 
-        let x_left = f64::min(self.x1, self.x2);
-        let x_right = f64::max(self.x1, self.x2);
-        let y_top = f64::min(self.y1, self.y2);
-        let y_bottom = f64::max(self.y1, self.y2);
+        let (x_left, x_right, y_top, y_bottom) = self.get_control_points_orientated();
 
         // Top Left
         if is_within_point(x_left, y_top, x, y) {
@@ -194,15 +204,7 @@ impl CropDrawable {
         None
     }
 
-    fn draw_dot(&self, ctx: &cairo::Context, x: f64, y: f64) {
-        ctx.set_source_rgba(0.12, 0.32, 0.8, 1.0);
-        ctx.arc(x, y, CONTROL_POINT_RADIUS, 0.0, 2.0 * std::f64::consts::PI);
-        ctx.fill().unwrap();
-    }
-}
-
-impl Drawable for CropDrawable {
-    fn draw(&self, ctx: &cairo::Context, surface: &ImageSurface) {
+    fn draw(&self, acitve: bool, ctx: &cairo::Context, surface: &ImageSurface) {
         ctx.set_source_rgba(0.0, 0.0, 0.0, 0.5);
         ctx.set_fill_rule(cairo::FillRule::EvenOdd);
 
@@ -216,10 +218,28 @@ impl Drawable for CropDrawable {
         ctx.stroke().unwrap();
 
         // four dots
-        self.draw_dot(ctx, self.x1, self.y1);
-        self.draw_dot(ctx, self.x2, self.y1);
-        self.draw_dot(ctx, self.x1, self.y2);
-        self.draw_dot(ctx, self.x2, self.y2);
+        if acitve {
+            self.draw_dot(ctx, self.x1, self.y1);
+            self.draw_dot(ctx, self.x2, self.y1);
+            self.draw_dot(ctx, self.x1, self.y2);
+            self.draw_dot(ctx, self.x2, self.y2);
+        }
+    }
+
+    fn draw_dot(&self, ctx: &cairo::Context, x: f64, y: f64) {
+        ctx.set_source_rgba(0.12, 0.32, 0.8, 1.0);
+        ctx.arc(x, y, CONTROL_POINT_RADIUS, 0.0, 2.0 * std::f64::consts::PI);
+        ctx.fill().unwrap();
+    }
+}
+
+impl Drawable for CropDrawable {
+    fn draw_active(&self, ctx: &cairo::Context, surface: &ImageSurface) {
+        self.draw(true, ctx, surface);
+    }
+
+    fn draw_inactive(&self, ctx: &cairo::Context, surface: &ImageSurface) {
+        self.draw(false, ctx, surface);
     }
 
     fn draw_final(&self, _ctx: &cairo::Context, _surface: &ImageSurface) {
