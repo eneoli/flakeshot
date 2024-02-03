@@ -50,7 +50,7 @@ impl Canvas {
 
     pub fn render_drawable(&mut self, drawable: &dyn Drawable) {
         let ctx = Context::new(&self.surface).unwrap();
-        drawable.draw(&ctx, &self.surface);
+        drawable.draw_active(&ctx, &self.surface);
     }
 
     // TODO this is not good. Canvas should not care about that!
