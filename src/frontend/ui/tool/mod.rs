@@ -1,4 +1,4 @@
-use crate::frontend::screenshot_window::MouseEvent;
+use crate::frontend::{rectangle::Rectangle, screenshot_window::MouseEvent};
 
 use super::drawable::Drawable;
 
@@ -11,7 +11,7 @@ pub enum ToolIdentifier {
 
 pub enum ToolCommand {
     Noop,
-    Crop(f64, f64, f64, f64),
+    Crop(Rectangle),
 }
 
 pub trait Tool {
