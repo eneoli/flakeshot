@@ -22,9 +22,7 @@ impl ToolManager {
     }
 
     fn create_tools() -> HashMap<ToolIdentifier, Box<dyn Tool>> {
-        HashMap::from([
-            (ToolIdentifier::Crop, Crop::boxed()),
-        ])
+        HashMap::from([(ToolIdentifier::Crop, Crop::boxed())])
     }
 
     pub fn active_tool(&self) -> Option<&dyn Tool> {
