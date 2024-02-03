@@ -22,7 +22,11 @@ impl ToolManager {
     }
 
     fn create_tools() -> HashMap<ToolIdentifier, Box<dyn Tool>> {
-        HashMap::from([(ToolIdentifier::Crop, Crop::boxed())])
+        let mut map: HashMap<ToolIdentifier, Box<dyn Tool>> = HashMap::new();
+
+        map.insert(ToolIdentifier::Crop, Crop::boxed());
+
+        map
     }
 
     pub fn active_tool(&self) -> Option<&dyn Tool> {

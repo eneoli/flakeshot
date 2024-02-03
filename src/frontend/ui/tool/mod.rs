@@ -22,9 +22,9 @@ pub trait Tool {
 
     fn handle_mouse_event(&mut self, event: MouseEvent) -> ToolCommand {
         match event {
-            MouseEvent::MouseMove(x, y) => self.handle_mouse_move(x, y),
-            MouseEvent::MosePress(_, x, y) => self.handle_mouse_press(x, y),
-            MouseEvent::MouseRelease(_, x, y) => self.handle_mouse_release(x, y),
+            MouseEvent::MouseMove { x, y } => self.handle_mouse_move(x, y),
+            MouseEvent::MosePress { x, y, .. } => self.handle_mouse_press(x, y),
+            MouseEvent::MouseRelease { x, y, .. } => self.handle_mouse_release(x, y),
         }
     }
 }

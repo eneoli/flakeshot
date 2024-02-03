@@ -35,9 +35,9 @@ pub struct ScreenshotWindowModel {
 
 #[derive(Debug)]
 pub enum MouseEvent {
-    MouseMove(f64, f64),
-    MosePress(i32, f64, f64),
-    MouseRelease(i32, f64, f64),
+    MouseMove { x: f64, y: f64 },
+    MosePress { button: i32, x: f64, y: f64 },
+    MouseRelease { button: i32, x: f64, y: f64 },
 }
 
 #[derive(Debug)]
@@ -174,10 +174,10 @@ impl SimpleComponent for ScreenshotWindowModel {
         });
 
         motion.connect_motion(move |_, x, y| {
-            motion_sender_move.input(ScreenshotWindowInput::MouseEvent(MouseEvent::MouseMove(
-                monitor_x + x,
-                monitor_y + y,
-            )));
+            motion_sender_move.input(ScreenshotWindowInput::MouseEvent(MouseEvent::MouseMove {
+                x: monitor_x + x,
+                y: monitor_y + y,
+            }));
         });
 
         overlay.add_controller(motion);
@@ -187,17 +187,23 @@ impl SimpleComponent for ScreenshotWindowModel {
 
         let gesture_sender_pressed = sender.clone();
         gesture.connect_pressed(move |_, i, x, y| {
-            gesture_sender_pressed.input(ScreenshotWindowInput::MouseEvent(MouseEvent::MosePress(
-                i,
-                monitor_x + x,
-                monitor_y + y,
-            )));
+            gesture_sender_pressed.input(ScreenshotWindowInput::MouseEvent(
+                MouseEvent::MosePress {
+                    button: i,
+                    x: monitor_x + x,
+                    y: monitor_y + y,
+                },
+            ));
         });
 
         let gesture_sender_released = sender.clone();
         gesture.connect_released(move |_, i, x, y| {
             gesture_sender_released.input(ScreenshotWindowInput::MouseEvent(
-                MouseEvent::MouseRelease(i, monitor_x + x, monitor_y + y),
+                MouseEvent::MouseRelease {
+                    button: i,
+                    x: monitor_x + x,
+                    y: monitor_y + y,
+                },
             ));
         });
 
