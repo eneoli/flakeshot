@@ -1,0 +1,53 @@
+use std::collections::HashMap;
+
+use super::ui::tool::{crop::Crop, Tool, ToolIdentifier};
+
+pub struct ToolManager {
+    tools: HashMap<ToolIdentifier, Box<dyn Tool>>,
+    active_tool: Option<ToolIdentifier>,
+}
+
+impl ToolManager {
+    pub fn new() -> Self {
+        Self {
+            tools: Self::create_tools(),
+            active_tool: Some(ToolIdentifier::Crop),
+        }
+    }
+
+    fn create_tools() -> HashMap<ToolIdentifier, Box<dyn Tool>> {
+        let mut map: HashMap<ToolIdentifier, Box<dyn Tool>> = HashMap::new();
+
+        map.insert(ToolIdentifier::Crop, Crop::boxed());
+
+        map
+    }
+
+    pub fn active_tool(&self) -> Option<&Box<dyn Tool>> {
+        if let Some(identifer) = &self.active_tool {
+            return Some(
+                self.tools
+                    .get(&identifer)
+                    .expect("Couldn't find tool instance. This is likely a bug."),
+            );
+        }
+
+        None
+    }
+
+    pub fn active_tool_mut(&mut self) -> Option<&mut Box<dyn Tool>> {
+        if let Some(identifer) = &self.active_tool {
+            return Some(
+                self.tools
+                    .get_mut(&identifer)
+                    .expect("Couldn't find tool instance. This is likely a bug."),
+            );
+        }
+
+        None
+    }
+
+    pub fn set_active_tool(&mut self, identifier: Option<ToolIdentifier>) {
+        self.active_tool = identifier;
+    }
+}
