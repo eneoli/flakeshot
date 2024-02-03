@@ -109,11 +109,12 @@ impl Tool for Crop {
                 *y2 = y;
             } else {
                 // Create new box
-                let Rectangle { x1, x2, y1, y2 } = &mut self.drawable.selection;
-                *x1 = x;
-                *y1 = y;
-                *x2 = x;
-                *y2 = y;
+                self.drawable.selection = Rectangle {
+                    x1: x,
+                    y1: y,
+                    x2: x,
+                    y2: y,
+                };
             }
 
             self.is_dragging = false;
