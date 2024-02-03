@@ -6,6 +6,12 @@ pub struct Rectangle {
     pub y2: f64,
 }
 
+impl Default for Rectangle {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Rectangle {
     pub fn new() -> Self {
         Self {

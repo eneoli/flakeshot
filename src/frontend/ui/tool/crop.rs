@@ -23,6 +23,12 @@ pub struct Crop {
     mouse_y: f64,
 }
 
+impl Default for Crop {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Crop {
     pub fn new() -> Self {
         Self {
@@ -139,6 +145,12 @@ impl Tool for Crop {
 
 pub struct CropDrawable {
     pub selection: Rectangle,
+}
+
+impl Default for CropDrawable {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl CropDrawable {

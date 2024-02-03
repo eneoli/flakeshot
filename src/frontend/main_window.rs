@@ -141,7 +141,7 @@ fn init_monitor(
     // add screenshot of monitor to image
     model
         .ui_manager
-        .stamp_image(x as f64, y as f64, width as f64, height as f64, &image)
+        .stamp_image(x as f64, y as f64, width as f64, height as f64, image)
         .expect("Couldn't stamp image.");
 }
 

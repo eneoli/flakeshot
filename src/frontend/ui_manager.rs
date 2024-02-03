@@ -17,17 +17,17 @@ use super::{
 type RenderObserver = dyn Fn(&UiManager);
 
 enum CanvasDrawableStrategy<'a> {
-    DrawActive(&'a dyn Drawable),
-    DrawInactive(&'a dyn Drawable),
-    DrawFinal(&'a dyn Drawable),
+    Active(&'a dyn Drawable),
+    Inactive(&'a dyn Drawable),
+    Final(&'a dyn Drawable),
 }
 
 impl<'a> CanvasDrawable for CanvasDrawableStrategy<'a> {
     fn draw(&self, ctx: &cairo::Context, surface: &ImageSurface) {
         match self {
-            CanvasDrawableStrategy::DrawActive(drawable) => drawable.draw_active(ctx, surface),
-            CanvasDrawableStrategy::DrawInactive(drawable) => drawable.draw_inactive(ctx, surface),
-            CanvasDrawableStrategy::DrawFinal(drawable) => drawable.draw_final(ctx, surface),
+            CanvasDrawableStrategy::Active(drawable) => drawable.draw_active(ctx, surface),
+            CanvasDrawableStrategy::Inactive(drawable) => drawable.draw_inactive(ctx, surface),
+            CanvasDrawableStrategy::Final(drawable) => drawable.draw_final(ctx, surface),
         }
     }
 }
@@ -118,12 +118,12 @@ impl UiManager {
 
         for drawable in &self.drawables {
             self.canvas
-                .render_drawable(&CanvasDrawableStrategy::DrawInactive(drawable.as_ref()));
+                .render_drawable(&CanvasDrawableStrategy::Inactive(drawable.as_ref()));
         }
 
         if let Some(tool) = self.tool_manager.active_tool() {
             self.canvas
-                .render_drawable(&CanvasDrawableStrategy::DrawActive(tool.get_drawable()));
+                .render_drawable(&CanvasDrawableStrategy::Active(tool.get_drawable()));
         }
 
         self.notify_render_observer();
@@ -139,11 +139,11 @@ impl UiManager {
         let mut canvas = self.canvas.from_original();
 
         for drawable in &self.drawables {
-            canvas.render_drawable(&CanvasDrawableStrategy::DrawFinal(drawable.as_ref()));
+            canvas.render_drawable(&CanvasDrawableStrategy::Final(drawable.as_ref()));
         }
 
         if let Some(tool) = self.tool_manager.active_tool() {
-            canvas.render_drawable(&CanvasDrawableStrategy::DrawFinal(tool.get_drawable()));
+            canvas.render_drawable(&CanvasDrawableStrategy::Final(tool.get_drawable()));
         }
 
         canvas

@@ -7,6 +7,12 @@ pub struct ToolManager {
     active_tool: Option<ToolIdentifier>,
 }
 
+impl Default for ToolManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ToolManager {
     pub fn new() -> Self {
         Self {
@@ -23,24 +29,26 @@ impl ToolManager {
         map
     }
 
-    pub fn active_tool(&self) -> Option<&Box<dyn Tool>> {
+    pub fn active_tool(&self) -> Option<&dyn Tool> {
         if let Some(identifer) = &self.active_tool {
             return Some(
                 self.tools
-                    .get(&identifer)
-                    .expect("Couldn't find tool instance. This is likely a bug."),
+                    .get(identifer)
+                    .expect("Couldn't find tool instance. This is likely a bug.")
+                    .as_ref(),
             );
         }
 
         None
     }
 
-    pub fn active_tool_mut(&mut self) -> Option<&mut Box<dyn Tool>> {
+    pub fn active_tool_mut(&mut self) -> Option<&mut dyn Tool> {
         if let Some(identifer) = &self.active_tool {
             return Some(
                 self.tools
-                    .get_mut(&identifer)
-                    .expect("Couldn't find tool instance. This is likely a bug."),
+                    .get_mut(identifer)
+                    .expect("Couldn't find tool instance. This is likely a bug.")
+                    .as_mut(),
             );
         }
 
