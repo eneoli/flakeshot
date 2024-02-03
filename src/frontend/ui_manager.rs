@@ -3,40 +3,59 @@ use image::DynamicImage;
 
 use super::{
     file_chooser::FileChooser,
+    rectangle::Rectangle,
     screenshot_window::MouseEvent,
+    tool_manager::ToolManager,
     ui::{
-        canvas::Canvas,
+        canvas::{Canvas, CanvasDrawable},
         drawable::Drawable,
-        tool::{crop::Crop, Tool, ToolCommand},
+        tool::ToolCommand,
         toolbar::ToolbarEvent,
     },
 };
 
-type RenderHandler = dyn Fn(&UiManager);
+type RenderObserver = dyn Fn(&UiManager);
+
+enum CanvasDrawableStrategy<'a> {
+    DrawActive(&'a dyn Drawable),
+    DrawInactive(&'a dyn Drawable),
+    DrawFinal(&'a dyn Drawable),
+}
+
+impl<'a> CanvasDrawable for CanvasDrawableStrategy<'a> {
+    fn draw(&self, ctx: &cairo::Context, surface: &ImageSurface) {
+        match self {
+            CanvasDrawableStrategy::DrawActive(drawable) => drawable.draw_active(ctx, surface),
+            CanvasDrawableStrategy::DrawInactive(drawable) => drawable.draw_inactive(ctx, surface),
+            CanvasDrawableStrategy::DrawFinal(drawable) => drawable.draw_final(ctx, surface),
+        }
+    }
+}
 
 pub struct UiManager {
+    tool_manager: ToolManager,
     canvas: Canvas,
+    selection: Rectangle,
     drawables: Vec<Box<dyn Drawable>>,
-    on_render_handler: Vec<Box<RenderHandler>>,
-    active_tool: Option<Box<dyn Tool>>,
-    selected_x1: f64,
-    selected_x2: f64,
-    selected_y1: f64,
-    selected_y2: f64,
+    render_observer: Vec<Box<RenderObserver>>,
 }
 
 impl UiManager {
     pub fn new(total_width: i32, total_height: i32) -> Self {
         UiManager {
+            tool_manager: ToolManager::new(),
             canvas: Canvas::new(total_width, total_height).expect("Couldn't create canvas."),
+            selection: Rectangle::with_size(total_width as f64, total_height as f64),
             drawables: vec![],
-            on_render_handler: vec![],
-            active_tool: Some(Box::new(Crop::new())),
-            selected_x1: 0.0,
-            selected_x2: total_width as f64,
-            selected_y1: 0.0,
-            selected_y2: total_height as f64,
+            render_observer: vec![],
         }
+    }
+
+    pub fn on_render<F>(&mut self, handler: F)
+    where
+        F: Fn(&Self) + 'static,
+    {
+        self.render_observer.push(Box::new(handler));
     }
 
     pub fn persist_canvas(&mut self) {
@@ -52,7 +71,7 @@ impl UiManager {
         image: &DynamicImage,
     ) -> anyhow::Result<()> {
         self.canvas.stamp_image(x, y, width, height, image)?;
-        self.notify_render_handler();
+        self.notify_render_observer();
 
         Ok(())
     }
@@ -61,64 +80,58 @@ impl UiManager {
         self.canvas.crop(x, y, width, height)
     }
 
+    pub fn add_drawable(&mut self, drawable: Box<dyn Drawable>) {
+        self.drawables.push(drawable)
+    }
+
     pub fn handle_tool_event(&mut self, event: ToolbarEvent) {
         match event {
             ToolbarEvent::SaveAsFile => self.save_canvas_to_file(),
             ToolbarEvent::SaveIntoClipboard => {}
-            ToolbarEvent::Crop => {}
+            ToolbarEvent::ToolSelect(tool_identifier) => {
+                self.tool_manager.set_active_tool(Some(tool_identifier))
+            }
         }
     }
 
     pub fn handle_mouse_event(&mut self, event: MouseEvent) {
-        if let Some(tool) = &mut self.active_tool {
+        if let Some(tool) = self.tool_manager.active_tool_mut() {
             let cmd = tool.handle_mouse_event(event);
             self.handle_tool_command(cmd);
             self.render();
         }
     }
 
+    fn set_crop_area(&mut self, rectangle: Rectangle) {
+        self.selection = rectangle;
+    }
+
     fn handle_tool_command(&mut self, command: ToolCommand) {
         match command {
-            ToolCommand::Crop(x1, x2, y1, y2) => self.set_crop_area(x1, x2, y1, y2),
-            ToolCommand::Nop => {}
+            ToolCommand::Crop(rectangle) => self.set_crop_area(rectangle),
+            ToolCommand::Noop => {}
         }
     }
 
-    pub fn set_crop_area(&mut self, x1: f64, x2: f64, y1: f64, y2: f64) {
-        self.selected_x1 = x1;
-        self.selected_x2 = x2;
-        self.selected_y1 = y1;
-        self.selected_y2 = y2;
-    }
-
-    pub fn add_drawable(&mut self, drawable: Box<dyn Drawable>) {
-        self.drawables.push(drawable)
-    }
-
-    pub fn render(&mut self) {
+    fn render(&mut self) {
         self.canvas.clear().expect("Couldn't clear canvas.");
 
         for drawable in &self.drawables {
-            self.canvas.render_drawable(drawable.as_ref());
+            self.canvas
+                .render_drawable(&CanvasDrawableStrategy::DrawInactive(drawable.as_ref()));
         }
 
-        if let Some(tool) = &self.active_tool {
-            self.canvas.render_drawable(tool.get_drawable());
+        if let Some(tool) = self.tool_manager.active_tool() {
+            self.canvas
+                .render_drawable(&CanvasDrawableStrategy::DrawActive(tool.get_drawable()));
         }
 
-        self.notify_render_handler();
+        self.notify_render_observer();
     }
 
-    pub fn on_render<F>(&mut self, handler: F)
-    where
-        F: Fn(&Self) + 'static,
-    {
-        self.on_render_handler.push(Box::new(handler));
-    }
-
-    fn notify_render_handler(&self) {
-        for handler in &self.on_render_handler {
-            handler(self);
+    fn notify_render_observer(&self) {
+        for observer in &self.render_observer {
+            observer(self);
         }
     }
 
@@ -126,11 +139,11 @@ impl UiManager {
         let mut canvas = self.canvas.from_original();
 
         for drawable in &self.drawables {
-            canvas.render_drawable_final(drawable.as_ref());
+            canvas.render_drawable(&CanvasDrawableStrategy::DrawFinal(drawable.as_ref()));
         }
 
-        if let Some(tool) = &self.active_tool {
-            canvas.render_drawable_final(tool.get_drawable());
+        if let Some(tool) = self.tool_manager.active_tool() {
+            canvas.render_drawable(&CanvasDrawableStrategy::DrawFinal(tool.get_drawable()));
         }
 
         canvas
@@ -139,10 +152,7 @@ impl UiManager {
     fn save_canvas_to_file(&self) {
         let canvas = self.render_screenshot();
 
-        let x1 = self.selected_x1;
-        let x2 = self.selected_x2;
-        let y1 = self.selected_y1;
-        let y2 = self.selected_y2;
+        let Rectangle { x1, x2, y1, y2 } = self.selection;
 
         FileChooser::open(move |file| {
             if let Some(path) = file {
