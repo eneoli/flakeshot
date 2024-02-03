@@ -4,8 +4,13 @@ use super::drawable::Drawable;
 
 pub mod crop;
 
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum ToolIdentifier {
+    Crop,
+}
+
 pub enum ToolCommand {
-    Nop,
+    Noop,
     Crop(f64, f64, f64, f64),
 }
 
