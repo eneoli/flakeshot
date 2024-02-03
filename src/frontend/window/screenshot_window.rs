@@ -14,12 +14,12 @@ use relm4::{
     SimpleComponent,
 };
 
-use crate::backend::is_wayland;
-
-use super::{
-    main_window::AppModel,
-    ui::toolbar::{Toolbar, ToolbarEvent},
+use crate::{
+    backend::is_wayland,
+    frontend::ui::toolbar::{Toolbar, ToolbarEvent},
 };
+
+use super::main_window::AppModel;
 
 pub struct ScreenshotWindowInit {
     pub monitor: gdk4::Monitor,

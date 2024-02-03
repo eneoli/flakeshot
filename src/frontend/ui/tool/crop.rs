@@ -1,6 +1,6 @@
 use cairo::ImageSurface;
 
-use crate::frontend::{rectangle::Rectangle, ui::drawable::Drawable};
+use crate::frontend::{shape::rectangle::Rectangle, ui::drawable::Drawable};
 
 use super::{Tool, ToolCommand};
 

@@ -1,12 +1,12 @@
 use std::{collections::HashMap, rc::Rc};
 
-use super::{
-    screenshot_window::{
-        ScreenshotWindowInit, ScreenshotWindowInput, ScreenshotWindowModel, ScreenshotWindowOutput,
-    },
-    ui_manager::UiManager,
+use super::screenshot_window::{
+    ScreenshotWindowInit, ScreenshotWindowInput, ScreenshotWindowModel, ScreenshotWindowOutput,
 };
-use crate::backend::{self, MonitorInfo, OutputInfo};
+use crate::{
+    backend::{self, MonitorInfo, OutputInfo},
+    frontend::ui::ui_manager::UiManager,
+};
 use gtk::prelude::*;
 use image::DynamicImage;
 use relm4::{gtk::Application, prelude::*, Sender};

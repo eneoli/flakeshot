@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use super::ui::tool::{crop::Crop, Tool, ToolIdentifier};
+use super::tool::{crop::Crop, Tool, ToolIdentifier};
 
 pub struct ToolManager {
     tools: HashMap<ToolIdentifier, Box<dyn Tool>>,

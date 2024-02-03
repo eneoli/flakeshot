@@ -1,4 +1,4 @@
-use crate::frontend::{rectangle::Rectangle, screenshot_window::MouseEvent};
+use crate::frontend::{shape::rectangle::Rectangle, window::screenshot_window::MouseEvent};
 
 use super::drawable::Drawable;
 

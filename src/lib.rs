@@ -3,7 +3,7 @@
 use std::{fs::File, path::PathBuf};
 
 use cli::LogLevel;
-use frontend::main_window::AppModel;
+use frontend::window::main_window::AppModel;
 use gtk4::CssProvider;
 use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;

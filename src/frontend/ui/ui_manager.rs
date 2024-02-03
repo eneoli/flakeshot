@@ -1,17 +1,17 @@
 use cairo::ImageSurface;
 use image::DynamicImage;
 
+use crate::frontend::{
+    shape::rectangle::Rectangle,
+    window::{file_chooser::FileChooser, screenshot_window::MouseEvent},
+};
+
 use super::{
-    file_chooser::FileChooser,
-    rectangle::Rectangle,
-    screenshot_window::MouseEvent,
+    canvas::{Canvas, CanvasDrawable},
+    drawable::Drawable,
+    tool::ToolCommand,
     tool_manager::ToolManager,
-    ui::{
-        canvas::{Canvas, CanvasDrawable},
-        drawable::Drawable,
-        tool::ToolCommand,
-        toolbar::ToolbarEvent,
-    },
+    toolbar::ToolbarEvent,
 };
 
 type RenderObserver = dyn Fn(&UiManager);
