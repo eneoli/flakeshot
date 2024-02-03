@@ -24,7 +24,7 @@ were often only either for X11 *or* Wayland. `flakeshot` should close this gap b
 tool which should run on X11 as good as on Wayland.
 
 # Status
-`flakeshot` is still under heavy development and not considered useable.
+`flakeshot` already has basic screenshot capabilities including cropping. More features are currently being developed.
 
 <!-----------------------{ Links }---------------------------->
 
