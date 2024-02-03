@@ -1,6 +1,5 @@
 use std::{collections::HashMap, rc::Rc, time::Duration};
 
-use mouse_position::mouse_position::{Mouse};
 use super::{
     screenshot_window::{
         ScreenshotWindowInit, ScreenshotWindowInput, ScreenshotWindowModel, ScreenshotWindowOutput,
