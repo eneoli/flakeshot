@@ -114,7 +114,7 @@ impl Tool for Crop {
                     y1: y,
                     x2: x,
                     y2: y,
-                 };
+                };
             }
 
             self.is_dragging = false;
