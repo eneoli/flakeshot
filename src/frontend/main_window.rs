@@ -63,8 +63,8 @@ impl AppModel {
             shutdown
                 .register(async move {
                     Notification::new()
-                        .appname(&crate_name!())
-                        .summary(&crate_name!())
+                        .appname(crate_name!())
+                        .summary(crate_name!())
                         .body(&msg)
                         .hint(hint)
                         .show_async()
