@@ -1,7 +1,9 @@
 use cairo::{Context, Format, ImageSurface};
 use image::{DynamicImage, RgbaImage};
 
-use super::drawable::Drawable;
+pub trait CanvasDrawable {
+    fn draw(&self, ctx: &cairo::Context, surface: &ImageSurface);
+}
 
 pub struct Canvas {
     surface: ImageSurface,
@@ -47,16 +49,9 @@ impl Canvas {
         Ok(())
     }
 
-
-    pub fn render_drawable(&mut self, drawable: &dyn Drawable) {
+    pub fn render_drawable(&mut self, drawable: &dyn CanvasDrawable) {
         let ctx = Context::new(&self.surface).unwrap();
-        drawable.draw_active(&ctx, &self.surface);
-    }
-
-    // TODO this is not good. Canvas should not care about that!
-    pub fn render_drawable_final(&mut self, drawable: &dyn Drawable) {
-        let ctx = Context::new(&self.surface).unwrap();
-        drawable.draw_final(&ctx, &self.surface);
+        drawable.draw(&ctx, &self.surface);
     }
 
     pub fn stamp_image(
