@@ -31,7 +31,7 @@ impl FileChooser {
             on_submit: Box::new(on_submit),
         });
 
-        file_chooser.widget().show();
+        file_chooser.widget().present();
         file_chooser.detach_runtime();
     }
 }
