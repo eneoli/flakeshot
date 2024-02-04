@@ -1,8 +1,9 @@
 use std::rc::Rc;
 
-use cairo::ImageSurface;
+use cairo::{glib::Cast, ImageSurface};
 use gdk4::prelude::MonitorExt;
-use gtk::prelude::EventControllerExt;
+use gdk4_x11::X11Surface;
+use gtk::prelude::{EventControllerExt, NativeExt};
 use gtk4_layer_shell::LayerShell;
 use relm4::{
     drawing::DrawHandler,
@@ -12,6 +13,10 @@ use relm4::{
     },
     Component, ComponentController, ComponentParts, ComponentSender, Controller, Sender,
     SimpleComponent,
+};
+use x11rb::{
+    connection::Connection,
+    protocol::xproto::{ConfigureWindowAux, ConnectionExt},
 };
 
 use crate::{
@@ -105,8 +110,6 @@ impl SimpleComponent for ScreenshotWindowModel {
             window.set_anchor(gtk4_layer_shell::Edge::Right, true);
             window.set_layer(gtk4_layer_shell::Layer::Overlay);
             window.set_keyboard_mode(gtk4_layer_shell::KeyboardMode::OnDemand);
-        } else {
-            window.fullscreen();
         }
 
         window.set_decorated(false);
@@ -127,11 +130,50 @@ impl SimpleComponent for ScreenshotWindowModel {
         let monitor_x = model.monitor.geometry().x() as f64;
         let monitor_y = model.monitor.geometry().y() as f64;
 
-        // Window size
         window.hide(); // unrealize window to prevent wayland protocol error when resizing
-        window.set_monitor(&model.monitor);
         window.set_default_size(width, height);
 
+        if is_wayland() {
+            window.set_monitor(&model.monitor);
+
+            let realize_sender = sender.clone();
+            window.connect_realize(move |_| {
+                // make sure window is finished rendering before first draw
+                let s = realize_sender.clone();
+                gtk::glib::idle_add_local_once(move || {
+                    s.input(ScreenshotWindowInput::Redraw);
+                });
+            });
+        } else {
+            let (conn, _) = x11rb::connect(None).unwrap();
+            let x11_window_config = ConfigureWindowAux::default()
+                .x(monitor_x as i32)
+                .y(monitor_y as i32);
+
+            // move X11 Surface to right monitor on realize
+            let realize_sender = sender.clone();
+            window.connect_realize(move |window| {
+                let surface = window.surface().downcast::<X11Surface>().unwrap();
+                let xid = surface.xid();
+                conn.configure_window(xid as u32, &x11_window_config)
+                    .unwrap();
+
+                conn.flush().unwrap();
+
+                // make sure window is finished rendering before first draw
+                let s = realize_sender.clone();
+                gtk::glib::idle_add_local_once(move || {
+                    s.input(ScreenshotWindowInput::Redraw);
+                });
+            });
+        }
+
+        window.present();
+
+        if !is_wayland() {
+            window.fullscreen_on_monitor(&model.monitor);
+            window.fullscreen();
+        }
         // Overlay
         let overlay = gtk::Overlay::new();
         window.set_child(Some(&overlay));
@@ -147,17 +189,6 @@ impl SimpleComponent for ScreenshotWindowModel {
         model.toolbar.widget().hide();
         model.toolbar.detach_runtime();
         overlay.add_overlay(model.toolbar.widget());
-
-        // On Realize
-        let realize_sender = sender.clone();
-        window.connect_realize(move |_| {
-            let s = realize_sender.clone();
-
-            // make sure window is finished rendering before first draw
-            gtk::glib::idle_add_local_once(move || {
-                s.input(ScreenshotWindowInput::Redraw);
-            });
-        });
 
         // On Mouse Move/Enter/Leave
         let motion = gtk::EventControllerMotion::new();

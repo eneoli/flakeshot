@@ -42,6 +42,8 @@ impl SimpleComponent for AppModel {
 
         // we use this window only as a container for the screenshot windows
         window.hide();
+        window.minimize();
+        window.set_visible(false);
 
         window
     }
@@ -110,6 +112,8 @@ fn init_monitor(
     let window = ScreenshotWindowModel::builder();
     register_keyboard_events(&window.root);
     app.add_window(&window.root);
+    window.root.set_visible(false);
+    window.root.hide();
 
     // launch + forward messages to main window
     let mut window_controller = window
