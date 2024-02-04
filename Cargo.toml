@@ -35,3 +35,4 @@ gdk-pixbuf = "0.18.3"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 xdg = "2.5"
+gdk4-x11 = "0.7.2"
