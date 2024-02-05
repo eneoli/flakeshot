@@ -1,6 +1,6 @@
 use std::{cell::RefCell, rc::Rc};
 
-use cairo::ImageSurface;
+use gtk4::cairo::ImageSurface;
 use image::DynamicImage;
 
 use super::{
