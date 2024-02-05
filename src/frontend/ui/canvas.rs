@@ -1,8 +1,8 @@
-use gtk4::cairo::{Context, Format, ImageSurface};
+use gtk4::cairo::{Context, Filter, Format, ImageSurface};
 use image::{DynamicImage, RgbaImage};
 
 pub trait CanvasDrawable {
-    fn draw(&self, ctx: &cairo::Context, surface: &ImageSurface);
+    fn draw(&self, ctx: &Context, surface: &ImageSurface);
 }
 
 pub struct Canvas {
@@ -81,7 +81,7 @@ impl Canvas {
 
         ctx.scale(width / image.width() as f64, height / image.height() as f64);
         ctx.set_source_surface(&image_surface, x, y)?;
-        ctx.source().set_filter(cairo::Filter::Best);
+        ctx.source().set_filter(Filter::Best);
         ctx.paint()?;
 
         Ok(())

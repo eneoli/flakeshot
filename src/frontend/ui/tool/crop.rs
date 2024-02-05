@@ -1,4 +1,4 @@
-use cairo::ImageSurface;
+use gtk4::cairo::{Context, FillRule, ImageSurface};
 
 use crate::frontend::{
     shape::{point::Point, rectangle::Rectangle},
@@ -200,11 +200,11 @@ impl CropDrawable {
         None
     }
 
-    fn draw(&self, acitve: bool, ctx: &cairo::Context, surface: &ImageSurface) {
+    fn draw(&self, acitve: bool, ctx: &Context, surface: &ImageSurface) {
         let Rectangle { fst, snd} = self.selection;
 
         ctx.set_source_rgba(0.0, 0.0, 0.0, 0.5);
-        ctx.set_fill_rule(cairo::FillRule::EvenOdd);
+        ctx.set_fill_rule(FillRule::EvenOdd);
 
         ctx.rectangle(0.0, 0.0, surface.width() as f64, surface.height() as f64);
         ctx.rectangle(fst.x, fst.y, snd.x - fst.x, snd.y - fst.y);
@@ -224,7 +224,7 @@ impl CropDrawable {
         }
     }
 
-    fn draw_dot(&self, ctx: &cairo::Context, x: f64, y: f64) {
+    fn draw_dot(&self, ctx: &Context, x: f64, y: f64) {
         ctx.set_source_rgba(0.12, 0.32, 0.8, 1.0);
         ctx.arc(x, y, CONTROL_POINT_RADIUS, 0.0, 2.0 * std::f64::consts::PI);
         ctx.fill().unwrap();
@@ -232,15 +232,15 @@ impl CropDrawable {
 }
 
 impl Drawable for CropDrawable {
-    fn draw_active(&self, ctx: &cairo::Context, surface: &ImageSurface) {
+    fn draw_active(&self, ctx: &Context, surface: &ImageSurface) {
         self.draw(true, ctx, surface);
     }
 
-    fn draw_inactive(&self, ctx: &cairo::Context, surface: &ImageSurface) {
+    fn draw_inactive(&self, ctx: &Context, surface: &ImageSurface) {
         self.draw(false, ctx, surface);
     }
 
-    fn draw_final(&self, _ctx: &cairo::Context, _surface: &ImageSurface) {
+    fn draw_final(&self, _ctx: &Context, _surface: &ImageSurface) {
         // We won't draw anything to the final screenshot
     }
 }

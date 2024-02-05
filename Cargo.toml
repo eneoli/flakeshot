@@ -30,3 +30,4 @@ gtk4-layer-shell = "0.2.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 xdg = "2.5"
+gdk4-x11 = "0.8.0"

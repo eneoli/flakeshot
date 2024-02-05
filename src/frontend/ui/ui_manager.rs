@@ -1,4 +1,4 @@
-use cairo::ImageSurface;
+use gtk4::cairo::{Context, ImageSurface};
 use image::DynamicImage;
 
 use crate::frontend::{
@@ -23,7 +23,7 @@ enum CanvasDrawableStrategy<'a> {
 }
 
 impl<'a> CanvasDrawable for CanvasDrawableStrategy<'a> {
-    fn draw(&self, ctx: &cairo::Context, surface: &ImageSurface) {
+    fn draw(&self, ctx: &Context, surface: &ImageSurface) {
         match self {
             CanvasDrawableStrategy::Active(drawable) => drawable.draw_active(ctx, surface),
             CanvasDrawableStrategy::Inactive(drawable) => drawable.draw_inactive(ctx, surface),

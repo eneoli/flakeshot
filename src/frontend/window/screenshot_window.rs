@@ -1,9 +1,11 @@
 use std::rc::Rc;
 
-use cairo::{glib::Cast, ImageSurface};
-use gdk4::prelude::MonitorExt;
 use gdk4_x11::X11Surface;
-use gtk::prelude::{EventControllerExt, NativeExt};
+use gtk::{
+    cairo::ImageSurface,
+    glib::Cast,
+    prelude::{EventControllerExt, MonitorExt, NativeExt},
+};
 use gtk4_layer_shell::LayerShell;
 use relm4::{
     drawing::DrawHandler,
@@ -30,12 +32,12 @@ use crate::{
 use super::main_window::AppModel;
 
 pub struct ScreenshotWindowInit {
-    pub monitor: gdk4::Monitor,
+    pub monitor: gtk4::gdk::Monitor,
     pub parent_sender: Rc<relm4::ComponentSender<AppModel>>,
 }
 
 pub struct ScreenshotWindowModel {
-    monitor: gdk4::Monitor,
+    monitor: gtk4::gdk::Monitor,
     draw_handler: DrawHandler,
     surface: Option<ImageSurface>,
     toolbar: Controller<Toolbar>,
@@ -104,7 +106,7 @@ impl SimpleComponent for ScreenshotWindowModel {
     type Widgets = ();
 
     fn init_root() -> Self::Root {
-        let window = gtk::Window::new();
+        let window = gtk4::Window::new();
 
         if is_wayland() {
             window.init_layer_shell();
