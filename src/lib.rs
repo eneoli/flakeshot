@@ -4,7 +4,7 @@ use std::{fs::File, path::PathBuf};
 
 use cli::LogLevel;
 use frontend::main_window::AppModel;
-use gtk4::CssProvider;
+use gtk4::{gdk::Display, CssProvider};
 use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
@@ -65,7 +65,7 @@ fn initialize_css() {
     provider.load_from_data(include_str!("frontend/style.css"));
 
     gtk4::style_context_add_provider_for_display(
-        &gdk4::Display::default().unwrap(),
+        &Display::default().unwrap(),
         &provider,
         gtk4::STYLE_PROVIDER_PRIORITY_APPLICATION,
     );
