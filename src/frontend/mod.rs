@@ -1,5 +1,3 @@
-pub mod file_chooser;
-pub mod main_window;
-pub mod screenshot_window;
+pub mod shape;
 pub mod ui;
-pub mod ui_manager;
+pub mod window;

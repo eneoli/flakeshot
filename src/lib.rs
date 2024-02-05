@@ -3,7 +3,7 @@
 use std::{fs::File, path::PathBuf};
 
 use cli::LogLevel;
-use frontend::main_window::AppModel;
+use frontend::window::main_window::AppModel;
 use gtk4::{gdk::Display, CssProvider};
 use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
@@ -53,7 +53,7 @@ pub fn init_logging(level: &LogLevel, path: &PathBuf) {
 }
 
 pub fn start_gui() {
-    let app = RelmApp::new("org.flakeshot.app");
+    let app = RelmApp::new("org.flakeshot.app").with_args(vec![]);
     relm4_icons::initialize_icons();
     initialize_css();
 

@@ -1,7 +1,12 @@
-use gtk::prelude::*;
+use gtk::prelude::ButtonExt;
+use gtk::prelude::OrientableExt;
+use gtk::prelude::ToggleButtonExt;
+use gtk::prelude::WidgetExt;
 use relm4::gtk::Align;
 use relm4::prelude::*;
 use relm4::SimpleComponent;
+
+use super::tool::ToolIdentifier;
 
 #[derive(Debug)]
 pub struct Toolbar {}
@@ -10,7 +15,7 @@ pub struct Toolbar {}
 pub enum ToolbarEvent {
     SaveAsFile,
     SaveIntoClipboard,
-    Crop,
+    ToolSelect(ToolIdentifier),
 }
 
 #[relm4::component(pub)]
@@ -31,11 +36,19 @@ impl SimpleComponent for Toolbar {
             #[name(crop)]
             gtk::ToggleButton {
                 set_icon_name: "crop",
+                set_active: true,
                 set_tooltip_text: Some("Crop the screenshot"),
                 add_css_class: "toolbar-button",
                 connect_clicked[sender] => move |_| {
-                    sender.output(ToolbarEvent::Crop).unwrap();
+                    sender.output(ToolbarEvent::ToolSelect(ToolIdentifier::Crop)).unwrap();
                 },
+            },
+
+            // Dummy, remove when adding tools
+            gtk::ToggleButton {
+                set_group: Some(&crop),
+                set_active: false,
+                set_visible: false,
             },
 
             gtk::Separator {},

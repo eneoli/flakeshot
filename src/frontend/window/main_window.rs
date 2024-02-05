@@ -1,12 +1,12 @@
 use std::{collections::HashMap, rc::Rc};
 
-use super::{
-    screenshot_window::{
-        ScreenshotWindowInit, ScreenshotWindowInput, ScreenshotWindowModel, ScreenshotWindowOutput,
-    },
-    ui_manager::UiManager,
+use super::screenshot_window::{
+    ScreenshotWindowInit, ScreenshotWindowInput, ScreenshotWindowModel, ScreenshotWindowOutput,
 };
-use crate::backend::{self, MonitorInfo, OutputInfo};
+use crate::{
+    backend::{self, MonitorInfo, OutputInfo},
+    frontend::ui::ui_manager::UiManager,
+};
 use gtk::prelude::*;
 use image::DynamicImage;
 use relm4::{gtk::Application, prelude::*, Sender};
@@ -41,7 +41,8 @@ impl SimpleComponent for AppModel {
         let window = gtk::Window::new();
 
         // we use this window only as a container for the screenshot windows
-        window.hide();
+        window.minimize();
+        window.set_visible(false);
 
         window
     }
@@ -65,6 +66,8 @@ impl SimpleComponent for AppModel {
             init_monitor(&app, &mut model, &sender_ref, &screenshot, &mut monitors);
         }
 
+        model.ui_manager.persist_canvas();
+
         ComponentParts { model, widgets: () }
     }
 
@@ -72,6 +75,9 @@ impl SimpleComponent for AppModel {
         match message {
             AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::ToolbarEvent(event)) => {
                 self.ui_manager.handle_tool_event(event)
+            }
+            AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::MouseEvent(event)) => {
+                self.ui_manager.handle_mouse_event(event)
             }
         }
     }
@@ -105,6 +111,7 @@ fn init_monitor(
     let window = ScreenshotWindowModel::builder();
     register_keyboard_events(&window.root);
     app.add_window(&window.root);
+    window.root.set_visible(false);
 
     // launch + forward messages to main window
     let mut window_controller = window
@@ -136,7 +143,7 @@ fn init_monitor(
     // add screenshot of monitor to image
     model
         .ui_manager
-        .stamp_image(x as f64, y as f64, image)
+        .stamp_image(x as f64, y as f64, width as f64, height as f64, image)
         .expect("Couldn't stamp image.");
 }
 

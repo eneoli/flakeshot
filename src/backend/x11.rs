@@ -56,7 +56,6 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
     let mut images = Vec::with_capacity(setup.roots.len());
 
     for screen in &setup.roots {
-        let image = get_image(&conn, screen)?;
         let monitors = conn.randr_get_monitors(screen.root, true)?.reply()?;
 
         for monitor in &monitors.monitors {
@@ -65,6 +64,14 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
                 "We currently support only one output for each monitor. Please create an issue if you encounter this assert."
             );
 
+            let image = get_image(
+                &conn,
+                screen,
+                monitor.x,
+                monitor.y,
+                monitor.width,
+                monitor.height,
+            )?;
             let monitor_info = {
                 let screen_resources = conn
                     .randr_get_screen_resources_current(screen.root)?
@@ -102,26 +109,30 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
     Ok(images)
 }
 
-fn get_image(conn: &RustConnection, screen: &Screen) -> Result<DynamicImage, Error> {
+fn get_image(
+    conn: &RustConnection,
+    screen: &Screen,
+    x: i16,
+    y: i16,
+    width: u16,
+    height: u16,
+) -> Result<DynamicImage, Error> {
     use x11rb::protocol::xproto::ConnectionExt;
     const ALL_BITS: u32 = u32::MAX;
 
     let setup = &conn.setup();
-    let width_u16 = screen.width_in_pixels;
-    let height_u16 = screen.height_in_pixels;
-
-    let width_u32 = u32::from(width_u16);
-    let height_u32 = u32::from(height_u16);
+    let width_u32 = u32::from(width);
+    let height_u32 = u32::from(height);
 
     let (image_bytes, pixmap_format) = {
         let image_reply = conn
             .get_image(
                 ImageFormat::Z_PIXMAP,
                 screen.root,
-                0,
-                0,
-                width_u16,
-                height_u16,
+                x,
+                y,
+                width,
+                height,
                 ALL_BITS,
             )
             .map_err(Error::from)?
