@@ -23,7 +23,6 @@ gtk4 = "0.7"
 ksni = { git = "https://github.com/talonvoice/ksni/", branch = "zbus" }
 cairo-rs = "0.18.3"
 relm4 = "0.7.0-alpha.2"
-relm4-components = "0.7.0-alpha.2"
 relm4-icons = { version = "0.7.0-alpha.2", features = [
   "paper",
   "copy",
