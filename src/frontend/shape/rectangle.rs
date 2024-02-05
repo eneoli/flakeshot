@@ -23,6 +23,15 @@ impl Rectangle {
         let y_top = f64::min(self.fst.y, self.snd.y);
         let y_bottom = f64::max(self.fst.y, self.snd.y);
 
-        (Point {x: x_left, y: y_top}, Point {x: x_right, y: y_bottom})
+        (
+            Point {
+                x: x_left,
+                y: y_top,
+            },
+            Point {
+                x: x_right,
+                y: y_bottom,
+            },
+        )
     }
 }

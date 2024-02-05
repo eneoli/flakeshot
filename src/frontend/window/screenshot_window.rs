@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use gtk::{
     cairo::ImageSurface,
-    prelude::{EventControllerExt, MonitorExt, NativeExt},
+    prelude::{EventControllerExt, MonitorExt},
 };
 use gtk4_layer_shell::LayerShell;
 use relm4::{
@@ -146,8 +146,8 @@ impl SimpleComponent for ScreenshotWindowModel {
         } else {
             // let (conn, _) = x11rb::connect(None).unwrap();
             // let x11_window_config = ConfigureWindowAux::default()
-                // .x(monitor_x as i32)
-                // .y(monitor_y as i32);
+            // .x(monitor_x as i32)
+            // .y(monitor_y as i32);
 
             // move X11 Surface to right monitor on realize
             // let realize_sender = sender.clone();
@@ -156,14 +156,14 @@ impl SimpleComponent for ScreenshotWindowModel {
                 // let surface = window.surface().downcast::<X11Surface>().unwrap();
                 // let xid = surface.xid();
                 // conn.configure_window(xid as u32, &x11_window_config)
-                    // .unwrap();
+                // .unwrap();
 
                 // conn.flush().unwrap();
 
                 // make sure window is finished rendering before first draw
                 // let s = realize_sender.clone();
                 // gtk::glib::idle_add_local_once(move || {
-                    // s.input(ScreenshotWindowInput::Redraw);
+                // s.input(ScreenshotWindowInput::Redraw);
                 // });
             });
         }

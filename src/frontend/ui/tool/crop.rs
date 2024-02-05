@@ -87,22 +87,10 @@ impl Tool for Crop {
 
                 // Extend current box
                 self.drawable.selection.fst = match control_point {
-                    ControlPoint::TopLeft => Point {
-                        x: snd.x,
-                        y: snd.y,
-                    },
-                    ControlPoint::TopRight => Point {
-                        x: fst.x,
-                        y: snd.y,
-                    },
-                    ControlPoint::BottomLeft => Point {
-                        x: snd.x,
-                        y: fst.y,
-                    },
-                    ControlPoint::BottomRight => Point {
-                        x: fst.x,
-                        y: fst.y,
-                    },
+                    ControlPoint::TopLeft => Point { x: snd.x, y: snd.y },
+                    ControlPoint::TopRight => Point { x: fst.x, y: snd.y },
+                    ControlPoint::BottomLeft => Point { x: snd.x, y: fst.y },
+                    ControlPoint::BottomRight => Point { x: fst.x, y: fst.y },
                 };
 
                 self.drawable.selection.snd = position;
@@ -157,7 +145,7 @@ impl CropDrawable {
 
     pub fn is_within_selection(&self, position: Point) -> bool {
         let (fst, snd) = self.selection.get_points_clockwise();
-        let Point {x, y} = position;
+        let Point { x, y } = position;
 
         fst.x <= x
             && snd.x >= x
@@ -170,7 +158,10 @@ impl CropDrawable {
         let is_within_point = |xc: f64, yc: f64, point: Point| {
             let radius = CONTROL_POINT_RADIUS + CONTROL_POINT_TOLERANCE;
 
-            xc - radius <= point.x && xc + radius >= point.x && yc - radius <= point.y && yc + radius >= point.y
+            xc - radius <= point.x
+                && xc + radius >= point.x
+                && yc - radius <= point.y
+                && yc + radius >= point.y
         };
 
         let (fst, snd) = self.selection.get_points_clockwise();
@@ -199,7 +190,7 @@ impl CropDrawable {
     }
 
     fn draw(&self, acitve: bool, ctx: &Context, surface: &ImageSurface) {
-        let Rectangle { fst, snd} = self.selection;
+        let Rectangle { fst, snd } = self.selection;
 
         ctx.set_source_rgba(0.0, 0.0, 0.0, 0.5);
         ctx.set_fill_rule(FillRule::EvenOdd);
