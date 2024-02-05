@@ -150,20 +150,21 @@ impl SimpleComponent for ScreenshotWindowModel {
                 });
             });
         } else {
-            let (conn, _) = x11rb::connect(None).unwrap();
-            let x11_window_config = ConfigureWindowAux::default()
-                .x(monitor_x as i32)
-                .y(monitor_y as i32);
+            // let (conn, _) = x11rb::connect(None).unwrap();
+            // let x11_window_config = ConfigureWindowAux::default()
+                // .x(monitor_x as i32)
+                // .y(monitor_y as i32);
 
             // move X11 Surface to right monitor on realize
             let realize_sender = sender.clone();
             window.connect_realize(move |window| {
-                let surface = window.surface().downcast::<X11Surface>().unwrap();
-                let xid = surface.xid();
-                conn.configure_window(xid as u32, &x11_window_config)
-                    .unwrap();
+                todo!("Waiting for https://github.com/gtk-rs/gtk4-rs/issues/1597");
+                // let surface = window.surface().downcast::<X11Surface>().unwrap();
+                // let xid = surface.xid();
+                // conn.configure_window(xid as u32, &x11_window_config)
+                    // .unwrap();
 
-                conn.flush().unwrap();
+                // conn.flush().unwrap();
 
                 // make sure window is finished rendering before first draw
                 let s = realize_sender.clone();
