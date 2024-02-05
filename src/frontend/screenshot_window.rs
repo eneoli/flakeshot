@@ -1,7 +1,6 @@
 use std::rc::Rc;
 
-use cairo::ImageSurface;
-use gtk::prelude::MonitorExt;
+use gtk::{cairo::ImageSurface, prelude::MonitorExt};
 use gtk4_layer_shell::LayerShell;
 use relm4::{
     drawing::DrawHandler,
