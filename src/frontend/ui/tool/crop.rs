@@ -1,6 +1,9 @@
 use cairo::ImageSurface;
 
-use crate::frontend::{shape::rectangle::Rectangle, ui::drawable::Drawable};
+use crate::frontend::{
+    shape::{point::Point, rectangle::Rectangle},
+    ui::drawable::Drawable,
+};
 
 use super::{Tool, ToolCommand};
 
@@ -19,8 +22,7 @@ pub struct Crop {
     is_active: bool,
     is_within: bool,
     is_dragging: bool,
-    mouse_x: f64,
-    mouse_y: f64,
+    mouse_pos: Point,
 }
 
 impl Default for Crop {
@@ -36,8 +38,7 @@ impl Crop {
             is_active: false,
             is_within: false,
             is_dragging: false,
-            mouse_x: 0.0,
-            mouse_y: 0.0,
+            mouse_pos: Point::default(),
         }
     }
 
@@ -47,73 +48,71 @@ impl Crop {
 }
 
 impl Tool for Crop {
-    fn handle_mouse_move(&mut self, x: f64, y: f64) -> ToolCommand {
-        let Rectangle { x1, x2, y1, y2 } = &mut self.drawable.selection;
+    fn handle_mouse_move(&mut self, position: Point) -> ToolCommand {
+        let Rectangle { fst, snd } = &mut self.drawable.selection;
 
         if self.is_active && !self.is_dragging {
-            *x2 = x;
-            *y2 = y;
+            self.drawable.selection.snd = position;
         }
 
         if self.is_within && self.is_dragging {
             // move box
-            let delta_x = x - self.mouse_x;
-            let delta_y = y - self.mouse_y;
+            let delta_x = position.x - self.mouse_pos.x;
+            let delta_y = position.y - self.mouse_pos.y;
 
-            *x1 += delta_x;
-            *x2 += delta_x;
-            *y1 += delta_y;
-            *y2 += delta_y;
+            self.drawable.selection.fst.add(Point {
+                x: delta_x,
+                y: delta_y,
+            });
+
+            self.drawable.selection.snd.add(Point {
+                x: delta_x,
+                y: delta_y,
+            });
         }
 
-        self.is_within = self.drawable.is_within_selection(x, y);
+        self.is_within = self.drawable.is_within_selection(position);
 
-        self.mouse_x = x;
-        self.mouse_y = y;
+        self.mouse_pos = position;
 
         ToolCommand::Noop
     }
 
-    fn handle_mouse_press(&mut self, x: f64, y: f64) -> ToolCommand {
+    fn handle_mouse_press(&mut self, position: Point) -> ToolCommand {
         if !self.is_within {
             self.is_active = true;
 
-            let control_point = self.drawable.is_within_control_point(x, y);
+            let control_point = self.drawable.is_within_control_point(position);
 
             if let Some(control_point) = control_point {
-                let (x_left, x_right, y_top, y_bottom) =
-                    self.drawable.selection.get_points_clockwise();
+                let (fst, snd) = self.drawable.selection.get_points_clockwise();
 
                 // Extend current box
-                let Rectangle { x1, x2, y1, y2 } = &mut self.drawable.selection;
-                match control_point {
-                    ControlPoint::TopLeft => {
-                        *x1 = x_right;
-                        *y1 = y_bottom;
-                    }
-                    ControlPoint::TopRight => {
-                        *x1 = x_left;
-                        *y1 = y_bottom;
-                    }
-                    ControlPoint::BottomLeft => {
-                        *x1 = x_right;
-                        *y1 = y_top;
-                    }
-                    ControlPoint::BottomRight => {
-                        *x1 = x_left;
-                        *y1 = y_top;
-                    }
-                }
+                self.drawable.selection.fst = match control_point {
+                    ControlPoint::TopLeft => Point {
+                        x: snd.x,
+                        y: snd.y,
+                    },
+                    ControlPoint::TopRight => Point {
+                        x: fst.x,
+                        y: snd.y,
+                    },
+                    ControlPoint::BottomLeft => Point {
+                        x: snd.x,
+                        y: fst.y,
+                    },
+                    ControlPoint::BottomRight => Point {
+                        x: fst.x,
+                        y: fst.y,
+                    },
+                };
 
-                *x2 = x;
-                *y2 = y;
+                self.drawable.selection.snd = position;
             } else {
                 // Create new box
                 self.drawable.selection = Rectangle {
-                    x1: x,
-                    y1: y,
-                    x2: x,
-                    y2: y,
+                    fst: position,
+                    snd: position,
                 };
             }
 
@@ -125,15 +124,12 @@ impl Tool for Crop {
         ToolCommand::Noop
     }
 
-    fn handle_mouse_release(&mut self, x: f64, y: f64) -> ToolCommand {
+    fn handle_mouse_release(&mut self, position: Point) -> ToolCommand {
         self.is_active = false;
         self.is_dragging = false;
 
-        let Rectangle { x2, y2, .. } = &mut self.drawable.selection;
-
         if !self.is_within {
-            *x2 = x;
-            *y2 = y;
+            self.drawable.selection.snd = position;
         }
 
         ToolCommand::Crop(self.drawable.selection.clone())
@@ -157,46 +153,47 @@ impl Default for CropDrawable {
 impl CropDrawable {
     pub fn new() -> Self {
         CropDrawable {
-            selection: Rectangle::new(),
+            selection: Rectangle::default(),
         }
     }
 
-    pub fn is_within_selection(&self, x: f64, y: f64) -> bool {
-        let (x_left, x_right, y_top, y_bottom) = self.selection.get_points_clockwise();
+    pub fn is_within_selection(&self, position: Point) -> bool {
+        let (fst, snd) = self.selection.get_points_clockwise();
+        let Point {x, y} = position;
 
-        x_left <= x
-            && x_right >= x
-            && y_top <= y
-            && y_bottom >= y
-            && self.is_within_control_point(x, y).is_none()
+        fst.x <= x
+            && snd.x >= x
+            && fst.y <= y
+            && snd.y >= y
+            && self.is_within_control_point(position).is_none()
     }
 
-    fn is_within_control_point(&self, x: f64, y: f64) -> Option<ControlPoint> {
-        let is_within_point = |xc: f64, yc: f64, x: f64, y: f64| {
+    fn is_within_control_point(&self, position: Point) -> Option<ControlPoint> {
+        let is_within_point = |xc: f64, yc: f64, point: Point| {
             let radius = CONTROL_POINT_RADIUS + CONTROL_POINT_TOLERANCE;
 
-            xc - radius <= x && xc + radius >= x && yc - radius <= y && yc + radius >= y
+            xc - radius <= point.x && xc + radius >= point.x && yc - radius <= point.y && yc + radius >= point.y
         };
 
-        let (x_left, x_right, y_top, y_bottom) = self.selection.get_points_clockwise();
+        let (fst, snd) = self.selection.get_points_clockwise();
 
         // Top Left
-        if is_within_point(x_left, y_top, x, y) {
+        if is_within_point(fst.x, fst.y, position) {
             return Some(ControlPoint::TopLeft);
         }
 
         // Top Right
-        if is_within_point(x_right, y_top, x, y) {
+        if is_within_point(snd.x, fst.y, position) {
             return Some(ControlPoint::TopRight);
         }
 
         // Bottom Left
-        if is_within_point(x_left, y_bottom, x, y) {
+        if is_within_point(fst.x, snd.y, position) {
             return Some(ControlPoint::BottomLeft);
         }
 
         // Bottom Right
-        if is_within_point(x_right, y_bottom, x, y) {
+        if is_within_point(snd.x, snd.y, position) {
             return Some(ControlPoint::BottomRight);
         }
 
@@ -204,26 +201,26 @@ impl CropDrawable {
     }
 
     fn draw(&self, acitve: bool, ctx: &cairo::Context, surface: &ImageSurface) {
-        let Rectangle { x1, x2, y1, y2 } = self.selection;
+        let Rectangle { fst, snd} = self.selection;
 
         ctx.set_source_rgba(0.0, 0.0, 0.0, 0.5);
         ctx.set_fill_rule(cairo::FillRule::EvenOdd);
 
         ctx.rectangle(0.0, 0.0, surface.width() as f64, surface.height() as f64);
-        ctx.rectangle(x1, y1, x2 - x1, y2 - y1);
+        ctx.rectangle(fst.x, fst.y, snd.x - fst.x, snd.y - fst.y);
         ctx.fill().unwrap();
 
         ctx.set_source_rgba(0.12, 0.32, 0.8, 1.0);
-        ctx.rectangle(x1, y1, x2 - x1, y2 - y1);
+        ctx.rectangle(fst.x, fst.y, snd.x - fst.x, snd.y - fst.y);
         ctx.set_line_width(0.75);
         ctx.stroke().unwrap();
 
         // four dots
         if acitve {
-            self.draw_dot(ctx, x1, y1);
-            self.draw_dot(ctx, x2, y1);
-            self.draw_dot(ctx, x1, y2);
-            self.draw_dot(ctx, x2, y2);
+            self.draw_dot(ctx, fst.x, fst.y);
+            self.draw_dot(ctx, snd.x, fst.y);
+            self.draw_dot(ctx, fst.x, snd.y);
+            self.draw_dot(ctx, snd.x, snd.y);
         }
     }
 

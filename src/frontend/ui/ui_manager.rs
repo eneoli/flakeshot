@@ -152,16 +152,16 @@ impl UiManager {
     fn save_canvas_to_file(&self) {
         let canvas = self.render_screenshot();
 
-        let Rectangle { x1, x2, y1, y2 } = self.selection;
+        let Rectangle { fst, snd } = self.selection.clone();
 
         FileChooser::open(move |file| {
             if let Some(path) = file {
                 canvas
                     .crop_to_image(
-                        x1,
-                        y1,
-                        std::cmp::max(0, (x2 - x1).floor() as u32),
-                        std::cmp::max(0, (y2 - y1).floor() as u32),
+                        fst.x,
+                        fst.y,
+                        std::cmp::max(0, (snd.x - fst.x).floor() as u32),
+                        std::cmp::max(0, (snd.y - fst.y).floor() as u32),
                     )
                     .expect("Couldn't crop canvas.")
                     .save(path)

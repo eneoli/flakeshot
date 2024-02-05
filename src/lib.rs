@@ -1,6 +1,6 @@
 //! Welcome to the code-documentation of flakeshot!
 
-use std::{fs::File, path::PathBuf};
+use std::{fmt::Debug, fs::File, path::PathBuf};
 
 use cli::LogLevel;
 use frontend::window::main_window::AppModel;

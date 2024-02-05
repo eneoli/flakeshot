@@ -21,7 +21,10 @@ use x11rb::{
 
 use crate::{
     backend::is_wayland,
-    frontend::ui::toolbar::{Toolbar, ToolbarEvent},
+    frontend::{
+        shape::point::Point,
+        ui::toolbar::{Toolbar, ToolbarEvent},
+    },
 };
 
 use super::main_window::AppModel;
@@ -40,9 +43,9 @@ pub struct ScreenshotWindowModel {
 
 #[derive(Debug)]
 pub enum MouseEvent {
-    MouseMove { x: f64, y: f64 },
-    MosePress { button: i32, x: f64, y: f64 },
-    MouseRelease { button: i32, x: f64, y: f64 },
+    MouseMove(Point),
+    MosePress { button: i32, position: Point },
+    MouseRelease { button: i32, position: Point },
 }
 
 #[derive(Debug)]
@@ -205,10 +208,12 @@ impl SimpleComponent for ScreenshotWindowModel {
         });
 
         motion.connect_motion(move |_, x, y| {
-            motion_sender_move.input(ScreenshotWindowInput::MouseEvent(MouseEvent::MouseMove {
-                x: monitor_x + x,
-                y: monitor_y + y,
-            }));
+            motion_sender_move.input(ScreenshotWindowInput::MouseEvent(MouseEvent::MouseMove(
+                Point {
+                    x: monitor_x + x,
+                    y: monitor_y + y,
+                },
+            )));
         });
 
         overlay.add_controller(motion);
@@ -221,8 +226,10 @@ impl SimpleComponent for ScreenshotWindowModel {
             gesture_sender_pressed.input(ScreenshotWindowInput::MouseEvent(
                 MouseEvent::MosePress {
                     button: i,
-                    x: monitor_x + x,
-                    y: monitor_y + y,
+                    position: Point {
+                        x: monitor_x + x,
+                        y: monitor_y + y,
+                    },
                 },
             ));
         });
@@ -232,8 +239,10 @@ impl SimpleComponent for ScreenshotWindowModel {
             gesture_sender_released.input(ScreenshotWindowInput::MouseEvent(
                 MouseEvent::MouseRelease {
                     button: i,
-                    x: monitor_x + x,
-                    y: monitor_y + y,
+                    position: Point {
+                        x: monitor_x + x,
+                        y: monitor_y + y,
+                    },
                 },
             ));
         });

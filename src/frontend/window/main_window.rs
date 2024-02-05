@@ -41,7 +41,6 @@ impl SimpleComponent for AppModel {
         let window = gtk::Window::new();
 
         // we use this window only as a container for the screenshot windows
-        window.hide();
         window.minimize();
         window.set_visible(false);
 
