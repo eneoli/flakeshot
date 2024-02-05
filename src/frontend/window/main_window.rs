@@ -112,7 +112,6 @@ fn init_monitor(
     register_keyboard_events(&window.root);
     app.add_window(&window.root);
     window.root.set_visible(false);
-    window.root.hide();
 
     // launch + forward messages to main window
     let mut window_controller = window
