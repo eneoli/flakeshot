@@ -12,7 +12,6 @@ authors = ["eneoli", "TornaxO7"]
 image = "0.24"
 thiserror = "1.0"
 x11rb = { version = "0.13", features = ["randr"] }
-arboard = { version = "3.3", features = ["wayland-data-control"] }
 clap = { version = "4.4", features = ["derive", "cargo", "string"] }
 anyhow = "1.0"
 memfd = "0.6"
@@ -22,7 +21,6 @@ wayland-protocols-wlr = { version = "0.2", features = ["client"] }
 gtk4 = "0.7"
 ksni = { git = "https://github.com/talonvoice/ksni/", branch = "zbus" }
 relm4 = "0.7.0-alpha.2"
-relm4-components = "0.7.0-alpha.2"
 relm4-icons = { version = "0.7.0-alpha.2", features = [
   "paper",
   "copy",
