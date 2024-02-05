@@ -49,8 +49,6 @@ impl Crop {
 
 impl Tool for Crop {
     fn handle_mouse_move(&mut self, position: Point) -> ToolCommand {
-        let Rectangle { fst, snd } = &mut self.drawable.selection;
-
         if self.is_active && !self.is_dragging {
             self.drawable.selection.snd = position;
         }
@@ -132,7 +130,7 @@ impl Tool for Crop {
             self.drawable.selection.snd = position;
         }
 
-        ToolCommand::Crop(self.drawable.selection.clone())
+        ToolCommand::Crop(self.drawable.selection)
     }
 
     fn get_drawable(&self) -> &dyn Drawable {

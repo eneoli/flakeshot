@@ -152,7 +152,7 @@ impl UiManager {
     fn save_canvas_to_file(&self) {
         let canvas = self.render_screenshot();
 
-        let Rectangle { fst, snd } = self.selection.clone();
+        let Rectangle { fst, snd } = self.selection;
 
         FileChooser::open(move |file| {
             if let Some(path) = file {

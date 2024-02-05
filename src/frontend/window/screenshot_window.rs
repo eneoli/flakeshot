@@ -1,9 +1,7 @@
 use std::rc::Rc;
 
-use gdk4_x11::X11Surface;
 use gtk::{
     cairo::ImageSurface,
-    glib::Cast,
     prelude::{EventControllerExt, MonitorExt, NativeExt},
 };
 use gtk4_layer_shell::LayerShell;
@@ -15,10 +13,6 @@ use relm4::{
     },
     Component, ComponentController, ComponentParts, ComponentSender, Controller, Sender,
     SimpleComponent,
-};
-use x11rb::{
-    connection::Connection,
-    protocol::xproto::{ConfigureWindowAux, ConnectionExt},
 };
 
 use crate::{
@@ -156,8 +150,8 @@ impl SimpleComponent for ScreenshotWindowModel {
                 // .y(monitor_y as i32);
 
             // move X11 Surface to right monitor on realize
-            let realize_sender = sender.clone();
-            window.connect_realize(move |window| {
+            // let realize_sender = sender.clone();
+            window.connect_realize(move |_window| {
                 todo!("Waiting for https://github.com/gtk-rs/gtk4-rs/issues/1597");
                 // let surface = window.surface().downcast::<X11Surface>().unwrap();
                 // let xid = surface.xid();
@@ -167,10 +161,10 @@ impl SimpleComponent for ScreenshotWindowModel {
                 // conn.flush().unwrap();
 
                 // make sure window is finished rendering before first draw
-                let s = realize_sender.clone();
-                gtk::glib::idle_add_local_once(move || {
-                    s.input(ScreenshotWindowInput::Redraw);
-                });
+                // let s = realize_sender.clone();
+                // gtk::glib::idle_add_local_once(move || {
+                    // s.input(ScreenshotWindowInput::Redraw);
+                // });
             });
         }
 
