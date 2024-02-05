@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use cairo::ImageSurface;
-use gdk4::prelude::MonitorExt;
+use gtk::prelude::MonitorExt;
 use gtk4_layer_shell::LayerShell;
 use relm4::{
     drawing::DrawHandler,
@@ -21,12 +21,12 @@ use super::{
 };
 
 pub struct ScreenshotWindowInit {
-    pub monitor: gdk4::Monitor,
+    pub monitor: gtk4::gdk::Monitor,
     pub parent_sender: Rc<relm4::ComponentSender<AppModel>>,
 }
 
 pub struct ScreenshotWindowModel {
-    monitor: gdk4::Monitor,
+    monitor: gtk4::gdk::Monitor,
     draw_handler: DrawHandler,
     surface: Option<ImageSurface>,
     toolbar: Controller<Toolbar>,
