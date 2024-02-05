@@ -1,4 +1,4 @@
-use cairo::{Context, Format, ImageSurface};
+use gtk4::cairo::{Context, Format, ImageSurface};
 use image::{DynamicImage, RgbaImage};
 
 pub trait CanvasDrawable {
@@ -73,7 +73,7 @@ impl Canvas {
 
         let image_surface = ImageSurface::create_for_data(
             image_bytes,
-            cairo::Format::ARgb32,
+            Format::ARgb32,
             image.width() as i32,
             image.height() as i32,
             Format::stride_for_width(Format::ARgb32, image.width())?,

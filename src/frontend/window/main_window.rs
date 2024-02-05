@@ -88,7 +88,7 @@ fn init_monitor(
     model: &mut AppModel,
     sender_ref: &Rc<ComponentSender<AppModel>>,
     (output_info, image): &(OutputInfo, DynamicImage),
-    monitors: &mut HashMap<String, gdk4::Monitor>,
+    monitors: &mut HashMap<String, gtk4::gdk::Monitor>,
 ) {
     let (monitor, x, y, width, height) = {
         let monitor_name = match &output_info.monitor_info {
@@ -148,8 +148,8 @@ fn init_monitor(
         .expect("Couldn't stamp image.");
 }
 
-fn get_monitors() -> HashMap<String, gdk4::Monitor> {
-    let monitor_list_model = gdk4::Display::default()
+fn get_monitors() -> HashMap<String, gtk4::gdk::Monitor> {
+    let monitor_list_model = gtk4::gdk::Display::default()
         .expect("GDK did not provide a display for us.")
         .monitors();
 
@@ -158,7 +158,7 @@ fn get_monitors() -> HashMap<String, gdk4::Monitor> {
         let monitor = monitor_list_model
             .item(i)
             .expect("We tried to access an invalid monitor.")
-            .downcast::<gdk4::Monitor>()
+            .downcast::<gtk4::gdk::Monitor>()
             .expect("Provided object is not a GDK Monitor");
 
         let connector = monitor
@@ -171,7 +171,7 @@ fn get_monitors() -> HashMap<String, gdk4::Monitor> {
     monitors
 }
 
-fn get_total_view_size(monitors: &Vec<&gdk4::Monitor>) -> (i32, i32) {
+fn get_total_view_size(monitors: &Vec<&gtk4::gdk::Monitor>) -> (i32, i32) {
     let mut width = 0;
     let mut height = 0;
     for monitor in monitors {
@@ -196,7 +196,7 @@ fn register_keyboard_events(window: &gtk::Window) {
     let event_controller = gtk::EventControllerKey::new();
 
     event_controller.connect_key_pressed(|_, key, _, _| {
-        if let gdk4::Key::Escape = key {
+        if let gtk4::gdk::Key::Escape = key {
             std::process::exit(0);
         }
 
