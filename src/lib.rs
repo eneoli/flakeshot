@@ -69,7 +69,9 @@ fn get_default_log_path() -> PathBuf {
 }
 
 pub fn start(mode: Mode) {
-    let app = RelmApp::new("org.flakeshot.app").with_args(vec![]);
+    let app = RelmApp::new("org.flakeshot.app")
+        .with_args(vec![])
+        .visible_on_activate(false);
     relm4_icons::initialize_icons();
     initialize_css();
 

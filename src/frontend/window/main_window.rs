@@ -171,7 +171,7 @@ impl Component for AppModel {
 
     fn init(
         payload: Self::Init,
-        _root: &Self::Root,
+        _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
         let mut model = Self::init(payload);

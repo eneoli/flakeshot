@@ -125,7 +125,7 @@ impl SimpleComponent for ScreenshotWindowModel {
 
     fn init(
         payload: ScreenshotWindowInit,
-        window: &Self::Root,
+        window: Self::Root,
         sender: ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
         let model = ScreenshotWindowModel::init(payload, sender.input_sender());
