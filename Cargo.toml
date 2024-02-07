@@ -11,23 +11,31 @@ authors = ["eneoli", "TornaxO7"]
 [dependencies]
 image = "0.24"
 thiserror = "1.0"
-x11rb = { version = "0.13", features = ["randr"] }
 clap = { version = "4.4", features = ["derive", "cargo", "string"] }
 anyhow = "1.0"
 memfd = "0.6"
+xdg = "2.5"
+ksni = { git = "https://github.com/talonvoice/ksni/", branch = "zbus" }
+
+# x11 specifique
+x11rb = { version = "0.13", features = ["randr"] }
+
+# wayland specifique
 wayland-client = "0.31"
 wayland-protocols = { version = "0.31", features = ["client", "unstable"] }
 wayland-protocols-wlr = { version = "0.2", features = ["client"] }
+
+# logging
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing = "0.1"
+
+# gtk stuff
+gtk4-layer-shell = "0.2.0"
+gdk4-x11 = "0.7"
 gtk4 = "0.7"
-ksni = { git = "https://github.com/talonvoice/ksni/", branch = "zbus" }
 relm4 = "0.7.0-alpha.2"
 relm4-icons = { version = "0.7.0-alpha.2", features = [
   "paper",
   "copy",
   "crop",
 ] }
-gtk4-layer-shell = "0.2.0"
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-xdg = "2.5"
-gdk4-x11 = "0.8.0"
