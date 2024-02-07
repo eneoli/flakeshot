@@ -61,6 +61,8 @@ impl AppModel {
             );
         }
 
+        ui_manager.persist_canvas();
+
         self.ui_manager = Some(ui_manager);
     }
 

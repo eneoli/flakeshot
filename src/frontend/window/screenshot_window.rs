@@ -128,7 +128,7 @@ impl SimpleComponent for ScreenshotWindowModel {
         window: &Self::Root,
         sender: ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
-        let mut model = ScreenshotWindowModel::init(payload, sender.input_sender());
+        let model = ScreenshotWindowModel::init(payload, sender.input_sender());
 
         let width = model.monitor.geometry().width();
         let height = model.monitor.geometry().height();
@@ -198,7 +198,6 @@ impl SimpleComponent for ScreenshotWindowModel {
         overlay.add_overlay(drawing_area);
 
         // Toolbar
-        model.toolbar.detach_runtime();
         overlay.add_overlay(model.toolbar.widget());
 
         // On Mouse Move/Enter/Leave
