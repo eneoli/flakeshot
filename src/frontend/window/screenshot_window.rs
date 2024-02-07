@@ -198,7 +198,7 @@ impl SimpleComponent for ScreenshotWindowModel {
         overlay.add_overlay(drawing_area);
 
         // Toolbar
-        model.toolbar.widget().hide();
+        model.toolbar.widget().set_visible(false);
         model.toolbar.detach_runtime();
         overlay.add_overlay(model.toolbar.widget());
 
@@ -260,7 +260,7 @@ impl SimpleComponent for ScreenshotWindowModel {
 
         drawing_area.add_controller(gesture);
 
-        window.present();
+        window.set_visible(true);
 
         ComponentParts { model, widgets: () }
     }
@@ -269,8 +269,8 @@ impl SimpleComponent for ScreenshotWindowModel {
         match message {
             ScreenshotWindowInput::Draw(surface) => self.draw(Some(surface)),
             ScreenshotWindowInput::Redraw => self.draw(None),
-            ScreenshotWindowInput::LeaveWindow => self.toolbar.widget().hide(),
-            ScreenshotWindowInput::EnterWindow => self.toolbar.widget().show(),
+            ScreenshotWindowInput::LeaveWindow => self.toolbar.widget().set_visible(false),
+            ScreenshotWindowInput::EnterWindow => self.toolbar.widget().set_visible(true),
             ScreenshotWindowInput::MouseEvent(event) => sender
                 .output_sender()
                 .emit(ScreenshotWindowOutput::MouseEvent(event)),
