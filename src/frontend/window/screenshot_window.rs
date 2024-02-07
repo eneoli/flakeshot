@@ -1,8 +1,10 @@
 use std::rc::Rc;
 
+use gdk4_x11::X11Surface;
 use gtk::{
     cairo::ImageSurface,
-    prelude::{EventControllerExt, MonitorExt},
+    glib::object::Cast,
+    prelude::{EventControllerExt, MonitorExt, NativeExt},
 };
 use gtk4_layer_shell::LayerShell;
 use relm4::{
@@ -13,6 +15,10 @@ use relm4::{
     },
     Component, ComponentController, ComponentParts, ComponentSender, Controller, Sender,
     SimpleComponent,
+};
+use x11rb::{
+    connection::Connection,
+    protocol::xproto::{ConfigureWindowAux, ConnectionExt},
 };
 
 use crate::{
@@ -128,14 +134,14 @@ impl SimpleComponent for ScreenshotWindowModel {
         let height = model.monitor.geometry().height();
         let monitor_x = model.monitor.geometry().x() as f64;
         let monitor_y = model.monitor.geometry().y() as f64;
+        let realize_sender = sender.clone();
 
-        window.hide(); // unrealize window to prevent wayland protocol error when resizing
+        window.set_visible(false); // unrealize window to prevent wayland protocol error when resizing
         window.set_default_size(width, height);
 
         if is_wayland() {
             window.set_monitor(&model.monitor);
 
-            let realize_sender = sender.clone();
             window.connect_realize(move |_| {
                 // make sure window is finished rendering before first draw
                 let s = realize_sender.clone();
@@ -144,36 +150,42 @@ impl SimpleComponent for ScreenshotWindowModel {
                 });
             });
         } else {
-            // let (conn, _) = x11rb::connect(None).unwrap();
-            // let x11_window_config = ConfigureWindowAux::default()
-            // .x(monitor_x as i32)
-            // .y(monitor_y as i32);
+            let (conn, _) = x11rb::connect(None).unwrap();
+            let x11_window_config = ConfigureWindowAux::default()
+                .x(monitor_x as i32)
+                .y(monitor_y as i32);
 
             // move X11 Surface to right monitor on realize
-            // let realize_sender = sender.clone();
-            window.connect_realize(move |_window| {
-                todo!("Waiting for https://github.com/gtk-rs/gtk4-rs/issues/1597");
-                // let surface = window.surface().downcast::<X11Surface>().unwrap();
-                // let xid = surface.xid();
-                // conn.configure_window(xid as u32, &x11_window_config)
-                // .unwrap();
+            window.connect_realize(move |window| {
+                if let Ok(desktop_session) = std::env::var("DESKTOP_SESSION") {
+                    if ["gnome", "kde"].contains(&desktop_session.as_ref() as &&str) {
+                        unimplemented!(concat![
+                            "Flakeshot isn't working on gnome and kde at the moment, see:\n",
+                            "https://github.com/gtk-rs/gtk4-rs/issues/1597"
+                        ]);
+                    }
+                }
 
-                // conn.flush().unwrap();
+                let surface = window.surface().downcast::<X11Surface>().unwrap();
+                let xid = surface.xid();
+                conn.configure_window(xid as u32, &x11_window_config)
+                    .unwrap();
+
+                conn.flush().unwrap();
 
                 // make sure window is finished rendering before first draw
-                // let s = realize_sender.clone();
-                // gtk::glib::idle_add_local_once(move || {
-                // s.input(ScreenshotWindowInput::Redraw);
-                // });
+                let s = realize_sender.clone();
+                gtk::glib::idle_add_local_once(move || {
+                    s.input(ScreenshotWindowInput::Redraw);
+                });
             });
-        }
 
-        window.present();
-
-        if !is_wayland() {
             window.fullscreen_on_monitor(&model.monitor);
             window.fullscreen();
         }
+
+        window.set_visible(true);
+
         // Overlay
         let overlay = gtk::Overlay::new();
         window.set_child(Some(&overlay));
