@@ -9,6 +9,7 @@ use super::{
 use crate::{
     backend::{self, MonitorInfo, OutputInfo},
     frontend::ui::ui_manager::UiManager,
+    tray,
 };
 use gtk::prelude::*;
 use image::DynamicImage;
@@ -28,6 +29,7 @@ pub struct AppModel {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
     Quit,
+    Gui,
 }
 
 impl AppModel {
@@ -176,6 +178,8 @@ impl Component for AppModel {
 
         if payload == Mode::Gui {
             model.start_gui(sender);
+        } else {
+            sender.command(|out, shutdown| shutdown.register(tray::start(out)).drop_on_shutdown());
         }
 
         ComponentParts { model, widgets: () }
@@ -197,11 +201,12 @@ impl Component for AppModel {
     fn update_cmd(
         &mut self,
         message: Self::CommandOutput,
-        _sender: ComponentSender<Self>,
+        sender: ComponentSender<Self>,
         _root: &Self::Root,
     ) {
         match message {
             Command::Quit => self.quit(),
+            Command::Gui => self.start_gui(sender),
         }
     }
 }
