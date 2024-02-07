@@ -198,7 +198,6 @@ impl SimpleComponent for ScreenshotWindowModel {
         overlay.add_overlay(drawing_area);
 
         // Toolbar
-        model.toolbar.widget().set_visible(false);
         model.toolbar.detach_runtime();
         overlay.add_overlay(model.toolbar.widget());
 
