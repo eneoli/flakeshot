@@ -1,7 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
 use super::{
-    mode::Mode,
+    run_mode::RunMode,
     screenshot_window::{
         ScreenshotWindowInit, ScreenshotWindowInput, ScreenshotWindowModel, ScreenshotWindowOutput,
     },
@@ -21,7 +21,7 @@ pub enum AppInput {
 }
 
 pub struct AppModel {
-    mode: Mode,
+    run_mode: RunMode,
     ui_manager: Option<UiManager>,
     window_controllers: Vec<Controller<ScreenshotWindowModel>>,
 }
@@ -34,9 +34,9 @@ pub enum Command {
 }
 
 impl AppModel {
-    fn init(mode: Mode) -> Self {
+    fn init(run_mode: RunMode) -> Self {
         AppModel {
-            mode,
+            run_mode,
             ui_manager: None,
             window_controllers: vec![],
         }
@@ -142,14 +142,14 @@ impl AppModel {
     }
 
     fn close(&mut self) {
-        match self.mode {
-            Mode::Tray => {
+        match self.run_mode {
+            RunMode::Tray => {
                 self.ui_manager = None;
                 for controller in &self.window_controllers {
                     controller.widget().close();
                 }
             }
-            Mode::Gui => self.quit(),
+            RunMode::Gui => self.quit(),
         };
     }
 
@@ -161,7 +161,7 @@ impl AppModel {
 impl Component for AppModel {
     type Input = AppInput;
     type Output = ();
-    type Init = Mode;
+    type Init = RunMode;
     type Root = gtk::Window;
     type Widgets = ();
     type CommandOutput = Command;
@@ -183,7 +183,7 @@ impl Component for AppModel {
     ) -> relm4::ComponentParts<Self> {
         let mut model = Self::init(payload);
 
-        if payload == Mode::Gui {
+        if payload == RunMode::Gui {
             model.start_gui(sender);
         } else {
             sender.command(|out, shutdown| shutdown.register(tray::start(out)).drop_on_shutdown());

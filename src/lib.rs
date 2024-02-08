@@ -4,7 +4,7 @@ use std::{fs::File, path::PathBuf, sync::OnceLock};
 
 use clap::crate_name;
 use cli::LogLevel;
-use frontend::window::{main_window::AppModel, mode::Mode};
+use frontend::window::{main_window::AppModel, run_mode::RunMode};
 use gtk4::{gdk::Display, CssProvider};
 use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
@@ -68,7 +68,7 @@ fn get_default_log_path() -> PathBuf {
         .unwrap_or_else(|e| panic!("Couldn't access log file path: {}", e))
 }
 
-pub fn start(mode: Mode) {
+pub fn start(mode: RunMode) {
     let app = RelmApp::new("org.flakeshot.app")
         .with_args(vec![])
         .visible_on_activate(false);

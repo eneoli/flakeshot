@@ -1,4 +1,4 @@
 pub mod file_chooser;
 pub mod main_window;
-pub mod mode;
+pub mod run_mode;
 pub mod screenshot_window;
