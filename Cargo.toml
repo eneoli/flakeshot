@@ -9,14 +9,6 @@ authors = ["eneoli", "TornaxO7"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-image = "0.24"
-thiserror = "1.0"
-clap = { version = "4.4", features = ["derive", "cargo", "string"] }
-anyhow = "1.0"
-memfd = "0.6"
-xdg = "2.5"
-ksni = { git = "https://github.com/talonvoice/ksni/", branch = "zbus" }
-
 # x11 specifique
 x11rb = { version = "0.13", features = ["randr"] }
 
@@ -33,9 +25,22 @@ tracing = "0.1"
 gtk4-layer-shell = "0.2.0"
 gdk4-x11 = "0.7"
 gtk4 = "0.7"
-relm4 = "0.7.0-alpha.2"
+# relm4 = "0.7.0-alpha.2"
+relm4 = { git = "https://github.com/Relm4/Relm4" }
 relm4-icons = { version = "0.7.0-alpha.2", features = [
   "paper",
   "copy",
   "crop",
 ] }
+
+# general
+image = "0.24"
+thiserror = "1.0"
+clap = { version = "4.4", features = ["derive", "cargo", "string"] }
+anyhow = "1.0"
+memfd = "0.6"
+xdg = "2.5"
+ksni = { git = "https://github.com/talonvoice/ksni/", branch = "zbus" }
+rustix = "0.38.31"
+
+tokio = "1.36"

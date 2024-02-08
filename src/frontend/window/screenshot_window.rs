@@ -125,10 +125,10 @@ impl SimpleComponent for ScreenshotWindowModel {
 
     fn init(
         payload: ScreenshotWindowInit,
-        window: &Self::Root,
+        window: Self::Root,
         sender: ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
-        let mut model = ScreenshotWindowModel::init(payload, sender.input_sender());
+        let model = ScreenshotWindowModel::init(payload, sender.input_sender());
 
         let width = model.monitor.geometry().width();
         let height = model.monitor.geometry().height();
@@ -201,8 +201,6 @@ impl SimpleComponent for ScreenshotWindowModel {
         overlay.add_overlay(drawing_area);
 
         // Toolbar
-        model.toolbar.widget().hide();
-        model.toolbar.detach_runtime();
         overlay.add_overlay(model.toolbar.widget());
 
         // On Mouse Move/Enter/Leave
@@ -272,8 +270,8 @@ impl SimpleComponent for ScreenshotWindowModel {
         match message {
             ScreenshotWindowInput::Draw(surface) => self.draw(Some(surface)),
             ScreenshotWindowInput::Redraw => self.draw(None),
-            ScreenshotWindowInput::LeaveWindow => self.toolbar.widget().hide(),
-            ScreenshotWindowInput::EnterWindow => self.toolbar.widget().show(),
+            ScreenshotWindowInput::LeaveWindow => self.toolbar.widget().set_visible(false),
+            ScreenshotWindowInput::EnterWindow => self.toolbar.widget().set_visible(true),
             ScreenshotWindowInput::MouseEvent(event) => sender
                 .output_sender()
                 .emit(ScreenshotWindowOutput::MouseEvent(event)),

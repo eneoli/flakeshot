@@ -75,7 +75,7 @@ impl SimpleComponent for Toolbar {
 
     fn init(
         _init: Self::Init,
-        root: &Self::Root,
+        root: Self::Root,
         sender: relm4::prelude::ComponentSender<Self>,
     ) -> relm4::prelude::ComponentParts<Self> {
         let model = Toolbar {};

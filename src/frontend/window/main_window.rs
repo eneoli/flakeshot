@@ -1,15 +1,19 @@
 use std::{collections::HashMap, rc::Rc};
 
-use super::screenshot_window::{
-    ScreenshotWindowInit, ScreenshotWindowInput, ScreenshotWindowModel, ScreenshotWindowOutput,
+use super::{
+    run_mode::RunMode,
+    screenshot_window::{
+        ScreenshotWindowInit, ScreenshotWindowInput, ScreenshotWindowModel, ScreenshotWindowOutput,
+    },
 };
 use crate::{
     backend::{self, MonitorInfo, OutputInfo},
     frontend::ui::ui_manager::UiManager,
+    tray,
 };
 use gtk::prelude::*;
 use image::DynamicImage;
-use relm4::{gtk::Application, prelude::*, Sender};
+use relm4::{gtk::Application, prelude::*};
 
 #[derive(Debug)]
 pub enum AppInput {
@@ -17,25 +21,150 @@ pub enum AppInput {
 }
 
 pub struct AppModel {
-    ui_manager: UiManager,
-    window_senders: Vec<Sender<ScreenshotWindowInput>>,
+    run_mode: RunMode,
+    ui_manager: Option<UiManager>,
+    window_controllers: Vec<Controller<ScreenshotWindowModel>>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Command {
+    Close,
+    Quit,
+    Gui,
 }
 
 impl AppModel {
-    fn init(total_width: i32, total_height: i32) -> Self {
+    fn init(run_mode: RunMode) -> Self {
         AppModel {
-            ui_manager: UiManager::new(total_width, total_height),
-            window_senders: vec![],
+            run_mode,
+            ui_manager: None,
+            window_controllers: vec![],
         }
+    }
+
+    fn start_gui(&mut self, sender: ComponentSender<Self>) {
+        let sender_ref = Rc::new(sender);
+        let mut monitors = get_monitors();
+
+        let mut ui_manager = {
+            let (total_width, total_height) = get_total_view_size(&monitors.values().collect());
+            UiManager::new(
+                total_width,
+                total_height,
+                sender_ref.command_sender().clone(),
+            )
+        };
+
+        let screenshots =
+            backend::create_screenshots().expect("We couldn't create the initial screenshots.");
+        let app = relm4::main_application();
+        for screenshot in screenshots {
+            self.init_monitor(
+                &app,
+                &mut ui_manager,
+                &sender_ref,
+                &screenshot,
+                &mut monitors,
+            );
+        }
+
+        ui_manager.persist_canvas();
+
+        self.ui_manager = Some(ui_manager);
+    }
+
+    fn init_monitor(
+        &mut self,
+        app: &Application,
+        ui_manager: &mut UiManager,
+        sender_ref: &Rc<ComponentSender<Self>>,
+        (output_info, image): &(OutputInfo, DynamicImage),
+        monitors: &mut HashMap<String, gtk4::gdk::Monitor>,
+    ) {
+        let (monitor, x, y, width, height) = {
+            let monitor_name = match &output_info.monitor_info {
+                MonitorInfo::Wayland { name, .. } => name,
+                MonitorInfo::X11 { name } => name,
+            };
+
+            let monitor = monitors
+                .remove(&monitor_name.to_string())
+                .expect("We tried to access a non-existend monitor.");
+
+            let x = monitor.geometry().x();
+            let y = monitor.geometry().y();
+            let width = monitor.geometry().width();
+            let height = monitor.geometry().height();
+
+            (monitor, x, y, width, height)
+        };
+
+        let window = {
+            let window = ScreenshotWindowModel::builder();
+            register_keyboard_events(&window.root, sender_ref.clone());
+            app.add_window(&window.root);
+            window.root.set_visible(false);
+
+            window
+        };
+
+        // launch + forward messages to main window
+        let window_controller = {
+            let window_controller = window
+                .launch(ScreenshotWindowInit {
+                    monitor,
+                    parent_sender: sender_ref.clone(),
+                })
+                .forward(sender_ref.input_sender(), |event| {
+                    AppInput::ScreenshotWindowOutput(event)
+                });
+
+            // subscribe to canvas changes
+            let sender_ui = window_controller.sender().clone();
+            ui_manager.on_render(move |ui_manager| {
+                let surface = ui_manager
+                    .crop(x as f64, y as f64, width, height)
+                    .expect("Couldn't crop surface for monitor.");
+                sender_ui
+                    .send(ScreenshotWindowInput::Draw(surface))
+                    .expect("Letting window redraw canvas failed.");
+            });
+
+            window_controller
+        };
+
+        self.window_controllers.push(window_controller);
+
+        // add screenshot of monitor to image
+        ui_manager
+            .stamp_image(x as f64, y as f64, width as f64, height as f64, image)
+            .expect("Couldn't stamp image.");
+    }
+
+    fn close(&mut self) {
+        match self.run_mode {
+            RunMode::Tray => {
+                self.ui_manager = None;
+                for controller in &self.window_controllers {
+                    controller.widget().close();
+                }
+            }
+            RunMode::Gui => self.quit(),
+        };
+    }
+
+    fn quit(&mut self) {
+        relm4::main_application().quit();
     }
 }
 
-impl SimpleComponent for AppModel {
+impl Component for AppModel {
     type Input = AppInput;
     type Output = ();
-    type Init = ();
+    type Init = RunMode;
     type Root = gtk::Window;
     type Widgets = ();
+    type CommandOutput = Command;
 
     fn init_root() -> Self::Root {
         let window = gtk::Window::new();
@@ -48,103 +177,46 @@ impl SimpleComponent for AppModel {
     }
 
     fn init(
-        _payload: Self::Init,
-        _root: &Self::Root,
+        payload: Self::Init,
+        _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
-        let app = relm4::main_application();
-        let sender_ref = Rc::new(sender);
+        let mut model = Self::init(payload);
 
-        let mut monitors = get_monitors();
-        let (total_width, total_height) = get_total_view_size(&monitors.values().collect());
-
-        let mut model = Self::init(total_width, total_height);
-
-        let screenshots =
-            backend::create_screenshots().expect("We couldn't create the initial screenshots.");
-        for screenshot in screenshots {
-            init_monitor(&app, &mut model, &sender_ref, &screenshot, &mut monitors);
+        if payload == RunMode::Gui {
+            model.start_gui(sender);
+        } else {
+            sender.command(|out, shutdown| shutdown.register(tray::start(out)).drop_on_shutdown());
         }
-
-        model.ui_manager.persist_canvas();
 
         ComponentParts { model, widgets: () }
     }
 
-    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
-        match message {
-            AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::ToolbarEvent(event)) => {
-                self.ui_manager.handle_tool_event(event)
-            }
-            AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::MouseEvent(event)) => {
-                self.ui_manager.handle_mouse_event(event)
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>, _root: &Self::Root) {
+        if let Some(ui_manager) = &mut self.ui_manager {
+            match message {
+                AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::ToolbarEvent(event)) => {
+                    ui_manager.handle_tool_event(event)
+                }
+                AppInput::ScreenshotWindowOutput(ScreenshotWindowOutput::MouseEvent(event)) => {
+                    ui_manager.handle_mouse_event(event)
+                }
             }
         }
     }
-}
 
-fn init_monitor(
-    app: &Application,
-    model: &mut AppModel,
-    sender_ref: &Rc<ComponentSender<AppModel>>,
-    (output_info, image): &(OutputInfo, DynamicImage),
-    monitors: &mut HashMap<String, gtk4::gdk::Monitor>,
-) {
-    let (monitor, x, y, width, height) = {
-        let monitor_name = match &output_info.monitor_info {
-            MonitorInfo::Wayland { name, .. } => name,
-            MonitorInfo::X11 { name } => name,
-        };
-
-        let monitor = monitors
-            .remove(&monitor_name.to_string())
-            .expect("We tried to access a non-existend monitor.");
-
-        let x = monitor.geometry().x();
-        let y = monitor.geometry().y();
-        let width = monitor.geometry().width();
-        let height = monitor.geometry().height();
-
-        (monitor, x, y, width, height)
-    };
-
-    let window = ScreenshotWindowModel::builder();
-    register_keyboard_events(&window.root);
-    app.add_window(&window.root);
-    window.root.set_visible(false);
-
-    // launch + forward messages to main window
-    let mut window_controller = window
-        .launch(ScreenshotWindowInit {
-            monitor,
-            parent_sender: sender_ref.clone(),
-        })
-        .forward(sender_ref.input_sender(), |event| {
-            AppInput::ScreenshotWindowOutput(event)
-        });
-
-    model
-        .window_senders
-        .push(window_controller.sender().clone());
-
-    window_controller.detach_runtime();
-
-    // subscribe to canvas changes
-    let sender_ui = window_controller.sender().clone();
-    model.ui_manager.on_render(move |ui_manager| {
-        let surface = ui_manager
-            .crop(x as f64, y as f64, width, height)
-            .expect("Couldn't crop surface for monitor.");
-        sender_ui
-            .send(ScreenshotWindowInput::Draw(surface))
-            .expect("Letting window redraw canvas failed.");
-    });
-
-    // add screenshot of monitor to image
-    model
-        .ui_manager
-        .stamp_image(x as f64, y as f64, width as f64, height as f64, image)
-        .expect("Couldn't stamp image.");
+    fn update_cmd(
+        &mut self,
+        message: Self::CommandOutput,
+        sender: ComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
+        match message {
+            Command::Quit => self.quit(),
+            Command::Gui => self.start_gui(sender),
+            Command::Close => self.close(),
+        }
+    }
 }
 
 fn get_monitors() -> HashMap<String, gtk4::gdk::Monitor> {
@@ -191,12 +263,15 @@ fn get_total_view_size(monitors: &Vec<&gtk4::gdk::Monitor>) -> (i32, i32) {
     (width, height)
 }
 
-fn register_keyboard_events(window: &gtk::Window) {
+fn register_keyboard_events(window: &gtk::Window, sender: Rc<ComponentSender<AppModel>>) {
     let event_controller = gtk::EventControllerKey::new();
 
-    event_controller.connect_key_pressed(|_, key, _, _| {
+    event_controller.connect_key_pressed(move |_, key, _, _| {
         if let gtk4::gdk::Key::Escape = key {
-            std::process::exit(0);
+            sender
+                .command_sender()
+                .send(Command::Close)
+                .expect("Couldn't send quit command");
         }
 
         gtk::glib::Propagation::Proceed

@@ -95,7 +95,7 @@ impl SimpleComponent for FileChooser {
 
     fn init(
         init: Self::Init,
-        root: &Self::Root,
+        root: Self::Root,
         sender: relm4::prelude::ComponentSender<Self>,
     ) -> relm4::prelude::ComponentParts<Self> {
         if is_wayland() {

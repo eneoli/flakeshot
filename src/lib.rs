@@ -1,18 +1,24 @@
 //! Welcome to the code-documentation of flakeshot!
 
-use std::{fs::File, path::PathBuf};
+use std::{fs::File, path::PathBuf, sync::OnceLock};
 
+use clap::crate_name;
 use cli::LogLevel;
-use frontend::window::main_window::AppModel;
+use frontend::window::{main_window::AppModel, run_mode::RunMode};
 use gtk4::{gdk::Display, CssProvider};
 use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
+use xdg::BaseDirectories;
 
 pub mod backend;
 pub mod cli;
 pub mod frontend;
 pub mod tray;
+
+static XDG: OnceLock<BaseDirectories> = OnceLock::new();
+
+pub const LOG_FILENAME: &str = "log.log";
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 ///
@@ -52,12 +58,24 @@ pub fn init_logging(level: &LogLevel, path: &PathBuf) {
     tracing::debug!("Logger initialised");
 }
 
-pub fn start_gui() {
-    let app = RelmApp::new("org.flakeshot.app").with_args(vec![]);
+pub fn get_xdg() -> &'static BaseDirectories {
+    XDG.get_or_init(|| BaseDirectories::with_prefix(crate_name!()).expect("Couldn't access XDG"))
+}
+
+fn get_default_log_path() -> PathBuf {
+    get_xdg()
+        .place_state_file(LOG_FILENAME)
+        .unwrap_or_else(|e| panic!("Couldn't access log file path: {}", e))
+}
+
+pub fn start(mode: RunMode) {
+    let app = RelmApp::new("org.flakeshot.app")
+        .with_args(vec![])
+        .visible_on_activate(false);
     relm4_icons::initialize_icons();
     initialize_css();
 
-    app.run::<AppModel>(());
+    app.run::<AppModel>(mode);
 }
 
 fn initialize_css() {

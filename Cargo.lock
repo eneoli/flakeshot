@@ -670,7 +670,9 @@ dependencies = [
  "memfd",
  "relm4",
  "relm4-icons",
+ "rustix 0.38.31",
  "thiserror",
+ "tokio",
  "tracing",
  "tracing-subscriber",
  "wayland-client",
@@ -1827,8 +1829,7 @@ checksum = "c08c74e62047bb2de4ff487b251e4a92e24f48745648451635cec7d591162d9f"
 [[package]]
 name = "relm4"
 version = "0.7.0-beta.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f505ac255c34dc85b8b189cbc8e12d012765aa9294727c6082e76777e56a50bf"
+source = "git+https://github.com/Relm4/Relm4#ce2e84c92bb67b80267939a96fccf9e1a2f8625f"
 dependencies = [
  "async-trait",
  "flume",
@@ -1854,8 +1855,7 @@ dependencies = [
 [[package]]
 name = "relm4-macros"
 version = "0.7.0-beta.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "086047e49d6426fd9f53109950f205d2ed88027d5fecfece724e6722904fe473"
+source = "git+https://github.com/Relm4/Relm4#ce2e84c92bb67b80267939a96fccf9e1a2f8625f"
 dependencies = [
  "proc-macro2",
  "quote",

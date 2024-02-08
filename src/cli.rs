@@ -4,8 +4,6 @@ use std::{fmt::Display, path::PathBuf};
 use clap::{crate_name, Parser, Subcommand, ValueEnum};
 use tracing::level_filters::LevelFilter;
 
-pub const LOG_FILE: &str = "log.log";
-
 #[derive(Parser, Debug)]
 #[command(author, version, about)]
 pub struct Cli {
@@ -17,7 +15,7 @@ pub struct Cli {
     ))]
     pub log_level: LogLevel,
 
-    #[arg(long, default_value = get_default_log_path().into_os_string())]
+    #[arg(long, default_value = crate::get_default_log_path().into_os_string())]
     pub log_path: PathBuf,
 
     #[command(subcommand)]
@@ -66,16 +64,4 @@ impl Display for LogLevel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", LevelFilter::from(self))
     }
-}
-
-fn get_default_log_path() -> PathBuf {
-    let xdg = xdg::BaseDirectories::new().expect("Couldn't access XDG env variables.");
-
-    let mut log_file_path = xdg
-        .create_state_directory(crate_name!())
-        .expect("Couldn't access state directory.");
-    log_file_path.push(LOG_FILE);
-
-    xdg.place_state_file(&log_file_path)
-        .unwrap_or_else(|e| panic!("Couldn't access log file path: {}", e))
 }
