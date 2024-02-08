@@ -161,7 +161,7 @@ impl SimpleComponent for ScreenshotWindowModel {
                     if ["gnome", "kde"].contains(&desktop_session.as_ref() as &&str) {
                         unimplemented!(concat![
                             "Flakeshot isn't working on gnome and kde at the moment, see:\n",
-                            "https://github.com/gtk-rs/gtk4-rs/issues/1597"
+                            "https://github.com/eneoli/flakeshot/issues/91"
                         ]);
                     }
                 }
@@ -179,12 +179,15 @@ impl SimpleComponent for ScreenshotWindowModel {
                     s.input(ScreenshotWindowInput::Redraw);
                 });
             });
-
-            window.fullscreen_on_monitor(&model.monitor);
-            window.fullscreen();
         }
 
         window.set_visible(true);
+
+        // those functions have to be called *after* `window.set_visible`
+        if !is_wayland() {
+            window.fullscreen_on_monitor(&model.monitor);
+            window.fullscreen();
+        }
 
         // Overlay
         let overlay = gtk::Overlay::new();
