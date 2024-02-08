@@ -8,5 +8,6 @@ use flakeshot::frontend::window::mode::Mode;
 fn main() {
     let cli = Cli::parse();
 
+    flakeshot::init_logging(&cli.log_level, &cli.log_path);
     flakeshot::start(Mode::from(cli.command()));
 }
