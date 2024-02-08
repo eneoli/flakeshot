@@ -28,6 +28,7 @@ pub struct AppModel {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
+    Close,
     Quit,
     Gui,
 }
@@ -136,7 +137,7 @@ impl AppModel {
             .expect("Couldn't stamp image.");
     }
 
-    fn quit(&mut self) {
+    fn close(&mut self) {
         match self.mode {
             Mode::Tray => {
                 self.ui_manager = None;
@@ -144,10 +145,12 @@ impl AppModel {
                     controller.widget().close();
                 }
             }
-            Mode::Gui => {
-                relm4::main_application().quit();
-            }
+            Mode::Gui => self.quit(),
         };
+    }
+
+    fn quit(&mut self) {
+        relm4::main_application().quit();
     }
 }
 
@@ -207,6 +210,7 @@ impl Component for AppModel {
         match message {
             Command::Quit => self.quit(),
             Command::Gui => self.start_gui(sender),
+            Command::Close => self.close(),
         }
     }
 }
@@ -262,7 +266,7 @@ fn register_keyboard_events(window: &gtk::Window, sender: Rc<ComponentSender<App
         if let gtk4::gdk::Key::Escape = key {
             sender
                 .command_sender()
-                .send(Command::Quit)
+                .send(Command::Close)
                 .expect("Couldn't send quit command");
         }
 
