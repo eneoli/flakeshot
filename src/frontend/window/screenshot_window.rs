@@ -179,12 +179,15 @@ impl SimpleComponent for ScreenshotWindowModel {
                     s.input(ScreenshotWindowInput::Redraw);
                 });
             });
-
-            window.fullscreen_on_monitor(&model.monitor);
-            window.fullscreen();
         }
 
         window.set_visible(true);
+
+        // those functions have to be called *after* `window.set_visible`
+        if !is_wayland() {
+            window.fullscreen_on_monitor(&model.monitor);
+            window.fullscreen();
+        }
 
         // Overlay
         let overlay = gtk::Overlay::new();
