@@ -261,7 +261,7 @@ impl SimpleComponent for ScreenshotWindowModel {
 
         drawing_area.add_controller(gesture);
 
-        window.set_visible(true);
+        window.present();
 
         ComponentParts { model, widgets: () }
     }
