@@ -5,10 +5,11 @@ use std::{
 
 use gtk4::cairo::{Context, ImageSurface};
 use image::{DynamicImage, GenericImageView, ImageOutputFormat};
+use relm4::Sender;
 
 use crate::frontend::{
     shape::rectangle::Rectangle,
-    window::{file_chooser::FileChooser, screenshot_window::MouseEvent},
+    window::{file_chooser::FileChooser, main_window::Command, screenshot_window::MouseEvent},
 };
 
 use super::{
@@ -43,16 +44,18 @@ pub struct UiManager {
     selection: Rectangle,
     drawables: Vec<Box<dyn Drawable>>,
     render_observer: Vec<Box<RenderObserver>>,
+    sender: Sender<Command>,
 }
 
 impl UiManager {
-    pub fn new(total_width: i32, total_height: i32) -> Self {
+    pub fn new(total_width: i32, total_height: i32, sender: Sender<Command>) -> Self {
         UiManager {
             tool_manager: ToolManager::new(),
             canvas: Canvas::new(total_width, total_height).expect("Couldn't create canvas."),
             selection: Rectangle::with_size(total_width as f64, total_height as f64),
             drawables: vec![],
             render_observer: vec![],
+            sender,
         }
     }
 
@@ -206,5 +209,9 @@ impl UiManager {
                 .flush()
                 .expect("Couldn't move image to clipboard.");
         }
+
+        self.sender
+            .send(Command::Close)
+            .expect("Couldn't send close command");
     }
 }

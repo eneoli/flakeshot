@@ -48,7 +48,11 @@ impl AppModel {
 
         let mut ui_manager = {
             let (total_width, total_height) = get_total_view_size(&monitors.values().collect());
-            UiManager::new(total_width, total_height)
+            UiManager::new(
+                total_width,
+                total_height,
+                sender_ref.command_sender().clone(),
+            )
         };
 
         let screenshots =
