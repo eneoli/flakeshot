@@ -20,6 +20,7 @@ pub enum AppInput {
     ScreenshotWindowOutput(ScreenshotWindowOutput),
 }
 
+#[derive(Debug)]
 pub struct AppModel {
     run_mode: RunMode,
     ui_manager: Option<UiManager>,

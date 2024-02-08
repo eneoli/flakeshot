@@ -38,6 +38,7 @@ impl<'a> CanvasDrawable for CanvasDrawableStrategy<'a> {
     }
 }
 
+#[derive(Debug)]
 pub struct UiManager {
     tool_manager: ToolManager,
     canvas: Canvas,

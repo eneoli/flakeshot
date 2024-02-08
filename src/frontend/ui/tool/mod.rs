@@ -7,17 +7,18 @@ use super::drawable::Drawable;
 
 pub mod crop;
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ToolIdentifier {
     Crop,
 }
 
+#[derive(Debug)]
 pub enum ToolCommand {
     Noop,
     Crop(Rectangle),
 }
 
-pub trait Tool {
+pub trait Tool: std::fmt::Debug {
     fn handle_mouse_move(&mut self, point: Point) -> ToolCommand;
     fn handle_mouse_press(&mut self, point: Point) -> ToolCommand;
     fn handle_mouse_release(&mut self, point: Point) -> ToolCommand;
