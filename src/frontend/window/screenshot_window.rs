@@ -161,7 +161,7 @@ impl SimpleComponent for ScreenshotWindowModel {
                     if ["gnome", "kde"].contains(&desktop_session.as_ref() as &&str) {
                         unimplemented!(concat![
                             "Flakeshot isn't working on gnome and kde at the moment, see:\n",
-                            "https://github.com/gtk-rs/gtk4-rs/issues/1597"
+                            "https://github.com/eneoli/flakeshot/issues/91"
                         ]);
                     }
                 }
