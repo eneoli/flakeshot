@@ -91,8 +91,8 @@ impl UiManager {
 
     pub fn handle_tool_event(&mut self, event: ToolbarEvent) {
         match event {
-            ToolbarEvent::SaveAsFile => self.save_canvas(true),
-            ToolbarEvent::SaveIntoClipboard => self.save_canvas(false),
+            ToolbarEvent::SaveAsFile => self.save_to_file(),
+            ToolbarEvent::SaveIntoClipboard => self.save_to_clipboard(),
             ToolbarEvent::ToolSelect(tool_identifier) => {
                 self.tool_manager.set_active_tool(Some(tool_identifier))
             }
@@ -153,58 +153,66 @@ impl UiManager {
 
         canvas
     }
+}
 
-    fn save_canvas(&self, save_to_file: bool) {
+impl UiManager {
+    fn get_crop_image(&self) -> DynamicImage {
         let canvas = self.render_screenshot();
         let Rectangle { fst, snd } = self.selection;
 
-        let img = canvas
+        canvas
             .crop_to_image(
                 fst.x,
                 fst.y,
                 std::cmp::max(0, (snd.x - fst.x).floor() as u32),
                 std::cmp::max(0, (snd.y - fst.y).floor() as u32),
             )
-            .expect("Couldn't crop canvas.");
+            .expect("Couldn't crop canvas.")
+    }
 
-        if save_to_file {
-            FileChooser::open(move |file| {
-                if let Some(path) = file {
-                    img.save(path).expect("Couldn't save image.");
-                }
-            });
+    fn save_to_file(&self) {
+        let img = self.get_crop_image();
+
+        FileChooser::open(move |file| {
+            if let Some(path) = file {
+                img.save(path).expect("Couldn't save image.");
+            }
+        });
+    }
+
+    fn save_to_clipboard(&self) {
+        let img = self.get_crop_image();
+
+        let mut child = if crate::backend::is_wayland() {
+            std::process::Command::new("wl-copy")
+                .stdin(Stdio::piped())
+                .spawn()
+                .expect("Couldn't spawn wl-copy process")
         } else {
-            let mut child = if crate::backend::is_wayland() {
-                std::process::Command::new("wl-copy")
-                    .stdin(Stdio::piped())
-                    .spawn()
-                    .expect("Couldn't spawn wl-copy process")
-            } else {
-                std::process::Command::new("xclip")
-                    .args(["-selection", "clipboard", "-target", "image/png"])
-                    .stdin(Stdio::piped())
-                    .spawn()
-                    .expect("Couldn't spawn xclip process")
-            };
+            std::process::Command::new("xclip")
+                .args(["-selection", "clipboard", "-target", "image/png"])
+                .stdin(Stdio::piped())
+                .spawn()
+                .expect("Couldn't spawn xclip process")
+        };
 
-            let mut image_bytes: Vec<u8> = {
-                let dim = img.dimensions();
-                Vec::with_capacity((dim.0 * dim.1) as usize)
-            };
+        let mut image_bytes: Vec<u8> = {
+            let dim = img.dimensions();
+            Vec::with_capacity((dim.0 * dim.1) as usize)
+        };
 
-            img.write_to(&mut Cursor::new(&mut image_bytes), ImageOutputFormat::Png)
-                .expect("Couldn't write image to stdin of clipboard process");
+        img.write_to(&mut Cursor::new(&mut image_bytes), ImageOutputFormat::Png)
+            .expect("Couldn't write image to stdin of clipboard process");
 
-            let child_stdin = child
-                .stdin
-                .as_mut()
-                .expect("Couldn't get stdin of clipboard-process");
-            child_stdin
-                .write_all(&image_bytes)
-                .expect("Couldn't write image bytes into clipboard");
-            child_stdin
-                .flush()
-                .expect("Couldn't move image to clipboard.");
-        }
+        let child_stdin = child
+            .stdin
+            .as_mut()
+            .expect("Couldn't get stdin of clipboard-process");
+        child_stdin
+            .write_all(&image_bytes)
+            .expect("Couldn't write image bytes into clipboard");
+        child_stdin
+            .flush()
+            .expect("Couldn't move image to clipboard.");
     }
 }
