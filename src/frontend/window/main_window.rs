@@ -11,9 +11,12 @@ use crate::{
     frontend::ui::ui_manager::UiManager,
     tray,
 };
+use clap::crate_name;
 use gtk::prelude::*;
 use image::DynamicImage;
+use notify_rust::{Notification, Urgency};
 use relm4::{gtk::Application, prelude::*};
+use tracing::error;
 
 #[derive(Debug)]
 pub enum AppInput {
@@ -36,7 +39,7 @@ pub struct AppModel {
 }
 
 /// All commands which can be send to [`AppModel`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
     /// Tells [`AppModel`] to *only* close the windows and UI of `flakeshot`.
     Close,
@@ -46,6 +49,10 @@ pub enum Command {
 
     /// Tells [`AppModel`] to open up the GUI.
     Gui,
+    Notify {
+        msg: String,
+        urgency: Urgency,
+    },
 }
 
 impl AppModel {
@@ -55,6 +62,24 @@ impl AppModel {
             ui_manager: None,
             window_controllers: vec![],
         }
+    }
+
+    fn notify(&self, sender: ComponentSender<Self>, msg: String, urgency: Urgency) {
+        sender.command(move |_out, shutdown| {
+            shutdown
+                .register(async move {
+                    if let Err(err) = Notification::new()
+                        .appname(&crate_name!())
+                        .urgency(urgency)
+                        .subtitle(&crate_name!())
+                        .body(&msg)
+                        .show()
+                    {
+                        error!("Couldn't show notification: {}", err);
+                    }
+                })
+                .drop_on_shutdown()
+        });
     }
 
     /// Start a new GUI session where a screenshot of all monitors
@@ -233,6 +258,12 @@ impl Component for AppModel {
             Command::Quit => self.quit(),
             Command::Gui => self.start_gui(sender),
             Command::Close => self.close(),
+            Command::Notify { msg, urgency } => {
+                if urgency == Urgency::Critical {
+                    error!(msg);
+                }
+                self.notify(sender, msg, urgency);
+            }
         }
     }
 }
