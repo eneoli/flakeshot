@@ -18,6 +18,8 @@ use notify_rust::{Notification, Urgency};
 use relm4::{gtk::Application, prelude::*};
 use tracing::error;
 
+const FLAKESHOT_SUMMARY: &str = "Flakeshot info";
+
 #[derive(Debug)]
 pub enum AppInput {
     ScreenshotWindowOutput(ScreenshotWindowOutput),
@@ -69,7 +71,7 @@ impl AppModel {
             if let Err(err) = Notification::new()
                 .appname(&crate_name!())
                 .urgency(urgency)
-                .summary(&crate_name!())
+                .summary(FLAKESHOT_SUMMARY)
                 .body(&msg)
                 .show()
             {
