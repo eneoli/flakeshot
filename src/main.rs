@@ -6,7 +6,7 @@ use flakeshot::cli::Cli;
 use flakeshot::frontend::window::run_mode::RunMode;
 
 fn main() {
-    hook_tracing_for_panics();
+    trace_panics();
     let cli = Cli::parse();
 
     flakeshot::init_logging(&cli.log_level, &cli.log_path);
