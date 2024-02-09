@@ -1,6 +1,6 @@
 use super::point::Point;
 
-#[derive(Copy, Clone, Default)]
+#[derive(Debug, Copy, Clone, Default)]
 pub struct Rectangle {
     pub fst: Point,
     pub snd: Point,

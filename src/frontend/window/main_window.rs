@@ -25,6 +25,7 @@ pub enum AppInput {
 /// - tray
 ///
 /// of `flakeshot`.
+#[derive(Debug)]
 pub struct AppModel {
     /// Determines how `flakeshot` behaves if it should be closed.
     run_mode: RunMode,

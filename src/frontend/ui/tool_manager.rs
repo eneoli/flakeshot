@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use super::tool::{crop::Crop, Tool, ToolIdentifier};
 
+#[derive(Debug)]
 pub struct ToolManager {
     tools: HashMap<ToolIdentifier, Box<dyn Tool>>,
     active_tool: Option<ToolIdentifier>,
