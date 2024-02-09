@@ -7,6 +7,7 @@ use crate::frontend::{
 
 use super::{Tool, ToolCommand};
 
+#[derive(Debug, Clone, Copy)]
 enum ControlPoint {
     TopLeft,
     TopRight,
@@ -17,6 +18,7 @@ enum ControlPoint {
 const CONTROL_POINT_RADIUS: f64 = 7.5;
 const CONTROL_POINT_TOLERANCE: f64 = 5.0;
 
+#[derive(Debug)]
 pub struct Crop {
     drawable: CropDrawable,
     is_active: bool,
@@ -126,6 +128,7 @@ impl Tool for Crop {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct CropDrawable {
     pub selection: Rectangle,
 }

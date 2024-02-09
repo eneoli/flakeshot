@@ -11,7 +11,7 @@ use super::tool::ToolIdentifier;
 #[derive(Debug)]
 pub struct Toolbar {}
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum ToolbarEvent {
     SaveAsFile,
     SaveIntoClipboard,

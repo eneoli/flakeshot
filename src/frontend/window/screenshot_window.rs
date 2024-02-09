@@ -36,6 +36,7 @@ pub struct ScreenshotWindowInit {
     pub parent_sender: Rc<relm4::ComponentSender<AppModel>>,
 }
 
+#[derive(Debug)]
 pub struct ScreenshotWindowModel {
     monitor: gtk4::gdk::Monitor,
     draw_handler: DrawHandler,

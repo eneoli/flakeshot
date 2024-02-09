@@ -3,6 +3,7 @@ use std::{
     process::Stdio,
 };
 
+use derive_where::derive_where;
 use gtk4::cairo::{Context, ImageSurface};
 use image::{DynamicImage, GenericImageView, ImageOutputFormat};
 use relm4::Sender;
@@ -38,13 +39,16 @@ impl<'a> CanvasDrawable for CanvasDrawableStrategy<'a> {
     }
 }
 
+#[derive_where(Debug)]
 pub struct UiManager {
     tool_manager: ToolManager,
     canvas: Canvas,
     selection: Rectangle,
     drawables: Vec<Box<dyn Drawable>>,
-    render_observer: Vec<Box<RenderObserver>>,
     app_model_sender: Sender<Command>,
+
+    #[derive_where(skip(Debug))]
+    render_observer: Vec<Box<RenderObserver>>,
 }
 
 impl UiManager {

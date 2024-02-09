@@ -5,6 +5,7 @@ pub trait CanvasDrawable {
     fn draw(&self, ctx: &Context, surface: &ImageSurface);
 }
 
+#[derive(Debug)]
 pub struct Canvas {
     surface: ImageSurface,
     original: ImageSurface,
