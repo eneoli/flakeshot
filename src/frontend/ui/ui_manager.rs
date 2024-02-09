@@ -6,11 +6,16 @@ use std::{
 use derive_where::derive_where;
 use gtk4::cairo::{Context, ImageSurface};
 use image::{DynamicImage, GenericImageView, ImageOutputFormat};
-use relm4::Sender;
+use notify_rust::Urgency;
+use relm4::ComponentSender;
 
 use crate::frontend::{
     shape::rectangle::Rectangle,
-    window::{file_chooser::FileChooser, main_window::Command, screenshot_window::MouseEvent},
+    window::{
+        file_chooser::FileChooser,
+        main_window::{AppModel, Command},
+        screenshot_window::MouseEvent,
+    },
 };
 
 use super::{
@@ -45,14 +50,18 @@ pub struct UiManager {
     canvas: Canvas,
     selection: Rectangle,
     drawables: Vec<Box<dyn Drawable>>,
-    app_model_sender: Sender<Command>,
+    app_model_sender: ComponentSender<AppModel>,
 
     #[derive_where(skip(Debug))]
     render_observer: Vec<Box<RenderObserver>>,
 }
 
 impl UiManager {
-    pub fn new(total_width: i32, total_height: i32, app_model_sender: Sender<Command>) -> Self {
+    pub fn new(
+        total_width: i32,
+        total_height: i32,
+        app_model_sender: ComponentSender<AppModel>,
+    ) -> Self {
         UiManager {
             tool_manager: ToolManager::new(),
             canvas: Canvas::new(total_width, total_height).expect("Couldn't create canvas."),
@@ -180,9 +189,15 @@ impl UiManager {
     fn save_to_file(&self) {
         let img = self.get_crop_image();
 
+        let app_model_sender = self.app_model_sender.clone();
         FileChooser::open(move |file| {
             if let Some(path) = file {
-                img.save(path).expect("Couldn't save image.");
+                img.save(&path).expect("Couldn't save image.");
+
+                app_model_sender.spawn_oneshot_command(move || Command::Notify {
+                    msg: format!("Screenshot save to {}", path.to_string_lossy()),
+                    urgency: Urgency::Low,
+                });
             }
         });
     }
@@ -223,7 +238,12 @@ impl UiManager {
             .expect("Couldn't move image to clipboard.");
 
         self.app_model_sender
-            .send(Command::Close)
-            .expect("Couldn't send close command");
+            .spawn_oneshot_command(|| Command::Notify {
+                msg: "Screenshot saved to clipboard.".to_string(),
+                urgency: Urgency::Low,
+            });
+
+        self.app_model_sender
+            .spawn_oneshot_command(|| Command::Close);
     }
 }

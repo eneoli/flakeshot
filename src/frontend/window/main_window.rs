@@ -64,37 +64,33 @@ impl AppModel {
         }
     }
 
-    fn notify(&self, sender: ComponentSender<Self>, msg: String, urgency: Urgency) {
-        sender.command(move |_out, shutdown| {
-            shutdown
-                .register(async move {
-                    if let Err(err) = Notification::new()
-                        .appname(&crate_name!())
-                        .urgency(urgency)
-                        .subtitle(&crate_name!())
-                        .body(&msg)
-                        .show()
-                    {
-                        error!("Couldn't show notification: {}", err);
-                    }
-                })
-                .drop_on_shutdown()
+    fn notify(&self, msg: String, urgency: Urgency) {
+        let handle = std::thread::spawn(move || {
+            if let Err(err) = Notification::new()
+                .appname(&crate_name!())
+                .urgency(urgency)
+                .summary(&crate_name!())
+                .body(&msg)
+                .show()
+            {
+                error!("Couldn't show notification: {}", err);
+            }
         });
+
+        handle
+            .join()
+            .expect("An error occured while creating a notification.");
     }
 
     /// Start a new GUI session where a screenshot of all monitors
     /// are taken and opens up the screenshot-editor.
     fn start_gui(&mut self, sender: ComponentSender<Self>) {
-        let sender_ref = Rc::new(sender);
+        let sender_ref = Rc::new(sender.clone());
         let mut monitors = get_monitors();
 
         let mut ui_manager = {
             let (total_width, total_height) = get_total_view_size(&monitors.values().collect());
-            UiManager::new(
-                total_width,
-                total_height,
-                sender_ref.command_sender().clone(),
-            )
+            UiManager::new(total_width, total_height, sender)
         };
 
         let screenshots =
@@ -262,7 +258,7 @@ impl Component for AppModel {
                 if urgency == Urgency::Critical {
                     error!(msg);
                 }
-                self.notify(sender, msg, urgency);
+                self.notify(msg, urgency);
             }
         }
     }
