@@ -13,7 +13,7 @@ fn main() {
     flakeshot::start(RunMode::from(cli.command()));
 }
 
-fn hook_tracing_for_panics() {
+fn trace_panics() {
     let prev_hook = std::panic::take_hook();
     std::panic::set_hook(Box::new(move |panic_info| {
         tracing_panic::panic_hook(panic_info);
