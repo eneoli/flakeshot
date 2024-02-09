@@ -20,6 +20,7 @@ wayland-protocols-wlr = { version = "0.2", features = ["client"] }
 # logging
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing = "0.1"
+tracing-panic = "0.1"
 
 # gtk stuff
 gtk4-layer-shell = "0.2.0"
