@@ -3,8 +3,9 @@ use std::{
     process::Stdio,
 };
 
+use anyhow::Context;
 use derive_where::derive_where;
-use gtk4::cairo::{Context, ImageSurface};
+use gtk4::cairo::{self, ImageSurface};
 use image::{DynamicImage, GenericImageView, ImageOutputFormat};
 use notify_rust::Urgency;
 use relm4::ComponentSender;
@@ -35,7 +36,7 @@ enum CanvasDrawableStrategy<'a> {
 }
 
 impl<'a> CanvasDrawable for CanvasDrawableStrategy<'a> {
-    fn draw(&self, ctx: &Context, surface: &ImageSurface) {
+    fn draw(&self, ctx: &cairo::Context, surface: &ImageSurface) {
         match self {
             CanvasDrawableStrategy::Active(drawable) => drawable.draw_active(ctx, surface),
             CanvasDrawableStrategy::Inactive(drawable) => drawable.draw_inactive(ctx, surface),
@@ -108,7 +109,15 @@ impl UiManager {
     pub fn handle_tool_event(&mut self, event: ToolbarEvent) {
         match event {
             ToolbarEvent::SaveAsFile => self.save_to_file(),
-            ToolbarEvent::SaveIntoClipboard => self.save_to_clipboard(),
+            ToolbarEvent::SaveIntoClipboard => {
+                if let Err(err) = self.save_to_clipboard() {
+                    self.app_model_sender
+                        .spawn_oneshot_command(move || Command::Notify {
+                            msg: err.to_string(),
+                            urgency: Urgency::Critical,
+                        });
+                }
+            }
             ToolbarEvent::ToolSelect(tool_identifier) => {
                 self.tool_manager.set_active_tool(Some(tool_identifier))
             }
@@ -192,30 +201,40 @@ impl UiManager {
         let app_model_sender = self.app_model_sender.clone();
         FileChooser::open(move |file| {
             if let Some(path) = file {
-                img.save(&path).expect("Couldn't save image.");
-
-                app_model_sender.spawn_oneshot_command(move || Command::Notify {
-                    msg: format!("Screenshot save to {}", path.to_string_lossy()),
-                    urgency: Urgency::Low,
-                });
+                match img.save(&path) {
+                    Ok(()) => {
+                        app_model_sender.spawn_oneshot_command(move || Command::Notify {
+                            msg: format!("Screenshot save to {}", path.to_string_lossy()),
+                            urgency: Urgency::Low,
+                        });
+                    }
+                    Err(err) => app_model_sender.spawn_oneshot_command(move || Command::Notify {
+                        msg: format!(
+                            "Couldn't save screenshot to {}: {}",
+                            path.to_string_lossy(),
+                            err.to_string()
+                        ),
+                        urgency: Urgency::Critical,
+                    }),
+                };
             }
         });
     }
 
-    fn save_to_clipboard(&self) {
+    fn save_to_clipboard(&self) -> anyhow::Result<()> {
         let img = self.get_crop_image();
 
         let mut child = if crate::backend::is_wayland() {
             std::process::Command::new("wl-copy")
                 .stdin(Stdio::piped())
                 .spawn()
-                .expect("Couldn't spawn wl-copy process")
+                .context("Couldn't spawn wl-copy process")?
         } else {
             std::process::Command::new("xclip")
                 .args(["-selection", "clipboard", "-target", "image/png"])
                 .stdin(Stdio::piped())
                 .spawn()
-                .expect("Couldn't spawn xclip process")
+                .context("Couldn't spawn xclip process")?
         };
 
         let mut image_bytes: Vec<u8> = {
@@ -224,18 +243,18 @@ impl UiManager {
         };
 
         img.write_to(&mut Cursor::new(&mut image_bytes), ImageOutputFormat::Png)
-            .expect("Couldn't write image to stdin of clipboard process");
+            .context("Couldn't write image to stdin of clipboard process");
 
         let child_stdin = child
             .stdin
             .as_mut()
-            .expect("Couldn't get stdin of clipboard-process");
+            .context("Couldn't get stdin of clipboard-process")?;
         child_stdin
             .write_all(&image_bytes)
-            .expect("Couldn't write image bytes into clipboard");
+            .context("Couldn't write image bytes into clipboard")?;
         child_stdin
             .flush()
-            .expect("Couldn't move image to clipboard.");
+            .context("Couldn't flush image to clipboard.")?;
 
         self.app_model_sender
             .spawn_oneshot_command(|| Command::Notify {
@@ -245,5 +264,7 @@ impl UiManager {
 
         self.app_model_sender
             .spawn_oneshot_command(|| Command::Close);
+
+        Ok(())
     }
 }
