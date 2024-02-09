@@ -20,21 +20,40 @@ pub enum AppInput {
     ScreenshotWindowOutput(ScreenshotWindowOutput),
 }
 
+/// The main struct of `flakeshot` which will manage the
+/// - windows and
+/// - tray
+///
+/// of `flakeshot`.
 pub struct AppModel {
+    /// Determines how `flakeshot` behaves if it should be closed.
     run_mode: RunMode,
+
+    /// `None`: If the GUI hasn't been started
+    /// `Some(UiManager)`: If the GUI has been started
     ui_manager: Option<UiManager>,
+
+    /// Holds the controllers of all created windows when the GUI has started.
+    /// It's empty, if the GUI has been closed.
     window_controllers: Vec<Controller<ScreenshotWindowModel>>,
 }
 
+/// All commands which can be send to [`AppModel`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
+    /// Tells [`AppModel`] to *only* close the windows and UI of `flakeshot`.
     Close,
+
+    /// Tells [`AppModel`] to quit completely.
     Quit,
+
+    /// Tells [`AppModel`] to open up the GUI.
     Gui,
 }
 
 impl AppModel {
-    fn init(run_mode: RunMode) -> Self {
+    /// Creates a new instance with the given run mode.
+    fn new(run_mode: RunMode) -> Self {
         AppModel {
             run_mode,
             ui_manager: None,
@@ -42,6 +61,8 @@ impl AppModel {
         }
     }
 
+    /// Start a new GUI session where a screenshot of all monitors
+    /// are taken and opens up the screenshot-editor for you.
     fn start_gui(&mut self, sender: ComponentSender<Self>) {
         let sender_ref = Rc::new(sender);
         let mut monitors = get_monitors();
@@ -141,6 +162,7 @@ impl AppModel {
             .expect("Couldn't stamp image.");
     }
 
+    /// Closes the GUI if [`AppModel`] is running as a trait.
     fn close(&mut self) {
         match self.run_mode {
             RunMode::Tray => {
@@ -153,6 +175,8 @@ impl AppModel {
         };
     }
 
+    /// Quits the program.
+    /// Basically a cleaner [`std::process::exit`].
     fn quit(&mut self) {
         relm4::main_application().quit();
     }
@@ -181,13 +205,13 @@ impl Component for AppModel {
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> relm4::ComponentParts<Self> {
-        let mut model = Self::init(payload);
+        let mut model = Self::new(payload);
 
-        if payload == RunMode::Gui {
-            model.start_gui(sender);
-        } else {
-            sender.command(|out, shutdown| shutdown.register(tray::start(out)).drop_on_shutdown());
-        }
+        match payload {
+            RunMode::Gui => model.start_gui(sender),
+            RunMode::Tray => sender
+                .command(|out, shutdown| shutdown.register(tray::start(out)).drop_on_shutdown()),
+        };
 
         ComponentParts { model, widgets: () }
     }
