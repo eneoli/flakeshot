@@ -243,7 +243,7 @@ impl UiManager {
         };
 
         img.write_to(&mut Cursor::new(&mut image_bytes), ImageOutputFormat::Png)
-            .context("Couldn't write image to stdin of clipboard process");
+            .context("Couldn't write image to stdin of clipboard process")?;
 
         let child_stdin = child
             .stdin
