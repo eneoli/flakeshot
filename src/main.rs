@@ -2,7 +2,7 @@
 compile_error!("flakeshot only runs on UNIX-like systems.");
 
 use clap::Parser;
-use flakeshot::cli::Cli;
+use flakeshot::cli::{Cli, Command};
 use flakeshot::frontend::window::main_window::Settings;
 use flakeshot::frontend::window::run_mode::RunMode;
 use notify_rust::Notification;
@@ -10,8 +10,16 @@ use notify_rust::Notification;
 fn main() {
     trace_panics();
     let cli = Cli::parse();
-
     flakeshot::init_logging(&cli.log_level, &cli.log_path);
+
+    if cli.command() == Command::PrintDefaultConfig {
+        println!(
+            "{}",
+            toml::to_string_pretty(&flakeshot::config::Config::default()).unwrap()
+        );
+        return;
+    }
+
     flakeshot::start(Settings {
         run_mode: RunMode::from(cli.command()),
         config_path: cli.config,

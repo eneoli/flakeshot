@@ -11,6 +11,7 @@ impl From<Command> for RunMode {
         match value {
             Command::Gui => Self::Gui,
             Command::Tray => Self::Tray,
+            _ => unreachable!("There's  no run mode for {:?} defined.", value),
         }
     }
 }

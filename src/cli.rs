@@ -31,13 +31,16 @@ impl Cli {
     }
 }
 
-#[derive(Subcommand, Debug, Clone, Copy)]
+#[derive(Subcommand, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
     /// Open the manual capture ui
     Gui,
 
     /// Start the system tray of flakeshot. (default)
     Tray,
+
+    /// Print the default config to stdout.
+    PrintDefaultConfig,
 }
 
 #[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
