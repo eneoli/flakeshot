@@ -14,7 +14,7 @@ fn main() {
     flakeshot::init_logging(&cli.log_level, &cli.log_path);
     flakeshot::start(Settings {
         run_mode: RunMode::from(cli.command()),
-        config_path: cli.config_path,
+        config_path: cli.config,
     });
 }
 
