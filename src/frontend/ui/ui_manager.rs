@@ -251,10 +251,12 @@ impl UiManager {
                 .args(args)
                 .stdin(Stdio::piped())
                 .spawn()
-                .expect(&format!(
-                    "Coulnd't spawn '{}'. Is it a typo or did you really install it?",
-                    &clip_man
-                ))
+                .unwrap_or_else(|err| {
+                    panic!(
+                        "Coulnd't spawn '{}'. Is it a typo or did you really install it?\n{}",
+                        &clip_man, err
+                    )
+                })
         };
 
         let mut image_bytes: Vec<u8> = {
