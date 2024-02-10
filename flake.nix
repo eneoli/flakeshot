@@ -86,6 +86,7 @@
               {
                 packages = with pkgs; [
                   snixembed
+                  cargo-udeps
                   stalonetray
                 ] ++ [ rust-toolchain ] ++ flakeshot.nativeBuildInputs ++ flakeshot.buildInputs;
               };
