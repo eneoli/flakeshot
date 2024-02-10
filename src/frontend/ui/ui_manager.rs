@@ -110,13 +110,18 @@ impl UiManager {
         match event {
             ToolbarEvent::SaveAsFile => self.save_to_file(),
             ToolbarEvent::SaveIntoClipboard => {
-                if let Err(err) = self.save_to_clipboard() {
-                    self.app_model_sender
-                        .spawn_oneshot_command(move || Command::Notify {
-                            msg: err.to_string(),
-                            urgency: Urgency::Critical,
-                        });
-                }
+                match self.save_to_clipboard() {
+                    Ok(()) => self
+                        .app_model_sender
+                        .spawn_oneshot_command(|| Command::Close),
+                    Err(err) => {
+                        self.app_model_sender
+                            .spawn_oneshot_command(move || Command::Notify {
+                                msg: err.to_string(),
+                                urgency: Urgency::Critical,
+                            })
+                    }
+                };
             }
             ToolbarEvent::ToolSelect(tool_identifier) => {
                 self.tool_manager.set_active_tool(Some(tool_identifier))
@@ -261,9 +266,6 @@ impl UiManager {
                 msg: "Screenshot saved to clipboard.".to_string(),
                 urgency: Urgency::Low,
             });
-
-        self.app_model_sender
-            .spawn_oneshot_command(|| Command::Close);
 
         Ok(())
     }
