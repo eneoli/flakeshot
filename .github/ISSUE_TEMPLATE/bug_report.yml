@@ -23,8 +23,8 @@ body:
     id: reproduction
     attributes:
       label: How can we reproduce the bug?
-      description: A small HowTo trigger your issue.
-      placeholder: 1. Run flakeshot in tray mode and \n 2. ...
+      description: A small HowTo trigger the issue.
+      placeholder: 1. Run flakeshot in tray mode \n 2. ...
     validations:
       required: true
   - type: dropdown
@@ -38,7 +38,7 @@ body:
       default: 0
     validations:
       required: true
-  - type: text
+  - type: input
     id: distro
     attributes:
       label: Which Linux Distro do you use?
