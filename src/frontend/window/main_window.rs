@@ -175,8 +175,6 @@ impl AppModel {
         };
     }
 
-    /// Quits the program.
-    /// Basically a cleaner [`std::process::exit`].
     fn quit(&mut self) {
         relm4::main_application().quit();
     }
