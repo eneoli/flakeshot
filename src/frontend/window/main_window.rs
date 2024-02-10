@@ -67,21 +67,15 @@ impl AppModel {
     }
 
     fn notify(&self, msg: String, urgency: Urgency) {
-        let handle = std::thread::spawn(move || {
-            if let Err(err) = Notification::new()
-                .appname(crate_name!())
-                .urgency(urgency)
-                .summary(FLAKESHOT_SUMMARY)
-                .body(&msg)
-                .show()
-            {
-                error!("Couldn't show notification: {}", err);
-            }
-        });
-
-        handle
-            .join()
-            .expect("An error occured while creating a notification.");
+        if let Err(err) = Notification::new()
+            .appname(crate_name!())
+            .urgency(urgency)
+            .summary(FLAKESHOT_SUMMARY)
+            .body(&msg)
+            .show()
+        {
+            error!("Couldn't show notification: {}", err);
+        }
     }
 
     /// Start a new GUI session where a screenshot of all monitors
