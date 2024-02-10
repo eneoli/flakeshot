@@ -1,17 +1,16 @@
 ---
 name: Bug Report
 description: File a bug report to help improving flakeshot!
-title: ""
+title: "Bug Report"
 labels:
   - bug
 projects:
   - eneoli/flakeshot
-assignees: null
+assignees: []
 body:
   - type: markdown
     attributes:
-      value: |
-        Thanks for taking the time to fill out this bug report!
+      value: Thanks for taking the time to fill out this bug report!
   - type: textarea
     id: description
     attributes:
@@ -22,7 +21,7 @@ body:
     validations:
       required: true
   - type: textarea
-    id: description
+    id: reproduction
     attributes:
       label: How can we reproduce the bug?
       description: A small HowTo trigger your issue.
