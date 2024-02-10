@@ -17,20 +17,14 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  check:
+  formatting:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
-      - uses: cachix/install-nix-action@v22
-        with:
-          nix_path: nixpkgs=channel:nixos-unstable
+      - uses: eneoli/flakeshot@v1
       - name: Check formatting
         if: github.event.pull_request.head.repo.full_name != github.repository
         run: cargo fmt --check --verbose
-
       - name: Format code
         id: format_code
         if: github.event.pull_request.head.repo.full_name == github.repository
@@ -48,12 +42,26 @@ jobs:
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}
           git commit -am "Automated formatting"
           git push
-
-      - name: Check best practices (Clippy)
-        run: cargo clippy --verbose -- -Dwarnings
-
+  check:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: eneoli/flakeshot@v1
       - name: Check for build errors
         run: cargo check --verbose
 
+  clippy:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: eneoli/flakeshot@v1
+      - name: Check best practices (Clippy)
+        run: cargo clippy --verbose -- -Dwarnings
+
+  tests:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: eneoli/flakeshot@v1
       - name: Running tests
         run: cargo test --verbose
