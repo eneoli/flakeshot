@@ -1,0 +1,61 @@
+---
+name: Bug Report
+description: File a bug report to help improving flakeshot!
+title: ""
+labels:
+  - bug
+projects:
+  - eneoli/flakeshot
+assignees: null
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report!
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Also tell us, what did you expect to happen?
+      placeholder: A bug happened!
+      value: ""
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: How can we reproduce the bug?
+      description: A small HowTo trigger your issue.
+      placeholder: 1. Run flakeshot in tray mode and \n 2. ...
+      value: ""
+    validations:
+      required: true
+  - type: dropdown
+    id: display-protocol
+    attributes:
+      label: Display Protocol
+      description: Do you use Wayland or X11?
+      options:
+        - Wayland
+        - X11
+      default: 0
+    validations:
+      required: true
+  - type: text
+    id: distro
+    attributes:
+      label: Which Linux Distro do you use?
+      placeholder: I use Arch btw.
+      value: ""
+  - type: textarea
+    id: monitors
+    attributes:
+      label: How many monitors do you have and how are they orientated?
+      placeholder: I have two monitors both orientateed side to side in landscape.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log output
+      description: Please copy and paste any relevant log output. This will be
+        automatically formatted into code, so no need for backticks.
+      render: shell
