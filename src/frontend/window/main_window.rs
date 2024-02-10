@@ -69,7 +69,7 @@ impl AppModel {
     fn notify(&self, msg: String, urgency: Urgency) {
         let handle = std::thread::spawn(move || {
             if let Err(err) = Notification::new()
-                .appname(&crate_name!())
+                .appname(crate_name!())
                 .urgency(urgency)
                 .summary(FLAKESHOT_SUMMARY)
                 .body(&msg)

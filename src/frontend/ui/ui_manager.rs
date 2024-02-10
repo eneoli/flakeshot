@@ -212,7 +212,7 @@ impl UiManager {
                         msg: format!(
                             "Couldn't save screenshot to {}: {}",
                             path.to_string_lossy(),
-                            err.to_string()
+                            err
                         ),
                         urgency: Urgency::Critical,
                     }),

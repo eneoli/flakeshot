@@ -23,7 +23,7 @@ fn trace_panics() {
         // we are already in a panic hook, if that panics as well... then we are
         // entering a recursion loop so we're just ignoring the result
         let _ = Notification::new()
-            .appname(&clap::crate_name!())
+            .appname(clap::crate_name!())
             .urgency(notify_rust::Urgency::Critical)
             .summary("Flakeshot paniced!")
             .body(concat![
