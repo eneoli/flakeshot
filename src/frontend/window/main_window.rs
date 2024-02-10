@@ -53,7 +53,6 @@ pub enum Command {
 }
 
 impl AppModel {
-    /// Creates a new instance with the given run mode.
     fn new(run_mode: RunMode) -> Self {
         AppModel {
             run_mode,
