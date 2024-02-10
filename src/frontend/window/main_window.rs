@@ -1,6 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
 use super::{
+    notification::Notification,
     run_mode::RunMode,
     screenshot_window::{
         ScreenshotWindowInit, ScreenshotWindowInput, ScreenshotWindowModel, ScreenshotWindowOutput,
@@ -14,7 +15,7 @@ use crate::{
 use clap::crate_name;
 use gtk::prelude::*;
 use image::DynamicImage;
-use notify_rust::{Notification, Urgency};
+use notify_rust::Urgency;
 use relm4::{gtk::Application, prelude::*};
 use tracing::error;
 
@@ -51,10 +52,7 @@ pub enum Command {
 
     /// Tells [`AppModel`] to open up the GUI.
     Gui,
-    Notify {
-        msg: String,
-        urgency: Urgency,
-    },
+    Notify(Notification),
 }
 
 impl AppModel {
@@ -66,12 +64,12 @@ impl AppModel {
         }
     }
 
-    fn notify(&self, msg: String, urgency: Urgency) {
-        if let Err(err) = Notification::new()
+    fn notify(&self, noti: Notification) {
+        if let Err(err) = notify_rust::Notification::new()
             .appname(crate_name!())
-            .urgency(urgency)
+            .urgency(noti.urgency)
             .summary(FLAKESHOT_SUMMARY)
-            .body(&msg)
+            .body(&noti.msg)
             .show()
         {
             error!("Couldn't show notification: {}", err);
@@ -250,11 +248,11 @@ impl Component for AppModel {
             Command::Quit => self.quit(),
             Command::Gui => self.start_gui(sender),
             Command::Close => self.close(),
-            Command::Notify { msg, urgency } => {
-                if urgency == Urgency::Critical {
-                    error!(msg);
+            Command::Notify(noti) => {
+                if noti.urgency == Urgency::Critical {
+                    error!(noti.msg);
                 }
-                self.notify(msg, urgency);
+                self.notify(noti);
             }
         }
     }

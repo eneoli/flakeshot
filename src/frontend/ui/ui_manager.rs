@@ -15,6 +15,7 @@ use crate::frontend::{
     window::{
         file_chooser::FileChooser,
         main_window::{AppModel, Command},
+        notification::Notification,
         screenshot_window::MouseEvent,
     },
 };
@@ -51,25 +52,21 @@ pub struct UiManager {
     canvas: Canvas,
     selection: Rectangle,
     drawables: Vec<Box<dyn Drawable>>,
-    app_model_sender: ComponentSender<AppModel>,
+    sender: ComponentSender<AppModel>,
 
     #[derive_where(skip(Debug))]
     render_observer: Vec<Box<RenderObserver>>,
 }
 
 impl UiManager {
-    pub fn new(
-        total_width: i32,
-        total_height: i32,
-        app_model_sender: ComponentSender<AppModel>,
-    ) -> Self {
+    pub fn new(total_width: i32, total_height: i32, sender: ComponentSender<AppModel>) -> Self {
         UiManager {
             tool_manager: ToolManager::new(),
             canvas: Canvas::new(total_width, total_height).expect("Couldn't create canvas."),
             selection: Rectangle::with_size(total_width as f64, total_height as f64),
             drawables: vec![],
             render_observer: vec![],
-            app_model_sender,
+            sender,
         }
     }
 
@@ -111,16 +108,14 @@ impl UiManager {
             ToolbarEvent::SaveAsFile => self.save_to_file(),
             ToolbarEvent::SaveIntoClipboard => {
                 match self.save_to_clipboard() {
-                    Ok(()) => self
-                        .app_model_sender
-                        .spawn_oneshot_command(|| Command::Close),
-                    Err(err) => {
-                        self.app_model_sender
-                            .spawn_oneshot_command(move || Command::Notify {
-                                msg: err.to_string(),
-                                urgency: Urgency::Critical,
-                            })
-                    }
+                    Ok(()) => self.sender.spawn_oneshot_command(|| Command::Close),
+                    Err(err) => notify(
+                        &self.sender,
+                        Notification {
+                            msg: err.to_string(),
+                            urgency: Urgency::Critical,
+                        },
+                    ),
                 };
             }
             ToolbarEvent::ToolSelect(tool_identifier) => {
@@ -203,24 +198,28 @@ impl UiManager {
     fn save_to_file(&self) {
         let img = self.get_crop_image();
 
-        let app_model_sender = self.app_model_sender.clone();
+        let sender = self.sender.clone();
         FileChooser::open(move |file| {
             if let Some(path) = file {
                 match img.save(&path) {
-                    Ok(()) => {
-                        app_model_sender.spawn_oneshot_command(move || Command::Notify {
+                    Ok(()) => notify(
+                        &sender,
+                        Notification {
                             msg: format!("Screenshot save to {}", path.to_string_lossy()),
                             urgency: Urgency::Low,
-                        });
-                    }
-                    Err(err) => app_model_sender.spawn_oneshot_command(move || Command::Notify {
-                        msg: format!(
-                            "Couldn't save screenshot to {}: {}",
-                            path.to_string_lossy(),
-                            err
-                        ),
-                        urgency: Urgency::Critical,
-                    }),
+                        },
+                    ),
+                    Err(err) => notify(
+                        &sender,
+                        Notification {
+                            msg: format!(
+                                "Couldn't save screenshot to {}: {}",
+                                path.to_string_lossy(),
+                                err
+                            ),
+                            urgency: Urgency::Critical,
+                        },
+                    ),
                 };
             }
         });
@@ -261,12 +260,18 @@ impl UiManager {
             .flush()
             .context("Couldn't flush image to clipboard.")?;
 
-        self.app_model_sender
-            .spawn_oneshot_command(|| Command::Notify {
+        notify(
+            &self.sender,
+            Notification {
                 msg: "Screenshot saved to clipboard.".to_string(),
                 urgency: Urgency::Low,
-            });
+            },
+        );
 
         Ok(())
     }
+}
+
+fn notify(app_model_sender: &ComponentSender<AppModel>, msg: Notification) {
+    app_model_sender.spawn_oneshot_command(|| Command::Notify(msg))
 }
