@@ -58,7 +58,7 @@ impl AppModel {
     }
 
     /// Start a new GUI session where a screenshot of all monitors
-    /// are taken and opens up the screenshot-editor for you.
+    /// are taken and opens up the screenshot-editor.
     fn start_gui(&mut self, sender: ComponentSender<Self>) {
         let sender_ref = Rc::new(sender);
         let mut monitors = get_monitors();
