@@ -162,7 +162,7 @@ impl AppModel {
             .expect("Couldn't stamp image.");
     }
 
-    /// Closes the GUI if [`AppModel`] is running as a trait.
+    /// Closes the GUI if [`AppModel`] is running as a tray.
     fn close(&mut self) {
         match self.run_mode {
             RunMode::Tray => {
