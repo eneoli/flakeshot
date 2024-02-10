@@ -27,7 +27,7 @@ pub enum AppInput {
 /// of `flakeshot`.
 #[derive(Debug)]
 pub struct AppModel {
-    /// Determines how `flakeshot` behaves if it should be closed.
+    /// The mode in which flakeshot was started.
     run_mode: RunMode,
 
     /// `None`: If the GUI hasn't been started
