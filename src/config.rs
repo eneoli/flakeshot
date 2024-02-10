@@ -12,10 +12,14 @@ pub struct Config {
 
 impl Config {
     pub fn load<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
-        match std::fs::read_to_string(path) {
+        match std::fs::read_to_string(&path) {
             Ok(content) => toml::from_str(&content).map_err(|e| e.into()),
             Err(e) => {
-                warn!("Couldn't read config file: {}", e);
+                warn!(
+                    "Couldn't read config file at {}: {}",
+                    path.as_ref().to_string_lossy(),
+                    e
+                );
                 Err(e.into())
             }
         }

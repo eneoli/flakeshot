@@ -4,10 +4,7 @@ use std::{fs::File, path::PathBuf, sync::OnceLock};
 
 use clap::crate_name;
 use cli::LogLevel;
-use frontend::window::{
-    main_window::{AppModel, Settings},
-    run_mode::RunMode,
-};
+use frontend::window::main_window::{AppModel, Settings};
 use gtk4::{gdk::Display, CssProvider};
 use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
