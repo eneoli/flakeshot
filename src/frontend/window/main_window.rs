@@ -20,11 +20,7 @@ pub enum AppInput {
     ScreenshotWindowOutput(ScreenshotWindowOutput),
 }
 
-/// The main struct of `flakeshot` which will manage the
-/// - windows and
-/// - tray
-///
-/// of `flakeshot`.
+/// The main struct of `flakeshot` which will manage the application lifecycle.
 #[derive(Debug)]
 pub struct AppModel {
     /// The mode in which flakeshot was started.
