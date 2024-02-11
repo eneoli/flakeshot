@@ -62,3 +62,7 @@ impl Default for Wayland {
         }
     }
 }
+
+pub fn print_default_config() {
+    println!("{}", toml::to_string_pretty(&Config::default()).unwrap());
+}

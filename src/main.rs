@@ -13,10 +13,7 @@ fn main() {
     flakeshot::init_logging(&cli.log_level, &cli.log_path);
 
     if cli.command() == Command::PrintDefaultConfig {
-        println!(
-            "{}",
-            toml::to_string_pretty(&flakeshot::config::Config::default()).unwrap()
-        );
+        flakeshot::config::print_default_config();
         return;
     }
 
