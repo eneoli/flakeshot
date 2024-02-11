@@ -52,6 +52,8 @@ pub enum Command {
 
     /// Tells [`AppModel`] to open up the GUI.
     Gui,
+
+    /// Tells [`AppModel`] to create a notification.
     Notify(Notification),
 }
 
