@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-use tracing::warn;
+use tracing::{error, warn};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(default)]
@@ -13,7 +13,10 @@ pub struct Config {
 impl Config {
     pub fn load<P: AsRef<Path>>(path: P) -> anyhow::Result<Self> {
         match std::fs::read_to_string(&path) {
-            Ok(content) => toml::from_str(&content).map_err(|e| e.into()),
+            Ok(content) => toml::from_str(&content).map_err(|e| {
+                error!("Couldn't parse config file: {}", e);
+                e.into()
+            }),
             Err(e) => {
                 warn!(
                     "Couldn't read config file at {}: {}",
