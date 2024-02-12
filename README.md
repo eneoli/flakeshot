@@ -24,12 +24,13 @@ were often only either for X11 *or* Wayland. `flakeshot` should close this gap b
 tool which should run on X11 as good as on Wayland.
 
 # Status
-`flakeshot` already has basic screenshot capabilities including cropping. More features are currently being developed.
+`flakeshot` is currently in [alpha-state].
 
 <!-----------------------{ Links }---------------------------->
 
 [flameshot]: https://github.com/flameshot-org/flameshot
 [grim]: https://sr.ht/~emersion/grim/
+[alpha-state]: https://en.wikipedia.org/wiki/Software_release_life_cycle#Alpha
 
 <!-----------------------{ Badges }--------------------------->
 
