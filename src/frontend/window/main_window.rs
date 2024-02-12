@@ -1,6 +1,7 @@
 use std::{collections::HashMap, rc::Rc};
 
 use super::{
+    notification::Notification,
     run_mode::RunMode,
     screenshot_window::{
         ScreenshotWindowInit, ScreenshotWindowInput, ScreenshotWindowModel, ScreenshotWindowOutput,
@@ -11,9 +12,14 @@ use crate::{
     frontend::ui::ui_manager::UiManager,
     tray,
 };
+use clap::crate_name;
 use gtk::prelude::*;
 use image::DynamicImage;
+use notify_rust::Urgency;
 use relm4::{gtk::Application, prelude::*};
+use tracing::error;
+
+const FLAKESHOT_SUMMARY: &str = "Flakeshot info";
 
 #[derive(Debug)]
 pub enum AppInput {
@@ -36,7 +42,7 @@ pub struct AppModel {
 }
 
 /// All commands which can be send to [`AppModel`].
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Command {
     /// Tells [`AppModel`] to *only* close the windows and UI of `flakeshot`.
     Close,
@@ -46,6 +52,9 @@ pub enum Command {
 
     /// Tells [`AppModel`] to open up the GUI.
     Gui,
+
+    /// Tells [`AppModel`] to create a notification.
+    Notify(Notification),
 }
 
 impl AppModel {
@@ -57,19 +66,27 @@ impl AppModel {
         }
     }
 
+    fn notify(&self, noti: Notification) {
+        if let Err(err) = notify_rust::Notification::new()
+            .appname(crate_name!())
+            .urgency(noti.urgency)
+            .summary(FLAKESHOT_SUMMARY)
+            .body(&noti.msg)
+            .show()
+        {
+            error!("Couldn't show notification: {}", err);
+        }
+    }
+
     /// Start a new GUI session where a screenshot of all monitors
     /// are taken and opens up the screenshot-editor.
     fn start_gui(&mut self, sender: ComponentSender<Self>) {
-        let sender_ref = Rc::new(sender);
+        let sender_ref = Rc::new(sender.clone());
         let mut monitors = get_monitors();
 
         let mut ui_manager = {
             let (total_width, total_height) = get_total_view_size(&monitors.values().collect());
-            UiManager::new(
-                total_width,
-                total_height,
-                sender_ref.command_sender().clone(),
-            )
+            UiManager::new(total_width, total_height, sender)
         };
 
         let screenshots =
@@ -233,6 +250,12 @@ impl Component for AppModel {
             Command::Quit => self.quit(),
             Command::Gui => self.start_gui(sender),
             Command::Close => self.close(),
+            Command::Notify(noti) => {
+                if noti.urgency == Urgency::Critical {
+                    error!(noti.msg);
+                }
+                self.notify(noti);
+            }
         }
     }
 }

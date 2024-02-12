@@ -3,14 +3,21 @@ use std::{
     process::Stdio,
 };
 
+use anyhow::Context;
 use derive_where::derive_where;
-use gtk4::cairo::{Context, ImageSurface};
+use gtk4::cairo::{self, ImageSurface};
 use image::{DynamicImage, GenericImageView, ImageOutputFormat};
-use relm4::Sender;
+use notify_rust::Urgency;
+use relm4::ComponentSender;
 
 use crate::frontend::{
     shape::rectangle::Rectangle,
-    window::{file_chooser::FileChooser, main_window::Command, screenshot_window::MouseEvent},
+    window::{
+        file_chooser::FileChooser,
+        main_window::{AppModel, Command},
+        notification::Notification,
+        screenshot_window::MouseEvent,
+    },
 };
 
 use super::{
@@ -30,7 +37,7 @@ enum CanvasDrawableStrategy<'a> {
 }
 
 impl<'a> CanvasDrawable for CanvasDrawableStrategy<'a> {
-    fn draw(&self, ctx: &Context, surface: &ImageSurface) {
+    fn draw(&self, ctx: &cairo::Context, surface: &ImageSurface) {
         match self {
             CanvasDrawableStrategy::Active(drawable) => drawable.draw_active(ctx, surface),
             CanvasDrawableStrategy::Inactive(drawable) => drawable.draw_inactive(ctx, surface),
@@ -45,21 +52,21 @@ pub struct UiManager {
     canvas: Canvas,
     selection: Rectangle,
     drawables: Vec<Box<dyn Drawable>>,
-    app_model_sender: Sender<Command>,
+    sender: ComponentSender<AppModel>,
 
     #[derive_where(skip(Debug))]
     render_observer: Vec<Box<RenderObserver>>,
 }
 
 impl UiManager {
-    pub fn new(total_width: i32, total_height: i32, app_model_sender: Sender<Command>) -> Self {
+    pub fn new(total_width: i32, total_height: i32, sender: ComponentSender<AppModel>) -> Self {
         UiManager {
             tool_manager: ToolManager::new(),
             canvas: Canvas::new(total_width, total_height).expect("Couldn't create canvas."),
             selection: Rectangle::with_size(total_width as f64, total_height as f64),
             drawables: vec![],
             render_observer: vec![],
-            app_model_sender,
+            sender,
         }
     }
 
@@ -99,7 +106,18 @@ impl UiManager {
     pub fn handle_tool_event(&mut self, event: ToolbarEvent) {
         match event {
             ToolbarEvent::SaveAsFile => self.save_to_file(),
-            ToolbarEvent::SaveIntoClipboard => self.save_to_clipboard(),
+            ToolbarEvent::SaveIntoClipboard => {
+                match self.save_to_clipboard() {
+                    Ok(()) => self.sender.spawn_oneshot_command(|| Command::Close),
+                    Err(err) => notify(
+                        &self.sender,
+                        Notification {
+                            msg: err.to_string(),
+                            urgency: Urgency::Critical,
+                        },
+                    ),
+                };
+            }
             ToolbarEvent::ToolSelect(tool_identifier) => {
                 self.tool_manager.set_active_tool(Some(tool_identifier))
             }
@@ -180,27 +198,47 @@ impl UiManager {
     fn save_to_file(&self) {
         let img = self.get_crop_image();
 
+        let sender = self.sender.clone();
         FileChooser::open(move |file| {
             if let Some(path) = file {
-                img.save(path).expect("Couldn't save image.");
+                match img.save(&path) {
+                    Ok(()) => notify(
+                        &sender,
+                        Notification {
+                            msg: format!("Screenshot save to {}", path.to_string_lossy()),
+                            urgency: Urgency::Low,
+                        },
+                    ),
+                    Err(err) => notify(
+                        &sender,
+                        Notification {
+                            msg: format!(
+                                "Couldn't save screenshot to {}: {}",
+                                path.to_string_lossy(),
+                                err
+                            ),
+                            urgency: Urgency::Critical,
+                        },
+                    ),
+                };
             }
         });
     }
 
-    fn save_to_clipboard(&self) {
+    fn save_to_clipboard(&self) -> anyhow::Result<()> {
         let img = self.get_crop_image();
 
         let mut child = if crate::backend::is_wayland() {
             std::process::Command::new("wl-copy")
                 .stdin(Stdio::piped())
                 .spawn()
-                .expect("Couldn't spawn wl-copy process")
+                .context("Couldn't spawn wl-copy process")?
         } else {
             std::process::Command::new("xclip")
                 .args(["-selection", "clipboard", "-target", "image/png"])
                 .stdin(Stdio::piped())
                 .spawn()
-                .expect("Couldn't spawn xclip process")
+                .context("Couldn't spawn xclip process")?
         };
 
         let mut image_bytes: Vec<u8> = {
@@ -209,21 +247,31 @@ impl UiManager {
         };
 
         img.write_to(&mut Cursor::new(&mut image_bytes), ImageOutputFormat::Png)
-            .expect("Couldn't write image to stdin of clipboard process");
+            .context("Couldn't write image to stdin of clipboard process")?;
 
         let child_stdin = child
             .stdin
             .as_mut()
-            .expect("Couldn't get stdin of clipboard-process");
+            .context("Couldn't get stdin of clipboard-process")?;
         child_stdin
             .write_all(&image_bytes)
-            .expect("Couldn't write image bytes into clipboard");
+            .context("Couldn't write image bytes into clipboard")?;
         child_stdin
             .flush()
-            .expect("Couldn't move image to clipboard.");
+            .context("Couldn't flush image to clipboard.")?;
 
-        self.app_model_sender
-            .send(Command::Close)
-            .expect("Couldn't send close command");
+        notify(
+            &self.sender,
+            Notification {
+                msg: "Screenshot saved to clipboard.".to_string(),
+                urgency: Urgency::Low,
+            },
+        );
+
+        Ok(())
     }
+}
+
+fn notify(app_model_sender: &ComponentSender<AppModel>, msg: Notification) {
+    app_model_sender.spawn_oneshot_command(|| Command::Notify(msg))
 }
