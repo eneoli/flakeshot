@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-use tracing::{error, warn};
+use tracing::error;
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 #[serde(default)]
@@ -18,7 +18,7 @@ impl Config {
                 e.into()
             }),
             Err(e) => {
-                warn!(
+                error!(
                     "Couldn't read config file at {}: {}",
                     path.as_ref().to_string_lossy(),
                     e
