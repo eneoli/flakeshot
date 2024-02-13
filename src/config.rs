@@ -32,15 +32,19 @@ impl Config {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct X11 {
-    pub clipman: Clipman,
+    pub clipboard: Clipboard,
 }
 
 impl Default for X11 {
     fn default() -> Self {
-        let cmd = ["xclip", "-selection", "clipboard", "-target", "image/png"];
-
         Self {
-            clipman: Clipman(cmd.into_iter().map(|s| s.to_string()).collect()),
+            clipboard: Clipboard {
+                cmd: "xclip".to_string(),
+                args: ["-selection", "clipboard", "-target", "image/png"]
+                    .into_iter()
+                    .map(|s| s.to_string())
+                    .collect(),
+            },
         }
     }
 }
@@ -48,13 +52,16 @@ impl Default for X11 {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Wayland {
-    pub clipman: Clipman,
+    pub clipboard: Clipboard,
 }
 
 impl Default for Wayland {
     fn default() -> Self {
         Self {
-            clipman: Clipman(vec!["wl-copy".to_string()]),
+            clipboard: Clipboard {
+                cmd: "wl-copy".to_string(),
+                args: vec![],
+            },
         }
     }
 }
@@ -64,43 +71,9 @@ impl Default for Wayland {
 /// # Invariant
 /// It's always garanteed that the vector has at least one element (the command)!
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(remote = "Self", transparent)]
-pub struct Clipman(Vec<String>);
-
-impl Clipman {
-    pub fn cmd(&self) -> &String {
-        &self.0[0]
-    }
-
-    pub fn args(&self) -> &[String] {
-        &self.0[1..]
-    }
-}
-
-impl<'de> Deserialize<'de> for Clipman {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let unchecked = Clipman::deserialize(deserializer)?;
-
-        if unchecked.0.is_empty() {
-            return Err(serde::de::Error::custom(
-                "Clipboard-manager command can't be empty!",
-            ));
-        }
-
-        Ok(unchecked)
-    }
-}
-
-impl Serialize for Clipman {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        Clipman::serialize(self, serializer)
-    }
+pub struct Clipboard {
+    pub cmd: String,
+    pub args: Vec<String>,
 }
 
 pub fn print_default_config() {
