@@ -241,9 +241,15 @@ impl UiManager {
 
         let mut child = {
             let (clip_man, args) = if crate::backend::is_wayland() {
-                (&self.config.wayland.clip_man, &self.config.wayland.args)
+                (
+                    self.config.wayland.clipman.cmd(),
+                    self.config.wayland.clipman.args(),
+                )
             } else {
-                (&self.config.x11.clip_man, &self.config.x11.args)
+                (
+                    self.config.x11.clipman.cmd(),
+                    self.config.x11.clipman.args(),
+                )
             };
 
             std::process::Command::new(clip_man)

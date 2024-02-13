@@ -32,20 +32,15 @@ impl Config {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct X11 {
-    pub clip_man: String,
-    pub args: Vec<String>,
+    pub clipman: Clipman,
 }
 
 impl Default for X11 {
     fn default() -> Self {
+        let cmd = ["xclip", "-selection", "clipboard", "-target", "image/png"];
+
         Self {
-            clip_man: "xclip".into(),
-            args: vec![
-                String::from("-selection"),
-                String::from("clipboard"),
-                String::from("-target"),
-                String::from("image/png"),
-            ],
+            clipman: Clipman(cmd.into_iter().map(|s| s.to_string()).collect()),
         }
     }
 }
@@ -53,16 +48,54 @@ impl Default for X11 {
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Wayland {
-    pub clip_man: String,
-    pub args: Vec<String>,
+    pub clipman: Clipman,
 }
 
 impl Default for Wayland {
     fn default() -> Self {
         Self {
-            clip_man: "wl-copy".into(),
-            args: vec![],
+            clipman: Clipman(vec!["wl-copy".to_string()]),
         }
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(remote = "Self")]
+pub struct Clipman(Vec<String>);
+
+impl Clipman {
+    pub fn cmd(&self) -> &String {
+        &self.0[0]
+    }
+
+    pub fn args(&self) -> &[String] {
+        &self.0[1..]
+    }
+}
+
+impl<'de> Deserialize<'de> for Clipman {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let unchecked = Clipman::deserialize(deserializer)?;
+
+        if unchecked.0.is_empty() {
+            return Err(serde::de::Error::custom(
+                "Clipboard-manager command can't be empty!",
+            ));
+        }
+
+        Ok(unchecked)
+    }
+}
+
+impl Serialize for Clipman {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        Clipman::serialize(self, serializer)
     }
 }
 
