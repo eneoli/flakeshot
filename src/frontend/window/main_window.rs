@@ -9,6 +9,7 @@ use super::{
 };
 use crate::{
     backend::{self, MonitorInfo, OutputInfo},
+    config::Config,
     frontend::ui::ui_manager::UiManager,
     tray,
 };
@@ -94,8 +95,8 @@ impl AppModel {
             UiManager::new(
                 total_width,
                 total_height,
-                sender.clone(),
-                self.settings.config_path.as_path(),
+                sender,
+                Config::load(&self.settings.config_path).unwrap_or_default(),
             )
         };
 

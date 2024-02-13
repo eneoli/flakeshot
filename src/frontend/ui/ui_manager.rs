@@ -1,6 +1,5 @@
 use std::{
     io::{Cursor, Write},
-    path::Path,
     process::Stdio,
 };
 
@@ -69,7 +68,7 @@ impl UiManager {
         total_width: i32,
         total_height: i32,
         sender: ComponentSender<AppModel>,
-        cfg_path: &Path,
+        config: Config,
     ) -> Self {
         UiManager {
             tool_manager: ToolManager::new(),
@@ -78,7 +77,7 @@ impl UiManager {
             drawables: vec![],
             render_observer: vec![],
             sender,
-            config: Config::load(cfg_path).unwrap_or_default(),
+            config,
         }
     }
 
