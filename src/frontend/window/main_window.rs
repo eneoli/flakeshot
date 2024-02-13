@@ -100,7 +100,7 @@ impl AppModel {
                     .map_err(|_| {
                         self.notify(Notification {
                             msg: "Config is invalid! Please take a look into the logs.".to_string(),
-                            urgency: Urgency::Normal,
+                            urgency: Urgency::Critical,
                         })
                     })
                     .unwrap_or_default(),
