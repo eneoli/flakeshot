@@ -240,18 +240,21 @@ impl UiManager {
     fn save_to_clipboard(&self) -> anyhow::Result<()> {
         let img = self.get_crop_image();
 
-        let mut child = if crate::backend::is_wayland() {
-            std::process::Command::new(&self.config.wayland.clip_man)
-                .args(&self.config.wayland.args)
+        let mut child = {
+            let (clip_man, args) = if crate::backend::is_wayland() {
+                (&self.config.wayland.clip_man, &self.config.wayland.args)
+            } else {
+                (&self.config.x11.clip_man, &self.config.x11.args)
+            };
+
+            std::process::Command::new(clip_man)
+                .args(args)
                 .stdin(Stdio::piped())
                 .spawn()
-                .context("Couldn't spawn wl-copy process")?
-        } else {
-            std::process::Command::new(&self.config.x11.clip_man)
-                .args(&self.config.x11.args)
-                .stdin(Stdio::piped())
-                .spawn()
-                .context("Couldn't spawn xclip process")?
+                .expect(&format!(
+                    "Coulnd't spawn '{}'. Is it a typo or did you really install it?",
+                    &clip_man
+                ))
         };
 
         let mut image_bytes: Vec<u8> = {
