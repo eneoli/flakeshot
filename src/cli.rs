@@ -18,6 +18,9 @@ pub struct Cli {
     #[arg(long, default_value = crate::get_default_log_path().into_os_string())]
     pub log_path: PathBuf,
 
+    #[arg(short, long, default_value = crate::get_default_config_path().into_os_string())]
+    pub config_path: PathBuf,
+
     #[command(subcommand)]
     command: Option<Command>,
 }

@@ -1,5 +1,6 @@
 use std::{
     io::{Cursor, Write},
+    path::Path,
     process::Stdio,
 };
 
@@ -64,7 +65,12 @@ pub struct UiManager {
 }
 
 impl UiManager {
-    pub fn new(total_width: i32, total_height: i32, sender: ComponentSender<AppModel>) -> Self {
+    pub fn new(
+        total_width: i32,
+        total_height: i32,
+        sender: ComponentSender<AppModel>,
+        cfg_path: &Path,
+    ) -> Self {
         UiManager {
             tool_manager: ToolManager::new(),
             canvas: Canvas::new(total_width, total_height).expect("Couldn't create canvas."),
@@ -72,7 +78,7 @@ impl UiManager {
             drawables: vec![],
             render_observer: vec![],
             sender,
-            config: Config::load().unwrap_or(Config::default()),
+            config: Config::load(cfg_path).unwrap_or(Config::default()),
         }
     }
 

@@ -4,7 +4,10 @@ use std::{fs::File, path::PathBuf, sync::OnceLock};
 
 use clap::crate_name;
 use cli::LogLevel;
-use frontend::window::{main_window::AppModel, run_mode::RunMode};
+use frontend::window::{
+    main_window::{AppModel, Settings},
+    run_mode::RunMode,
+};
 use gtk4::{gdk::Display, CssProvider};
 use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
@@ -76,14 +79,14 @@ fn get_default_config_path() -> PathBuf {
         .unwrap_or_else(|e| panic!("Couldn't access config file path: {}", e))
 }
 
-pub fn start(mode: RunMode) {
+pub fn start(payload: Settings) {
     let app = RelmApp::new("org.flakeshot.app")
         .with_args(vec![])
         .visible_on_activate(false);
     relm4_icons::initialize_icons();
     initialize_css();
 
-    app.run::<AppModel>(mode);
+    app.run::<AppModel>(payload);
 }
 
 fn initialize_css() {
