@@ -242,13 +242,13 @@ impl UiManager {
         let mut child = {
             let (clip_man, args) = if crate::backend::is_wayland() {
                 (
-                    &self.config.wayland.clipboard.cmd,
-                    &self.config.wayland.clipboard.args,
+                    self.config.wayland.clipboard.cmd(),
+                    self.config.wayland.clipboard.args(),
                 )
             } else {
                 (
-                    &self.config.x11.clipboard.cmd,
-                    &self.config.x11.clipboard.args,
+                    self.config.x11.clipboard.cmd(),
+                    self.config.x11.clipboard.args(),
                 )
             };
 

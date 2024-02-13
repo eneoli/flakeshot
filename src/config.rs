@@ -37,14 +37,13 @@ pub struct X11 {
 
 impl Default for X11 {
     fn default() -> Self {
+        let cmd = ["xclip", "-selection", "clipboard", "-target", "image/png"]
+            .into_iter()
+            .map(|s| s.to_string())
+            .collect();
+
         Self {
-            clipboard: Clipboard {
-                cmd: "xclip".to_string(),
-                args: ["-selection", "clipboard", "-target", "image/png"]
-                    .into_iter()
-                    .map(|s| s.to_string())
-                    .collect(),
-            },
+            clipboard: Clipboard(cmd),
         }
     }
 }
@@ -58,10 +57,7 @@ pub struct Wayland {
 impl Default for Wayland {
     fn default() -> Self {
         Self {
-            clipboard: Clipboard {
-                cmd: "wl-copy".to_string(),
-                args: vec![],
-            },
+            clipboard: Clipboard(vec!["wl-copy".to_string()]),
         }
     }
 }
@@ -71,9 +67,43 @@ impl Default for Wayland {
 /// # Invariant
 /// It's always garanteed that the vector has at least one element (the command)!
 #[derive(Debug, Serialize, Deserialize)]
-pub struct Clipboard {
-    pub cmd: String,
-    pub args: Vec<String>,
+#[serde(remote = "Self", transparent)]
+pub struct Clipboard(Vec<String>);
+
+impl Clipboard {
+    pub fn cmd(&self) -> &str {
+        &self.0[0]
+    }
+
+    pub fn args(&self) -> &[String] {
+        &self.0[1..]
+    }
+}
+
+impl Serialize for Clipboard {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        Clipboard::serialize(self, serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for Clipboard {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let unchecked = Clipboard::deserialize(deserializer)?;
+
+        if unchecked.0.is_empty() {
+            return Err(serde::de::Error::custom(
+                "There has to be at least one value (which is the command.)",
+            ));
+        }
+
+        Ok(unchecked)
+    }
 }
 
 pub fn print_default_config() {
