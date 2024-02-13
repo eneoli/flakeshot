@@ -59,8 +59,12 @@ impl Default for Wayland {
     }
 }
 
+/// Stores the clipboard maager command.
+///
+/// # Invariant
+/// It's always garanteed that the vector has at least one element (the command)!
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(remote = "Self")]
+#[serde(remote = "Self", transparent)]
 pub struct Clipman(Vec<String>);
 
 impl Clipman {
