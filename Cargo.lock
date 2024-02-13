@@ -746,6 +746,7 @@ dependencies = [
  "relm4",
  "relm4-icons",
  "rustix 0.38.31",
+ "serde",
  "thiserror",
  "tokio",
  "toml",

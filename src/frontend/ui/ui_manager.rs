@@ -10,13 +10,16 @@ use image::{DynamicImage, GenericImageView, ImageOutputFormat};
 use notify_rust::Urgency;
 use relm4::ComponentSender;
 
-use crate::frontend::{
-    shape::rectangle::Rectangle,
-    window::{
-        file_chooser::FileChooser,
-        main_window::{AppModel, Command},
-        notification::Notification,
-        screenshot_window::MouseEvent,
+use crate::{
+    config::Config,
+    frontend::{
+        shape::rectangle::Rectangle,
+        window::{
+            file_chooser::FileChooser,
+            main_window::{AppModel, Command},
+            notification::Notification,
+            screenshot_window::MouseEvent,
+        },
     },
 };
 
@@ -56,6 +59,8 @@ pub struct UiManager {
 
     #[derive_where(skip(Debug))]
     render_observer: Vec<Box<RenderObserver>>,
+
+    config: Config,
 }
 
 impl UiManager {
@@ -67,6 +72,7 @@ impl UiManager {
             drawables: vec![],
             render_observer: vec![],
             sender,
+            config: Config::load().unwrap_or(Config::default()),
         }
     }
 
@@ -229,13 +235,14 @@ impl UiManager {
         let img = self.get_crop_image();
 
         let mut child = if crate::backend::is_wayland() {
-            std::process::Command::new("wl-copy")
+            std::process::Command::new(&self.config.wayland.clip_man)
+                .args(&self.config.wayland.args)
                 .stdin(Stdio::piped())
                 .spawn()
                 .context("Couldn't spawn wl-copy process")?
         } else {
-            std::process::Command::new("xclip")
-                .args(["-selection", "clipboard", "-target", "image/png"])
+            std::process::Command::new(&self.config.x11.clip_man)
+                .args(&self.config.x11.args)
                 .stdin(Stdio::piped())
                 .spawn()
                 .context("Couldn't spawn xclip process")?

@@ -13,12 +13,14 @@ use xdg::BaseDirectories;
 
 pub mod backend;
 pub mod cli;
+pub mod config;
 pub mod frontend;
 pub mod tray;
 
 static XDG: OnceLock<BaseDirectories> = OnceLock::new();
 
 pub const LOG_FILENAME: &str = "log.log";
+pub const CONFIG_FILENAME: &str = "config.toml";
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 ///
@@ -66,6 +68,12 @@ fn get_default_log_path() -> PathBuf {
     get_xdg()
         .place_state_file(LOG_FILENAME)
         .unwrap_or_else(|e| panic!("Couldn't access log file path: {}", e))
+}
+
+fn get_default_config_path() -> PathBuf {
+    get_xdg()
+        .place_config_file(CONFIG_FILENAME)
+        .unwrap_or_else(|e| panic!("Couldn't access config file path: {}", e))
 }
 
 pub fn start(mode: RunMode) {
