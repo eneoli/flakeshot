@@ -96,7 +96,14 @@ impl AppModel {
                 total_width,
                 total_height,
                 sender,
-                Config::load(&self.settings.config_path).unwrap_or_default(),
+                Config::load(&self.settings.config_path)
+                    .map_err(|_| {
+                        self.notify(Notification {
+                            msg: "Config is invalid! Please take a look into the logs.".to_string(),
+                            urgency: Urgency::Normal,
+                        })
+                    })
+                    .unwrap_or_default(),
             )
         };
 
