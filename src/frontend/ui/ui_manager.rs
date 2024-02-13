@@ -78,7 +78,7 @@ impl UiManager {
             drawables: vec![],
             render_observer: vec![],
             sender,
-            config: Config::load(cfg_path).unwrap_or(Config::default()),
+            config: Config::load(cfg_path).unwrap_or_default(),
         }
     }
 
