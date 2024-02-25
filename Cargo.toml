@@ -41,8 +41,9 @@ clap = { version = "4.5", features = ["derive", "cargo", "string"] }
 anyhow = "1.0"
 memfd = "0.6"
 xdg = "2.5"
-ksni = { git = "https://github.com/talonvoice/ksni/", branch = "zbus" }
+ksni = { git = "https://github.com/TornaxO7/ksni", branch = "zbus4" }
 rustix = "0.38"
 tokio = "1.36"
 derive-where = "1.2"
 notify-rust = "4.10"
+zbus = "4"
