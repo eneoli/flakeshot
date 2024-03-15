@@ -4,7 +4,7 @@ use std::{fs::File, path::PathBuf, sync::OnceLock};
 
 use clap::crate_name;
 use cli::LogLevel;
-use frontend::window::{main_window::AppModel, run_mode::RunMode};
+use frontend::window::main_window::{AppModel, Settings};
 use gtk4::{gdk::Display, CssProvider};
 use relm4::RelmApp;
 use tracing::level_filters::LevelFilter;
@@ -13,12 +13,14 @@ use xdg::BaseDirectories;
 
 pub mod backend;
 pub mod cli;
+pub mod config;
 pub mod frontend;
 pub mod tray;
 
 static XDG: OnceLock<BaseDirectories> = OnceLock::new();
 
 pub const LOG_FILENAME: &str = "log.log";
+pub const CONFIG_FILENAME: &str = "config.toml";
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 ///
@@ -68,14 +70,20 @@ fn get_default_log_path() -> PathBuf {
         .unwrap_or_else(|e| panic!("Couldn't access log file path: {}", e))
 }
 
-pub fn start(mode: RunMode) {
+fn get_default_config_path() -> PathBuf {
+    get_xdg()
+        .place_config_file(CONFIG_FILENAME)
+        .unwrap_or_else(|e| panic!("Couldn't access config file path: {}", e))
+}
+
+pub fn start(payload: Settings) {
     let app = RelmApp::new("org.flakeshot.app")
         .with_args(vec![])
         .visible_on_activate(false);
     relm4_icons::initialize_icons();
     initialize_css();
 
-    app.run::<AppModel>(mode);
+    app.run::<AppModel>(payload);
 }
 
 fn initialize_css() {

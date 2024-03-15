@@ -18,6 +18,9 @@ pub struct Cli {
     #[arg(long, default_value = crate::get_default_log_path().into_os_string())]
     pub log_path: PathBuf,
 
+    #[arg(short, long, default_value = crate::get_default_config_path().into_os_string())]
+    pub config: PathBuf,
+
     #[command(subcommand)]
     command: Option<Command>,
 }
@@ -28,13 +31,16 @@ impl Cli {
     }
 }
 
-#[derive(Subcommand, Debug, Clone, Copy)]
+#[derive(Subcommand, Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Command {
     /// Open the manual capture ui
     Gui,
 
     /// Start the system tray of flakeshot. (default)
     Tray,
+
+    /// Print the default config to stdout.
+    PrintDefaultConfig,
 }
 
 #[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
