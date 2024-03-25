@@ -6,7 +6,7 @@ use std::{
 use anyhow::Context;
 use derive_where::derive_where;
 use gtk4::cairo::{self, ImageSurface};
-use image::{DynamicImage, GenericImageView, ImageOutputFormat};
+use image::{DynamicImage, GenericImageView, ImageFormat};
 use notify_rust::Urgency;
 use relm4::ComponentSender;
 
@@ -246,7 +246,7 @@ impl UiManager {
             Vec::with_capacity((dim.0 * dim.1) as usize)
         };
 
-        img.write_to(&mut Cursor::new(&mut image_bytes), ImageOutputFormat::Png)
+        img.write_to(&mut Cursor::new(&mut image_bytes), ImageFormat::Png)
             .context("Couldn't write image to stdin of clipboard process")?;
 
         let child_stdin = child
