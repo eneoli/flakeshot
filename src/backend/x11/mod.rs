@@ -57,17 +57,21 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
     let creators = [PortalScreenshot::new()?];
 
     for creator in creators {
-        match try_create_screenshots_with(creator) {
+        match try_create_screenshots_with(&creator) {
             Ok(screenshots) => return Ok(screenshots),
-            Err(err) => warn!("{}", err),
+            Err(err) => warn!(
+                "Couldn't create screenshots from '{}': {}. Trying other creator...",
+                creator.get_name(),
+                err
+            ),
         }
     }
 
-    return try_create_screenshots_with(Fallback);
+    return try_create_screenshots_with(&Fallback);
 }
 
 fn try_create_screenshots_with(
-    creator: impl ScreenshotCreator,
+    creator: &impl ScreenshotCreator,
 ) -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
     use x11rb::protocol::randr::ConnectionExt;
 
@@ -85,7 +89,7 @@ fn try_create_screenshots_with(
                 "We currently support only one output for each monitor. Please create an issue if you encounter this assert."
             );
 
-            let image = creator.get_image(
+            let image = creator.create_screenshot(
                 &conn,
                 screen,
                 monitor.x,
@@ -130,8 +134,11 @@ fn try_create_screenshots_with(
     Ok(images)
 }
 
+/// Represents a screenshot creator which should create and return the screenshot of the provided screen.
 trait ScreenshotCreator {
-    fn get_image(
+    /// The creator which implements this function should return, if it succeeds, the screenshot with the provided meta data
+    /// and return it.
+    fn create_screenshot(
         &self,
         conn: &RustConnection,
         screen: &Screen,
@@ -140,4 +147,7 @@ trait ScreenshotCreator {
         width: u16,
         height: u16,
     ) -> Result<DynamicImage, Error>;
+
+    /// Returns the name of the creator. (In general it's the name of the struct which implements this.)
+    fn get_name(&self) -> &'static str;
 }

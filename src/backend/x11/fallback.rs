@@ -1,3 +1,4 @@
+//! The fallback screenshot creator if all previous attempts failed to create the screenshots of a monitor.
 use image::{DynamicImage, RgbImage, RgbaImage};
 use x11rb::{
     connection::Connection,
@@ -11,7 +12,7 @@ use super::ScreenshotCreator;
 pub struct Fallback;
 
 impl ScreenshotCreator for Fallback {
-    fn get_image(
+    fn create_screenshot(
         &self,
         conn: &RustConnection,
         screen: &Screen,
@@ -60,6 +61,10 @@ impl ScreenshotCreator for Fallback {
         };
 
         Ok(image)
+    }
+
+    fn get_name(&self) -> &'static str {
+        "Fallback-Creator"
     }
 }
 

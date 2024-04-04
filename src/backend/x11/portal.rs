@@ -1,3 +1,6 @@
+//! The screenshot creator by making use of the [org.freedesktop.portal.Screenshot] portal.
+//!
+//! [org.freedesktop.portal.Screenshot]: https://flatpak.github.io/xdg-desktop-portal/docs/doc-org.freedesktop.portal.Screenshot.html
 use anyhow::Result;
 use ashpd::desktop::screenshot::Screenshot;
 use image::{io::Reader, DynamicImage};
@@ -5,13 +8,11 @@ use tokio::runtime::Runtime;
 
 use super::ScreenshotCreator;
 
+/// Some errors which could occur while trying to create a screenshot from the portals.
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
-    #[error("An error occured from ashpd: {0}")]
+    #[error(transparent)]
     Ashpd(#[from] ashpd::Error),
-
-    #[error("")]
-    DbusUnknownFilePath,
 
     #[error("Couldn't open screenshot file from dbus: {0}")]
     IO(#[from] std::io::Error),
@@ -22,6 +23,8 @@ pub enum Error {
 
 #[derive(Debug)]
 pub struct PortalScreenshot {
+    /// Portal gives us a screenshot from all monitors. We just crop it later to the suitable
+    /// monitor for each request in `get_image`.
     screenshot: DynamicImage,
 }
 
@@ -42,7 +45,7 @@ impl PortalScreenshot {
 }
 
 impl ScreenshotCreator for PortalScreenshot {
-    fn get_image(
+    fn create_screenshot(
         &self,
         _conn: &x11rb::rust_connection::RustConnection,
         _screen: &x11rb::protocol::xproto::Screen,
@@ -54,6 +57,10 @@ impl ScreenshotCreator for PortalScreenshot {
         Ok(self
             .screenshot
             .crop_imm(x as u32, y as u32, width as u32, height as u32))
+    }
+
+    fn get_name(&self) -> &'static str {
+        "Portal-Screenshot"
     }
 }
 
