@@ -11,7 +11,8 @@ fn main() {
     let cli = Cli::parse();
 
     flakeshot::init_logging(&cli.log_level, &cli.log_path);
-    flakeshot::start(RunMode::from(cli.command()));
+    flakeshot::backend::create_screenshots().unwrap();
+    // flakeshot::start(RunMode::from(cli.command()));
 }
 
 fn trace_panics() {
