@@ -7,11 +7,7 @@ use flakeshot::frontend::window::run_mode::RunMode;
 use notify_rust::Notification;
 
 fn main() {
-    trace_panics();
-    let cli = Cli::parse();
-
-    flakeshot::init_logging(&cli.log_level, &cli.log_path);
-    flakeshot::start(RunMode::from(cli.command()));
+    println!(":monkaW:");
 }
 
 fn trace_panics() {
