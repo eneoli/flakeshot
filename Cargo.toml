@@ -26,8 +26,7 @@ tracing-panic = "0.1"
 gtk4-layer-shell = "0.2.0"
 gdk4-x11 = "0.7"
 gtk4 = "0.7"
-# relm4 = "0.7.0-alpha.2"
-relm4 = { git = "https://github.com/Relm4/Relm4" }
+relm4 = "0.7.1"
 relm4-icons = { version = "0.7.0-alpha.2", features = [
   "paper",
   "copy",
