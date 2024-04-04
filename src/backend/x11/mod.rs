@@ -67,7 +67,7 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
         }
     }
 
-    return try_create_screenshots_with(&Fallback);
+    try_create_screenshots_with(&Fallback)
 }
 
 fn try_create_screenshots_with(
