@@ -1,5 +1,8 @@
 //! Backend implementation for X11.
+mod dbus;
+
 use image::{DynamicImage, RgbImage, RgbaImage};
+use tracing::warn;
 use x11rb::{
     connection::Connection,
     protocol::xproto::{ImageFormat, ImageOrder, Screen},
@@ -23,6 +26,9 @@ pub enum Error {
 
     #[error(transparent)]
     StringUtf8(#[from] std::string::FromUtf8Error),
+
+    #[error("An error occured from dbus: {0}")]
+    DBus(#[from] zbus::Error),
 }
 
 /// The main function of this module.
@@ -48,6 +54,15 @@ pub enum Error {
 /// }
 /// ```
 pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
+    match dbus::try_create_screenshots() {
+        Ok(screenshots) => return Ok(screenshots),
+        Err(err) => warn!("{}", err),
+    };
+
+    return default_screenshot_creation();
+}
+
+fn default_screenshot_creation() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
     use x11rb::protocol::randr::ConnectionExt;
 
     let (conn, _) = x11rb::connect(None)?;
