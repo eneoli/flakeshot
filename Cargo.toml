@@ -26,8 +26,7 @@ tracing-panic = "0.1"
 gtk4-layer-shell = "0.2.0"
 gdk4-x11 = "0.7"
 gtk4 = "0.7"
-# relm4 = "0.7.0-alpha.2"
-relm4 = { git = "https://github.com/Relm4/Relm4" }
+relm4 = "0.7.1"
 relm4-icons = { version = "0.7.0-alpha.2", features = [
   "paper",
   "copy",
@@ -41,8 +40,10 @@ clap = { version = "4.5", features = ["derive", "cargo", "string"] }
 anyhow = "1.0"
 memfd = "0.6"
 xdg = "2.5"
-ksni = { git = "https://github.com/talonvoice/ksni/", branch = "zbus" }
+ksni = { git = "https://github.com/TornaxO7/ksni", branch = "zbus4" }
 rustix = "0.38"
 tokio = "1.37"
 derive-where = "1.2"
+
+ashpd = "0"
 notify-rust = "4.11"

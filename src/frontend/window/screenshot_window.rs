@@ -8,7 +8,7 @@ use gtk::{
 };
 use gtk4_layer_shell::LayerShell;
 use relm4::{
-    drawing::DrawHandler,
+    abstractions::drawing::DrawHandler,
     gtk::{
         self,
         prelude::{GtkWindowExt, WidgetExt},
