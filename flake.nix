@@ -88,8 +88,6 @@
                   snixembed
                   cargo-udeps
                   stalonetray
-
-                  zbus-xmlgen
                 ] ++ [ rust-toolchain ] ++ flakeshot.nativeBuildInputs ++ flakeshot.buildInputs;
               };
         };

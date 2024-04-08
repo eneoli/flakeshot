@@ -44,6 +44,6 @@ ksni = { git = "https://github.com/TornaxO7/ksni", branch = "zbus4" }
 rustix = "0.38"
 tokio = "1.37"
 derive-where = "1.2"
-notify-rust = "4.10"
 
 ashpd = "0"
+notify-rust = "4.11"
