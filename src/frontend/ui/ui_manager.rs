@@ -10,13 +10,16 @@ use image::{DynamicImage, GenericImageView, ImageFormat};
 use notify_rust::Urgency;
 use relm4::ComponentSender;
 
-use crate::frontend::{
-    shape::rectangle::Rectangle,
-    window::{
-        file_chooser::FileChooser,
-        main_window::{AppModel, Command},
-        notification::Notification,
-        screenshot_window::MouseEvent,
+use crate::{
+    config::Config,
+    frontend::{
+        shape::rectangle::Rectangle,
+        window::{
+            file_chooser::FileChooser,
+            main_window::{AppModel, Command},
+            notification::Notification,
+            screenshot_window::MouseEvent,
+        },
     },
 };
 
@@ -56,10 +59,17 @@ pub struct UiManager {
 
     #[derive_where(skip(Debug))]
     render_observer: Vec<Box<RenderObserver>>,
+
+    config: Config,
 }
 
 impl UiManager {
-    pub fn new(total_width: i32, total_height: i32, sender: ComponentSender<AppModel>) -> Self {
+    pub fn new(
+        total_width: i32,
+        total_height: i32,
+        sender: ComponentSender<AppModel>,
+        config: Config,
+    ) -> Self {
         UiManager {
             tool_manager: ToolManager::new(),
             canvas: Canvas::new(total_width, total_height).expect("Couldn't create canvas."),
@@ -67,6 +77,7 @@ impl UiManager {
             drawables: vec![],
             render_observer: vec![],
             sender,
+            config,
         }
     }
 
@@ -228,17 +239,29 @@ impl UiManager {
     fn save_to_clipboard(&self) -> anyhow::Result<()> {
         let img = self.get_crop_image();
 
-        let mut child = if crate::backend::is_wayland() {
-            std::process::Command::new("wl-copy")
+        let mut child = {
+            let (clip_man, args) = if crate::backend::is_wayland() {
+                (
+                    self.config.wayland.clipboard.cmd(),
+                    self.config.wayland.clipboard.args(),
+                )
+            } else {
+                (
+                    self.config.x11.clipboard.cmd(),
+                    self.config.x11.clipboard.args(),
+                )
+            };
+
+            std::process::Command::new(clip_man)
+                .args(args)
                 .stdin(Stdio::piped())
                 .spawn()
-                .context("Couldn't spawn wl-copy process")?
-        } else {
-            std::process::Command::new("xclip")
-                .args(["-selection", "clipboard", "-target", "image/png"])
-                .stdin(Stdio::piped())
-                .spawn()
-                .context("Couldn't spawn xclip process")?
+                .unwrap_or_else(|err| {
+                    panic!(
+                        "Coulnd't spawn '{}'. Is it a typo or did you really install it?\n{}",
+                        &clip_man, err
+                    )
+                })
         };
 
         let mut image_bytes: Vec<u8> = {
