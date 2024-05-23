@@ -1,4 +1,4 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, path::PathBuf, rc::Rc};
 
 use super::{
     notification::Notification,
@@ -9,6 +9,7 @@ use super::{
 };
 use crate::{
     backend::{self, MonitorInfo, OutputInfo},
+    config::Config,
     frontend::ui::ui_manager::UiManager,
     tray,
 };
@@ -28,10 +29,13 @@ pub enum AppInput {
 
 /// The main struct of `flakeshot` which will manage the application lifecycle.
 #[derive(Debug)]
-pub struct AppModel {
-    /// The mode in which flakeshot was started.
-    run_mode: RunMode,
+pub struct Settings {
+    pub run_mode: RunMode,
+    pub config_path: PathBuf,
+}
 
+#[derive(Debug)]
+pub struct AppModel {
     /// `None`: If the GUI hasn't been started
     /// `Some(UiManager)`: If the GUI has been started
     ui_manager: Option<UiManager>,
@@ -39,6 +43,8 @@ pub struct AppModel {
     /// Holds the controllers of all created windows when the GUI has started.
     /// It's empty, if the GUI has been closed.
     window_controllers: Vec<Controller<ScreenshotWindowModel>>,
+
+    settings: Settings,
 }
 
 /// All commands which can be send to [`AppModel`].
@@ -58,11 +64,11 @@ pub enum Command {
 }
 
 impl AppModel {
-    fn new(run_mode: RunMode) -> Self {
-        AppModel {
-            run_mode,
+    fn new(settings: Settings) -> Self {
+        Self {
             ui_manager: None,
             window_controllers: vec![],
+            settings,
         }
     }
 
@@ -86,7 +92,19 @@ impl AppModel {
 
         let mut ui_manager = {
             let (total_width, total_height) = get_total_view_size(&monitors.values().collect());
-            UiManager::new(total_width, total_height, sender)
+            UiManager::new(
+                total_width,
+                total_height,
+                sender,
+                Config::load(&self.settings.config_path)
+                    .map_err(|_| {
+                        self.notify(Notification {
+                            msg: "Config is invalid! Please take a look into the logs.".to_string(),
+                            urgency: Urgency::Critical,
+                        })
+                    })
+                    .unwrap_or_default(),
+            )
         };
 
         let screenshots =
@@ -177,7 +195,7 @@ impl AppModel {
 
     /// Closes the GUI if [`AppModel`] is running as a tray.
     fn close(&mut self) {
-        match self.run_mode {
+        match self.settings.run_mode {
             RunMode::Tray => {
                 self.ui_manager = None;
                 for controller in &self.window_controllers {
@@ -196,7 +214,7 @@ impl AppModel {
 impl Component for AppModel {
     type Input = AppInput;
     type Output = ();
-    type Init = RunMode;
+    type Init = Settings;
     type Root = gtk::Window;
     type Widgets = ();
     type CommandOutput = Command;
@@ -218,11 +236,11 @@ impl Component for AppModel {
     ) -> relm4::ComponentParts<Self> {
         let mut model = Self::new(payload);
 
-        match payload {
+        match model.settings.run_mode {
             RunMode::Gui => model.start_gui(sender),
             RunMode::Tray => sender
                 .command(|out, shutdown| shutdown.register(tray::start(out)).drop_on_shutdown()),
-        };
+        }
 
         ComponentParts { model, widgets: () }
     }
