@@ -26,7 +26,7 @@ tracing-panic = "0.1"
 gtk4-layer-shell = "0.2.0"
 gdk4-x11 = "0.7"
 gtk4 = "0.7"
-relm4 = "0.7.1"
+relm4 = "0.7"
 relm4-icons = { version = "0.7.0-alpha.2", features = [
   "paper",
   "copy",
@@ -34,7 +34,7 @@ relm4-icons = { version = "0.7.0-alpha.2", features = [
 ] }
 
 # general
-image = "0.24"
+image = "0.25"
 thiserror = "1.0"
 clap = { version = "4.5", features = ["derive", "cargo", "string"] }
 anyhow = "1.0"
@@ -47,3 +47,5 @@ derive-where = "1.2"
 
 ashpd = "0"
 notify-rust = "4.11"
+toml = "0.8"
+serde = "1.0"
