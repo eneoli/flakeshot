@@ -24,7 +24,7 @@ tracing-panic = "0.1"
 
 # gtk stuff
 gtk4-layer-shell = "0.2.0"
-gdk4-x11 = "0.7"
+gdk4-x11 = "0.9"
 gtk4 = "0.7"
 relm4 = "0.7"
 relm4-icons = { version = "0.7.0-alpha.2", features = [
