@@ -42,7 +42,7 @@ memfd = "0.6"
 xdg = "2.5"
 ksni = { git = "https://github.com/TornaxO7/ksni", branch = "zbus4" }
 rustix = "0.38"
-tokio = "1.37"
+tokio = "1.38"
 derive-where = "1.2"
 
 ashpd = "0"
