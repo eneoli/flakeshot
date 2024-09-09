@@ -42,7 +42,7 @@ memfd = "0.6"
 xdg = "2.5"
 ksni = { git = "https://github.com/talonvoice/ksni/", branch = "zbus" }
 rustix = "0.38"
-tokio = "1.38"
+tokio = "1.40"
 derive-where = "1.2"
 notify-rust = "4.11"
 toml = "0.8"
