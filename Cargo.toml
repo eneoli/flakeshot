@@ -14,7 +14,7 @@ x11rb = { version = "0.13", features = ["randr"] }
 
 # wayland specifique
 wayland-client = "0.31"
-wayland-protocols = { version = "0.31", features = ["client", "unstable"] }
+wayland-protocols = { version = "0.32", features = ["client", "unstable"] }
 wayland-protocols-wlr = { version = "0.2", features = ["client"] }
 
 # logging
