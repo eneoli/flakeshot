@@ -113,7 +113,7 @@ fn get_tray_image() -> ImageBuffer<Rgba<u8>, Vec<u8>> {
         let image_bytes = include_bytes!("../../assets/flakeshot_logo_dpi_96.png");
         Cursor::new(image_bytes)
     };
-    image::io::Reader::with_format(cursor, image::ImageFormat::Png)
+    image::ImageReader::with_format(cursor, image::ImageFormat::Png)
         .decode()
         .unwrap()
         .to_rgba8()
