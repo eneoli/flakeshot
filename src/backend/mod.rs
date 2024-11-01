@@ -1,5 +1,8 @@
 //! Contains the different backends to get the screenshot from.
 
+use image::DynamicImage;
+use tracing::info;
+mod portal;
 pub mod wayland;
 pub mod x11;
 
@@ -51,6 +54,21 @@ pub struct OutputInfo {
     pub monitor_info: MonitorInfo,
 }
 
+/// Represents a screenshot creator which should create and return the screenshot of the provided screen.
+trait ScreenshotCreator {
+    type Error;
+
+    /// The creator which implements this function should return, if it succeeds, the screenshot with the provided meta data
+    /// and return it.
+    fn create_screenshot(
+        &self,
+        x: i16,
+        y: i16,
+        width: u16,
+        height: u16,
+    ) -> Result<DynamicImage, Self::Error>;
+}
+
 /// Checks if system is using Wayland
 pub fn is_wayland() -> bool {
     wayland_client::Connection::connect_to_env().is_ok()
@@ -66,6 +84,13 @@ pub fn is_wayland() -> bool {
 /// A tuple where the first value contains some general information about the output and is
 /// mapped to the given image in the second value of the tuple.
 pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
+    // match portal::create_screnshots() {
+    //     Ok(screenshots) => return Ok(screenshots),
+    //     Err(e) => {
+    //         info!("Creating screenshots with portals failed: {}", e);
+    //     }
+    // };
+
     if is_wayland() {
         wayland::create_screenshots().map_err(Error::from)
     } else {
