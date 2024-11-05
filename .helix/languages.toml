@@ -1,0 +1,6 @@
+[language-server.rust-analyzer]
+command = "rust-analyzer"
+
+[[language]]
+name = "rust"
+language-servers = ["rust-analyzer"]
