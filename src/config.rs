@@ -37,13 +37,11 @@ pub struct X11 {
 
 impl Default for X11 {
     fn default() -> Self {
-        let cmd = ["xclip", "-selection", "clipboard", "-target", "image/png"]
-            .into_iter()
-            .map(|s| s.to_string())
-            .collect();
-
         Self {
-            clipboard: Clipboard(cmd),
+            clipboard: Clipboard::new(
+                "xclip",
+                &["-selection", "clipboard", "-target", "image/png"],
+            ),
         }
     }
 }
@@ -57,7 +55,7 @@ pub struct Wayland {
 impl Default for Wayland {
     fn default() -> Self {
         Self {
-            clipboard: Clipboard(vec!["wl-copy".to_string()]),
+            clipboard: Clipboard::new("wl-copy", &[]),
         }
     }
 }
@@ -67,16 +65,28 @@ impl Default for Wayland {
 /// # Invariant
 /// It's always garanteed that the vector has at least one element (the command)!
 #[derive(Debug, Serialize, Deserialize)]
-#[serde(remote = "Self", transparent)]
-pub struct Clipboard(Vec<String>);
+#[serde(remote = "Self")]
+pub struct Clipboard {
+    pub cmd: String,
+    pub args: Vec<String>,
+}
 
 impl Clipboard {
+    fn new<S: ToString>(cmd: S, args: &[S]) -> Self {
+        let args = args.iter().map(|arg| arg.to_string()).collect();
+
+        Self {
+            cmd: cmd.to_string(),
+            args,
+        }
+    }
+
     pub fn cmd(&self) -> &str {
-        &self.0[0]
+        &self.cmd
     }
 
     pub fn args(&self) -> &[String] {
-        &self.0[1..]
+        &self.args
     }
 }
 
@@ -96,9 +106,9 @@ impl<'de> Deserialize<'de> for Clipboard {
     {
         let unchecked = Clipboard::deserialize(deserializer)?;
 
-        if unchecked.0.is_empty() {
+        if unchecked.cmd.is_empty() {
             return Err(serde::de::Error::custom(
-                "There has to be at least one value (which is the command.)",
+                "You have to set a command for the clipboard.",
             ));
         }
 
