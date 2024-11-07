@@ -95,7 +95,7 @@ fn inner_create_screenshots(
 
             let image = create_screenshot_fn(
                 &conn,
-                &screen,
+                screen,
                 monitor.x,
                 monitor.y,
                 monitor.width,
