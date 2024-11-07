@@ -33,4 +33,7 @@ pub enum WaylandError {
 
     #[error("An error happened.")]
     GenericError(&'static str),
+
+    #[error("Couldn't create screenshots with portal: {0}")]
+    Portal(#[from] super::super::portal::Error),
 }

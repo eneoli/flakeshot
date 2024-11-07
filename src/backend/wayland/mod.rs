@@ -4,7 +4,9 @@ use crate::backend::OutputInfo;
 use image::DynamicImage::{ImageRgb8, ImageRgba8};
 use image::{DynamicImage, RgbImage, RgbaImage};
 use std::io::Read;
+use tracing::info;
 use wayland_client::protocol::wl_shm::Format;
+use wayland_output_info::WaylandOutputInfo;
 
 pub mod wayland_error;
 pub(crate) mod wayland_frame_meta;
@@ -15,8 +17,39 @@ pub(crate) mod wayland_screenshot_manager;
 pub(crate) mod wayland_screenshot_state;
 pub(crate) mod wayland_shared_memory;
 
+type FnCreateScreenshot =
+    dyn Fn(&mut WaylandScreenshotManager, &WaylandOutputInfo) -> Result<DynamicImage, WaylandError>;
+
 /// The main function of this module.
 ///
+pub fn create_screenshots() -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandError> {
+    match try_with_portal() {
+        Ok(screenshots) => return Ok(screenshots),
+        Err(e) => info!("Wayland: {}", e),
+    };
+
+    inner_create_screenshots(&manual_create_screenshot)
+}
+
+fn inner_create_screenshots(
+    create_screenshot: &FnCreateScreenshot,
+) -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandError> {
+    let mut screenshots: Vec<(OutputInfo, DynamicImage)> = vec![];
+    let mut manager = WaylandScreenshotManager::new()?;
+    let outputs = manager.get_outputs()?.clone();
+
+    for output in outputs {
+        let img = create_screenshot(&mut manager, &output)?;
+
+        let output_info = OutputInfo::from(&output);
+        screenshots.push((output_info, img));
+
+        manager.next_screen(); // reset current screenshot metadata
+    }
+
+    Ok(screenshots)
+}
+
 /// This function collects, from each screen (a.k.a your monitors) a screenshot
 /// and returns it.
 ///
@@ -37,52 +70,57 @@ pub(crate) mod wayland_shared_memory;
 ///     image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
 /// }
 /// ```
-pub fn create_screenshots() -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandError> {
-    let mut screenshots: Vec<(OutputInfo, DynamicImage)> = vec![];
-    let mut manager = WaylandScreenshotManager::new()?;
-    let outputs = manager.get_outputs()?.clone();
+fn manual_create_screenshot(
+    manager: &mut WaylandScreenshotManager,
+    output: &WaylandOutputInfo,
+) -> Result<DynamicImage, WaylandError> {
+    let queue_handle = manager.get_queue_handle();
+    let screenshot_manager = manager.get_zwlr_screencopy_manager_v1()?.clone();
 
-    for output in outputs {
-        let queue_handle = manager.get_queue_handle();
-        let screenshot_manager = manager.get_zwlr_screencopy_manager_v1()?.clone();
+    let frame = screenshot_manager.capture_output(0, &output.output, &queue_handle, ());
 
-        let img = {
-            let frame = screenshot_manager.capture_output(0, &output.output, &queue_handle, ());
+    let mut shared_memory = manager.create_shared_memory()?;
+    frame.copy(shared_memory.get_buffer());
 
-            let mut shared_memory = manager.create_shared_memory()?;
-            frame.copy(shared_memory.get_buffer());
+    manager.await_screenshot()?;
 
-            manager.await_screenshot()?;
+    // read from shared memory
+    // data holds our screenshot
+    let mut data = vec![];
+    shared_memory
+        .get_memfile()
+        .read_to_end(&mut data)
+        .map_err(|_| WaylandError::GenericError("Couldn't read shared memory file"))?;
 
-            // read from shared memory
-            // data holds our screenshot
-            let mut data = vec![];
-            shared_memory
-                .get_memfile()
-                .read_to_end(&mut data)
-                .map_err(|_| WaylandError::GenericError("Couldn't read shared memory file"))?;
+    let img = {
+        let width = shared_memory.width();
+        let height = shared_memory.height();
+        let format = shared_memory.format();
 
-            let img = {
-                let width = shared_memory.width();
-                let height = shared_memory.height();
-                let format = shared_memory.format();
+        image_from_wayland(data, width, height, format)?
+    };
 
-                image_from_wayland(data, width, height, format)?
-            };
+    shared_memory.destroy();
 
-            shared_memory.destroy();
+    Ok(img)
+}
 
-            img
-        };
+fn try_with_portal() -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandError> {
+    let screenshot = super::portal::create_screenshot()?;
 
-        let output_info = OutputInfo::from(output);
+    let cropper = move |_manager: &mut WaylandScreenshotManager,
+                        output: &WaylandOutputInfo|
+          -> Result<DynamicImage, WaylandError> {
+        let output = OutputInfo::from(output);
+        Ok(screenshot.crop_imm(
+            output.x as u32,
+            output.y as u32,
+            output.width.into(),
+            output.height.into(),
+        ))
+    };
 
-        screenshots.push((output_info, img));
-
-        manager.next_screen(); // reset current screenshot metadata
-    }
-
-    Ok(screenshots)
+    inner_create_screenshots(&cropper)
 }
 
 // Transforms the buffer containing our image from the wayland compositor into a `image::DynamicImage`.

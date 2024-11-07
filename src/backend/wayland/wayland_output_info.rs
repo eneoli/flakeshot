@@ -28,7 +28,7 @@ impl WaylandOutputInfo {
     }
 }
 
-impl From<WaylandOutputInfo> for OutputInfo {
+impl From<&WaylandOutputInfo> for OutputInfo {
     fn from(value: &WaylandOutputInfo) -> Self {
         OutputInfo {
             id: value.output.id().protocol_id(),

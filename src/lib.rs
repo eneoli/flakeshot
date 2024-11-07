@@ -77,12 +77,6 @@ fn get_default_config_path() -> PathBuf {
         .unwrap_or_else(|e| panic!("Couldn't access config file path: {}", e))
 }
 
-fn get_portal_screenshot_tmp_path() -> PathBuf {
-    get_xdg()
-        .place_cache_file(PORTAL_FILENAME)
-        .unwrap_or_else(|e| panic!("Couldn't access screenshot file of portal: {}", e))
-}
-
 pub fn start(payload: Settings) {
     let app = RelmApp::new("org.flakeshot.app")
         .with_args(vec![])
