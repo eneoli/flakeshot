@@ -43,7 +43,25 @@ pub enum Error {
 }
 
 /// The main function of this module.
-/// Tries different things to retrieve a screenshot per monitor.
+/// Tries to retrieve a screenshot of each monitor by attempting different ways (for example by using portals.)
+///
+/// # Example
+/// ```no_test
+/// use flakeshot::backend::x11::get_images;
+/// use std::fs::File;
+/// use image::ImageOutputFormat;
+///
+/// fn main() {
+///     let mut file = File::create("./targets/example_screenshot.png").unwrap();
+///     let images = get_images().unwrap();
+///
+///     // we will only use the first screenshot for this example
+///     let first_screen = images.first().unwrap();
+///     let image = &first_screen.1;
+///
+///     image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
+/// }
+/// ```
 pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
     match try_with_portal() {
         Ok(screenshots) => return Ok(screenshots),
@@ -53,6 +71,11 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
     inner_create_screenshots(&manual_create_screenshot)
 }
 
+/// This function is a generalized function to create and collect the screenshots of each monitor.
+///
+/// # Arguments
+/// - `create_screenshot_fn`: This function will be called for each monitor and it should return the screenshot of the given data of
+///                           the screen
 fn inner_create_screenshots(
     create_screenshot_fn: &FnCreateScreenshot,
 ) -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
@@ -115,26 +138,7 @@ fn inner_create_screenshots(
     Ok(images)
 }
 
-/// This function collects, from each screen (a.k.a your monitors) a screenshot
-/// and returns it.
-///
-/// # Example
-/// ```no_test
-/// use flakeshot::backend::x11::get_images;
-/// use std::fs::File;
-/// use image::ImageOutputFormat;
-///
-/// fn main() {
-///     let mut file = File::create("./targets/example_screenshot.png").unwrap();
-///     let images = get_images().unwrap();
-///
-///     // we will only use the first screenshot for this example
-///     let first_screen = images.first().unwrap();
-///     let image = &first_screen.1;
-///
-///     image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
-/// }
-/// ```
+/// This function communicates directly with the xorg-server to create the screenshot (that's why we call it "manually")
 fn manual_create_screenshot(
     conn: &RustConnection,
     screen: &Screen,
@@ -185,6 +189,7 @@ fn manual_create_screenshot(
     Ok(image)
 }
 
+/// this function attempts to create the screenshot by using portals
 fn try_with_portal() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
     let screenshot = crate::backend::portal::create_screenshot()?;
 
