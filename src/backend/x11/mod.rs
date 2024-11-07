@@ -1,12 +1,26 @@
 //! Backend implementation for X11.
 use image::{DynamicImage, RgbImage, RgbaImage};
+use tracing::info;
 use x11rb::{
     connection::Connection,
-    protocol::xproto::{ImageFormat, ImageOrder, Screen},
+    protocol::{
+        randr::ConnectionExt,
+        xproto::{ImageFormat, ImageOrder, Screen},
+    },
     rust_connection::RustConnection,
 };
 
 use super::{MonitorInfo, OutputInfo};
+
+/// Arguments:
+/// - conn
+/// - screen
+/// - x
+/// - y
+/// - width
+/// - height
+type FnCreateScreenshot =
+    dyn Fn(&RustConnection, &Screen, i16, i16, u16, u16) -> Result<DynamicImage, Error>;
 
 /// A general enum with possible errors as values which can occur while
 /// operating with the xorg-server.
@@ -23,33 +37,25 @@ pub enum Error {
 
     #[error(transparent)]
     StringUtf8(#[from] std::string::FromUtf8Error),
+
+    #[error("Couldn't create screenshots with portal: {0}")]
+    Portal(#[from] super::portal::Error),
 }
 
 /// The main function of this module.
-///
-/// This function collects, from each screen (a.k.a your monitors) a screenshot
-/// and returns it.
-///
-/// # Example
-/// ```no_test
-/// use flakeshot::backend::x11::get_images;
-/// use std::fs::File;
-/// use image::ImageOutputFormat;
-///
-/// fn main() {
-///     let mut file = File::create("./targets/example_screenshot.png").unwrap();
-///     let images = get_images().unwrap();
-///
-///     // we will only use the first screenshot for this example
-///     let first_screen = images.first().unwrap();
-///     let image = &first_screen.1;
-///
-///     image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
-/// }
-/// ```
+/// Tries different things to retrieve a screenshot per monitor.
 pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
-    use x11rb::protocol::randr::ConnectionExt;
+    match try_with_portal() {
+        Ok(screenshots) => return Ok(screenshots),
+        Err(e) => info!("X11: {}", e),
+    }
 
+    inner_create_screenshots(&manual_create_screenshot)
+}
+
+fn inner_create_screenshots(
+    create_screenshot_fn: &FnCreateScreenshot,
+) -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
     let (conn, _) = x11rb::connect(None)?;
     let setup = conn.setup();
 
@@ -64,7 +70,7 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
                 "We currently support only one output for each monitor. Please create an issue if you encounter this assert."
             );
 
-            let image = create_screenshot(
+            let image = create_screenshot_fn(
                 &conn,
                 &screen,
                 monitor.x,
@@ -109,7 +115,27 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
     Ok(images)
 }
 
-pub fn create_screenshot(
+/// This function collects, from each screen (a.k.a your monitors) a screenshot
+/// and returns it.
+///
+/// # Example
+/// ```no_test
+/// use flakeshot::backend::x11::get_images;
+/// use std::fs::File;
+/// use image::ImageOutputFormat;
+///
+/// fn main() {
+///     let mut file = File::create("./targets/example_screenshot.png").unwrap();
+///     let images = get_images().unwrap();
+///
+///     // we will only use the first screenshot for this example
+///     let first_screen = images.first().unwrap();
+///     let image = &first_screen.1;
+///
+///     image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
+/// }
+/// ```
+fn manual_create_screenshot(
     conn: &RustConnection,
     screen: &Screen,
     x: i16,
@@ -157,6 +183,17 @@ pub fn create_screenshot(
     };
 
     Ok(image)
+}
+
+fn try_with_portal() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
+    let screenshot = crate::backend::portal::create_screenshot()?;
+
+    #[rustfmt::skip]
+    let crop = move |_conn: &RustConnection, _screen: &Screen, x: i16, y: i16, width: u16, height: u16| -> Result<DynamicImage, Error> {
+        Ok(screenshot.crop_imm(x as u32, y as u32, width.into(), height.into()))
+    };
+
+    inner_create_screenshots(&crop)
 }
 
 fn get_rgb_image(

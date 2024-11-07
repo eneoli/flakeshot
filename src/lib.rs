@@ -21,6 +21,7 @@ static XDG: OnceLock<BaseDirectories> = OnceLock::new();
 
 pub const LOG_FILENAME: &str = "log.log";
 pub const CONFIG_FILENAME: &str = "config.toml";
+pub const PORTAL_FILENAME: &str = "portal_screenshot";
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 ///
@@ -74,6 +75,12 @@ fn get_default_config_path() -> PathBuf {
     get_xdg()
         .place_config_file(CONFIG_FILENAME)
         .unwrap_or_else(|e| panic!("Couldn't access config file path: {}", e))
+}
+
+fn get_portal_screenshot_tmp_path() -> PathBuf {
+    get_xdg()
+        .place_cache_file(PORTAL_FILENAME)
+        .unwrap_or_else(|e| panic!("Couldn't access screenshot file of portal: {}", e))
 }
 
 pub fn start(payload: Settings) {
