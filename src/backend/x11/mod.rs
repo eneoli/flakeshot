@@ -71,10 +71,10 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Er
     inner_create_screenshots(&manual_create_screenshot)
 }
 
-/// This function is a generalized function to create and collect the screenshots of each monitor.
+/// A generalized function which iterates through all screens and creates a screenshot of it.
 ///
 /// # Arguments
-/// - `create_screenshot_fn`: This function will be called for each monitor and it should return the screenshot of the given data of
+/// - `create_screenshot_fn`: This function will be called for each screen and it should return the screenshot with the given data of
 ///                           the screen
 fn inner_create_screenshots(
     create_screenshot_fn: &FnCreateScreenshot,
@@ -189,7 +189,7 @@ fn manual_create_screenshot(
     Ok(image)
 }
 
-/// this function attempts to create the screenshot by using portals
+/// This function attempts to create the screenshot by using portals
 fn try_with_portal() -> Result<Vec<(OutputInfo, image::DynamicImage)>, Error> {
     let screenshot = crate::backend::portal::create_screenshot()?;
 

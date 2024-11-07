@@ -21,37 +21,7 @@ type FnCreateScreenshot =
     dyn Fn(&mut WaylandScreenshotManager, &WaylandOutputInfo) -> Result<DynamicImage, WaylandError>;
 
 /// The main function of this module.
-///
-pub fn create_screenshots() -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandError> {
-    match try_with_portal() {
-        Ok(screenshots) => return Ok(screenshots),
-        Err(e) => info!("Wayland: {}", e),
-    };
-
-    inner_create_screenshots(&manual_create_screenshot)
-}
-
-fn inner_create_screenshots(
-    create_screenshot: &FnCreateScreenshot,
-) -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandError> {
-    let mut screenshots: Vec<(OutputInfo, DynamicImage)> = vec![];
-    let mut manager = WaylandScreenshotManager::new()?;
-    let outputs = manager.get_outputs()?.clone();
-
-    for output in outputs {
-        let img = create_screenshot(&mut manager, &output)?;
-
-        let output_info = OutputInfo::from(&output);
-        screenshots.push((output_info, img));
-
-        manager.next_screen(); // reset current screenshot metadata
-    }
-
-    Ok(screenshots)
-}
-
-/// This function collects, from each screen (a.k.a your monitors) a screenshot
-/// and returns it.
+/// Creates and collects the screenshot of each screen.
 ///
 /// # Example
 /// ```no_test
@@ -70,6 +40,41 @@ fn inner_create_screenshots(
 ///     image.write_to(&mut file, ImageOutputFormat::Png).unwrap();
 /// }
 /// ```
+pub fn create_screenshots() -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandError> {
+    match try_with_portal() {
+        Ok(screenshots) => return Ok(screenshots),
+        Err(e) => info!("Wayland: {}", e),
+    };
+
+    inner_create_screenshots(&manual_create_screenshot)
+}
+
+/// A generalized function which iterates through all screens and creates a screenshot of it.
+///
+/// # Arguments
+/// - `create_screenshot_fn`: This function will be called for each screen and it should return the screenshot with the given data of
+///                           the screen
+fn inner_create_screenshots(
+    create_screenshot_fn: &FnCreateScreenshot,
+) -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandError> {
+    let mut screenshots: Vec<(OutputInfo, DynamicImage)> = vec![];
+    let mut manager = WaylandScreenshotManager::new()?;
+    let outputs = manager.get_outputs()?.clone();
+
+    for output in outputs {
+        let img = create_screenshot_fn(&mut manager, &output)?;
+        let output_info = OutputInfo::from(&output);
+
+        screenshots.push((output_info, img));
+
+        manager.next_screen(); // reset current screenshot metadata
+    }
+
+    Ok(screenshots)
+}
+
+/// This function collects from each screen (a.k.a your monitors) a screenshot
+/// and returns it.
 fn manual_create_screenshot(
     manager: &mut WaylandScreenshotManager,
     output: &WaylandOutputInfo,
@@ -105,6 +110,7 @@ fn manual_create_screenshot(
     Ok(img)
 }
 
+/// This function attempts to create the screenshot by using portals
 fn try_with_portal() -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandError> {
     let screenshot = super::portal::create_screenshot()?;
 
