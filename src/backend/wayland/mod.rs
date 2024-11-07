@@ -38,21 +38,16 @@ pub(crate) mod wayland_shared_memory;
 /// }
 /// ```
 pub fn create_screenshots() -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandError> {
-    let mut manager = WaylandScreenshotManager::new()?;
-    let queue_handle = manager.get_queue_handle();
-
-    let screenshot_manager = manager.get_zwlr_screencopy_manager_v1()?.clone();
-
-    let num_outputs = { manager.get_outputs()?.len() };
-
     let mut screenshots: Vec<(OutputInfo, DynamicImage)> = vec![];
-    for i in 0..num_outputs {
-        let img = {
-            let frame = {
-                let output = &manager.get_outputs()?[i];
+    let mut manager = WaylandScreenshotManager::new()?;
+    let outputs = manager.get_outputs()?.clone();
 
-                screenshot_manager.capture_output(0, &output.output, &queue_handle, ())
-            };
+    for output in outputs {
+        let queue_handle = manager.get_queue_handle();
+        let screenshot_manager = manager.get_zwlr_screencopy_manager_v1()?.clone();
+
+        let img = {
+            let frame = screenshot_manager.capture_output(0, &output.output, &queue_handle, ());
 
             let mut shared_memory = manager.create_shared_memory()?;
             frame.copy(shared_memory.get_buffer());
@@ -80,7 +75,7 @@ pub fn create_screenshots() -> Result<Vec<(OutputInfo, DynamicImage)>, WaylandEr
             img
         };
 
-        let output_info = OutputInfo::try_from(&manager.get_outputs()?[i])?;
+        let output_info = OutputInfo::from(output);
 
         screenshots.push((output_info, img));
 

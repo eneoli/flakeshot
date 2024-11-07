@@ -1,4 +1,3 @@
-use crate::backend::wayland::wayland_error::WaylandError;
 use crate::backend::wayland::wayland_geometry::WaylandGeometry;
 use crate::backend::wayland::wayland_output_mode::WaylandOutputMode;
 use crate::backend::{MonitorInfo, OutputInfo, Pixel};
@@ -29,11 +28,9 @@ impl WaylandOutputInfo {
     }
 }
 
-impl TryFrom<&WaylandOutputInfo> for OutputInfo {
-    type Error = WaylandError;
-
-    fn try_from(value: &WaylandOutputInfo) -> Result<Self, Self::Error> {
-        Ok(OutputInfo {
+impl From<WaylandOutputInfo> for OutputInfo {
+    fn from(value: &WaylandOutputInfo) -> Self {
+        OutputInfo {
             id: value.output.id().protocol_id(),
             width: value.mode.width as Pixel,
             height: value.mode.height as Pixel,
@@ -43,6 +40,6 @@ impl TryFrom<&WaylandOutputInfo> for OutputInfo {
                 name: value.name.clone(),
                 description: value.description.clone(),
             },
-        })
+        }
     }
 }
