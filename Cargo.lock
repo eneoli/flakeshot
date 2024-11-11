@@ -887,7 +887,7 @@ dependencies = [
  "tracing-panic",
  "tracing-subscriber",
  "wayland-client",
- "wayland-protocols",
+ "wayland-protocols 0.32.5",
  "wayland-protocols-wlr",
  "x11rb",
  "xdg",
@@ -3142,6 +3142,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "wayland-protocols"
+version = "0.32.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7cd0ade57c4e6e9a8952741325c30bf82f4246885dca8bf561898b86d0c1f58e"
+dependencies = [
+ "bitflags 2.5.0",
+ "wayland-backend",
+ "wayland-client",
+ "wayland-scanner",
+]
+
+[[package]]
 name = "wayland-protocols-wlr"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3150,7 +3162,7 @@ dependencies = [
  "bitflags 2.5.0",
  "wayland-backend",
  "wayland-client",
- "wayland-protocols",
+ "wayland-protocols 0.31.2",
  "wayland-scanner",
 ]
 
