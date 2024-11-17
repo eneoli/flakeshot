@@ -39,7 +39,7 @@ enum CanvasDrawableStrategy<'a> {
     Final(&'a dyn Drawable),
 }
 
-impl<'a> CanvasDrawable for CanvasDrawableStrategy<'a> {
+impl CanvasDrawable for CanvasDrawableStrategy<'_> {
     fn draw(&self, ctx: &cairo::Context, surface: &ImageSurface) {
         match self {
             CanvasDrawableStrategy::Active(drawable) => drawable.draw_active(ctx, surface),

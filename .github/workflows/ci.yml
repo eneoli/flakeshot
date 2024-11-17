@@ -21,7 +21,7 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - uses: eneoli/flakeshot@v1
+      - uses: eneoli/flakeshot@ci-nix-v2
       - name: Check formatting
         if: github.event.pull_request.head.repo.full_name != github.repository
         run: cargo fmt --check --verbose
@@ -46,7 +46,7 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - uses: eneoli/flakeshot@v1
+      - uses: eneoli/flakeshot@ci-nix-v2
       - name: Check for build errors
         run: cargo check --verbose
 
@@ -54,7 +54,7 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - uses: eneoli/flakeshot@v1
+      - uses: eneoli/flakeshot@ci-nix-v2
       - name: Check best practices (Clippy)
         run: cargo clippy --verbose -- -Dwarnings
 
@@ -62,7 +62,7 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - uses: eneoli/flakeshot@v1
+      - uses: eneoli/flakeshot@ci-nix-v2
       - name: Running tests
         run: cargo test --verbose
 
@@ -70,6 +70,6 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - uses: eneoli/flakeshot@v1
+      - uses: eneoli/flakeshot@ci-nix-v2
       - name: Check for unused dependencies
         run: cargo udeps

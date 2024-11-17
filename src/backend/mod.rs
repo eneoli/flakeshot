@@ -1,5 +1,6 @@
 //! Contains the different backends to get the screenshot from.
 
+mod portal;
 pub mod wayland;
 pub mod x11;
 
