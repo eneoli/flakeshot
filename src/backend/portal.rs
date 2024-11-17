@@ -28,7 +28,7 @@ async fn request_screenshot() -> ashpd::Result<Screenshot> {
         .response()
 }
 
-/// We try to use the screenshot portals first
+/// Creates a screenshot by using portals.
 pub fn create_screenshot() -> Result<DynamicImage, Error> {
     let rt = Runtime::new()?;
     let screenshot = rt.block_on(request_screenshot())?;
