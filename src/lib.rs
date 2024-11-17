@@ -21,7 +21,6 @@ static XDG: OnceLock<BaseDirectories> = OnceLock::new();
 
 pub const LOG_FILENAME: &str = "log.log";
 pub const CONFIG_FILENAME: &str = "config.toml";
-pub const PORTAL_FILENAME: &str = "portal_screenshot";
 
 /// An enum error which contains all possible error sources while executing flakeshot.
 ///
